@@ -12,6 +12,7 @@ import os
 import os.path
 import errno
 import logging
+from logging.config import dictConfig
 import traceback
 import time
 if sys.platform == 'win32':
@@ -181,48 +182,92 @@ def munge_oserror(exception):
     return (message, errortype, errorcode, exception.strerror, exception.filename, exception.filename2)
 
 
-def setup_logging(logfilepath=None, loglevel=logging.INFO, console=True):
+def timestamp():
     """
-    Set up the logging system.
+    Produce a timestamp string from current local date and time.
 
-    Sets up the logging system, by default sending log messages with a level
-    logging.INFO or higher to a text file in the current directory, with name
-    <PROGRAM_NAME>_<TIMESTAMP>_log.txt, and to the console.
-
-    Optionally, the path of the logging file and the minimum logging level can
-    be provided, and console output can be disabled.
-
-    The caller is responsible for calling logging.shutdown() when done.
-
-    Arguments:
-        logfilepath: the path of the logging file.
-            (default: see above)
-        loglevel: the minimum logging level.
-            (default: logging.INFO)
-        console: if True, logging messages are sent to the console too.
-            (default: True)
-
-    Returns:
-        The path of the logging file.
+    The current format string is YYYYMMDD_HHMMSS.
     """
-    if logfilepath is None:
-        logfilepath = os.path.join(os.getcwd(), PROGRAM_NAME + time.strftime('_%Y%m%d_%H%M%S_log.txt'))
+    return time.strftime('%Y%m%d_%H%M%S')
+
+
+def setup_logging(logfile=None, outputfile=None, console=True):
+    """
+    Set up logging system, disabling all existing loggers.
+
+    With the current configuration ALL logging messages are sent to 'logfile'
+    and logging.INFO messages are sent to 'outputfile', timestamped.
+
+    In addition to that, and if 'console' is True, logging.INFO messages are
+    sent to the console too, but without a timestamp.
+
+    If 'logfile' or 'outputfile' are None, the corresponding files are not
+    created and no logging message will go there. In this case, if 'console' is
+    False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
+    """
+    logging_configuration = {
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'detailed': {
+                'style': '{',
+                'format': '{asctime}.{msecs:04.0f} [{levelname}] {message}',
+                'datefmt': '%Y%m%d_%H%M%S'
+            },
+            'simple': {
+                'style': '{',
+                'format': '{asctime} {message}',
+                'datefmt': '%Y%m%d_%H%M%S'
+            },
+            'message': {
+                'style': '{',
+                'format': '{message}',
+            },
+        },
+        'filters': {'output': {'()': lambda: lambda log_record: log_record.levelno == logging.INFO}},
+        'handlers': {},
+        'loggers': {
+            '': {  # root logger
+                'level': 'NOTSET',
+                'handlers': [],
+                'propagate': False,
+            },
+        },
+    }
+
+    if logfile:
+        logging_configuration['handlers']['logfile'] = {
+            'level': 'NOTSET',
+            'formatter': 'detailed',
+            'class': 'logging.FileHandler',
+            'filename': logfile,
+            'mode': 'w',
+            'encoding': 'utf8'
+        }
+        logging_configuration['loggers']['']['handlers'].append('logfile')
+
+    if outputfile:
+        logging_configuration['handlers']['outputfile'] = {
+            'level': 'NOTSET',
+            'formatter': 'simple',
+            'filters': ['output'],
+            'class': 'logging.FileHandler',
+            'filename': outputfile,
+            'mode': 'w',
+            'encoding': 'utf8'
+        }
+        logging_configuration['loggers']['']['handlers'].append('outputfile')
 
     if console:
-        consolehandler = logging.StreamHandler()
-        consolehandler.setLevel(loglevel)
-        consolehandler.setFormatter(logging.Formatter(fmt='%(levelname).1s: %(message)s'))
+        logging_configuration['handlers']['console'] = {
+            'level': 'NOTSET',
+            'formatter': 'message',
+            'filters': ['output'],
+            'class': 'logging.StreamHandler',
+        }
+        logging_configuration['loggers']['']['handlers'].append('console')
 
-    loghandler = logging.FileHandler(logfilepath, 'w', encoding='utf8')
-    loghandler.setLevel(loglevel)
-    loghandler.setFormatter(logging.Formatter(fmt='%(asctime)s |%(levelname)8s| %(message)s'))
-
-    logging.getLogger().setLevel(logging.NOTSET)
-    if console:
-        logging.getLogger().addHandler(consolehandler)
-    logging.getLogger().addHandler(loghandler)
-
-    return logfilepath
+    dictConfig(logging_configuration)
 
 
 # These tests are a bit incomplete, but for now they'll do.
@@ -230,3 +275,4 @@ if __name__ == '__main__':
     print(f'Desktop path: [{DESKTOP_PATH}]')
     print(f'Program path: [{PROGRAM_PATH}]')
     print(f'Program name: [{PROGRAM_NAME}]')
+    print(f'Timestamp is {timestamp()}')
