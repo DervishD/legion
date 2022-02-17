@@ -72,7 +72,7 @@ if sys.platform.startswith('linux'):
 # So, this is a best-effort.
 #
 # PROGRAM_PATH is the canonical path for the current program.
-# PROGRAM_NAME is the name for the current path, without any extension.
+# PROGRAM_NAME is the name for the current program, without any extension.
 try:
     PROGRAM_PATH = os.path.realpath(sys.modules['__main__'].__file__)
     PROGRAM_NAME = os.path.splitext(os.path.basename(PROGRAM_PATH))[0]
