@@ -172,7 +172,7 @@ def munge_oserror(exception):
 
     message = f'{errortype} [{errorcode}]: {exception.strerror}'
 
-    # Allegedly, if filename2 is non empty, filename won't be, either
+    # Allegedly, if filename2 is non empty, filename won't be, either.
     if exception.filename:
         message += f" ('{exception.filename}'"
         if exception.filename2:
@@ -227,7 +227,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         'filters': {'output': {'()': lambda: lambda log_record: log_record.levelno == logging.INFO}},
         'handlers': {},
         'loggers': {
-            '': {  # root logger
+            '': {  # root logger.
                 'level': 'NOTSET',
                 'handlers': [],
                 'propagate': False,
