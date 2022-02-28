@@ -99,12 +99,16 @@ def excepthook(exc_type, exc_value, exc_traceback):
         ...
         sys.excepthook = legion.excepthook
     """
-    message = f'Unhandled exception {exc_type.__name__}'
-    logging.exception(message, exc_info=exc_value)
-    message += '\n'
-    message += 'at file {}, line {}\n\n'.format(*traceback.extract_tb(exc_traceback)[-1])
-    message += ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')
-    title = 'Unexpected error'
+    if issubclass(exc_type, KeyboardInterrupt):  # Act like a NOP if the user interrupted the program.
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    message = (
+        f'Unhandled exception {exc_type.__name__}.\n'
+        f'at file {exc_traceback.tb_frame.f_code.co_filename}, line {exc_traceback.tb_lineno}\n\n'
+        f'''{''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
+    )
+    title = 'Unexpected error in {PROGRAM_NAME}'
     if sys.platform == 'win32':
         ctypes.windll.user32.MessageBoxW(None, message, title, 0x30)  # 0x30 = MB_ICONWARNING | MB_OK
 
