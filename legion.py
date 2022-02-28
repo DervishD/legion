@@ -16,9 +16,8 @@ from logging.config import dictConfig
 import traceback
 import time
 if sys.platform == 'win32':
-    import win32con
-    import win32ui
-    from win32com.shell import shell, shellcon   # pylint: disable=no-name-in-module,import-error
+    import ctypes
+    import ctypes.wintypes
 
 
 __all__ = (  # pylint: disable=unused-variable
@@ -43,9 +42,11 @@ __all__ = (  # pylint: disable=unused-variable
 DESKTOP_PATH = os.path.expanduser('~')
 
 
-# On Windows it's better to use the ctypes-based win32com.shell modules.
+# On Windows it's better to use the ctypes modules.
 if sys.platform == 'win32':
-    DESKTOP_PATH = shell.SHGetFolderPath(0, shellcon.CSIDL_DESKTOP, 0, 0)
+    DESKTOP_PATH = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+    ctypes.windll.shell32.SHGetFolderPathW(0, 0, 0, 0, DESKTOP_PATH)
+    DESKTOP_PATH = DESKTOP_PATH.value
 
 
 # This works for modern macOS at least.
@@ -105,7 +106,8 @@ def excepthook(exc_type, exc_value, exc_traceback):
     message += ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')
     title = 'Unexpected error'
     if sys.platform == 'win32':
-        win32ui.MessageBox(message, title, win32con.MB_ICONWARNING)
+        ctypes.windll.user32.MessageBoxW(None, message, title, 0x30)  # 0x30 = MB_ICONWARNING | MB_OK
+
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         os.system(f'''osascript -e '{script}' >/dev/null''')
