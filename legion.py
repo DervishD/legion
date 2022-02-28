@@ -75,7 +75,11 @@ if sys.platform.startswith('linux'):
 # PROGRAM_PATH is the canonical path for the current program.
 # PROGRAM_NAME is the name for the current program, without any extension.
 try:
-    PROGRAM_PATH = os.path.realpath(sys.modules['__main__'].__file__)
+    if getattr(sys, 'frozen', False):
+        PROGRAM_PATH = sys.executable
+    else:
+        PROGRAM_PATH = sys.modules['__main__'].__file__
+    PROGRAM_PATH = os.path.realpath(PROGRAM_PATH)
     PROGRAM_NAME = os.path.splitext(os.path.basename(PROGRAM_PATH))[0]
 except AttributeError:
     PROGRAM_PATH = None
