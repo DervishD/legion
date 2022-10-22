@@ -19,6 +19,7 @@ if sys.platform == 'win32':
     import ctypes
     import ctypes.wintypes
 
+# cspell: ignore osascript oserror
 
 __all__ = (  # pylint: disable=unused-variable
     'DESKTOP_PATH',
@@ -195,8 +196,6 @@ def munge_oserror(exception):
 def timestamp():
     """
     Produce a timestamp string from current local date and time.
-
-    The current format string is YYYYMMDD_HHMMSS.
     """
     return time.strftime('%Y%m%d_%H%M%S')
 
