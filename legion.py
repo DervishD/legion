@@ -214,21 +214,38 @@ def setup_logging(logfile=None, outputfile=None, console=True):
     created and no logging message will go there. In this case, if 'console' is
     False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
     """
+    class MultilineFormatter(logging.Formatter):
+        """Simple multiline formatter for logging messages."""
+        def format(self, record):
+            """Format multiline records so they look like multiple records."""
+            message = super().format(record)  # Default formatting first.
+
+            if record.message.strip() == '':  # Should not happen, ever, but…
+                # Ignore empty messages.
+                return ''
+            # Get the preamble so it can be reproduced on each line.
+            preamble = message.split(record.message)[0]
+            # Return cleaned message: no multiple newlines, no trailing spaces,
+            # and the preamble is inserted at the beginning of each line.
+            return f'↲\n{preamble}'.join([line.rstrip() for line in message.splitlines() if line.strip()])
+
     logging_configuration = {
         'version': 1,
         'disable_existing_loggers': True,
         'formatters': {
             'detailed': {
+                '()': MultilineFormatter,
                 'style': '{',
                 'format': '{asctime}.{msecs:04.0f} [{levelname}] {message}',
                 'datefmt': '%Y%m%d_%H%M%S'
             },
             'simple': {
+                '()': MultilineFormatter,
                 'style': '{',
                 'format': '{asctime} {message}',
                 'datefmt': '%Y%m%d_%H%M%S'
             },
-            'message': {
+            'console': {
                 'style': '{',
                 'format': '{message}',
             },
@@ -270,7 +287,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
     if console:
         logging_configuration['handlers']['console'] = {
             'level': 'NOTSET',
-            'formatter': 'message',
+            'formatter': 'console',
             'filters': ['output'],
             'class': 'logging.StreamHandler',
         }
