@@ -260,7 +260,10 @@ def setup_logging(logfile=None, outputfile=None, console=True):
                 'format': '{message}',
             },
         },
-        'filters': {'output': {'()': lambda: lambda log_record: log_record.levelno == logging.INFO}},
+        'filters': {
+            'output': {'()': lambda: lambda log_record: log_record.levelno == logging.INFO},
+            'console': {'()': lambda: lambda log_record: log_record.levelno in (logging.ERROR, logging.INFO)}
+        },
         'handlers': {},
         'loggers': {
             '': {  # root logger.
@@ -298,7 +301,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         logging_configuration['handlers']['console'] = {
             'level': 'NOTSET',
             'formatter': 'console',
-            'filters': ['output'],
+            'filters': ['console'],
             'class': 'logging.StreamHandler',
         }
         logging_configuration['loggers']['']['handlers'].append('console')
