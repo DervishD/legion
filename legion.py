@@ -113,10 +113,21 @@ def excepthook(exc_type, exc_value, exc_traceback):
         f'at file {exc_traceback.tb_frame.f_code.co_filename}, line {exc_traceback.tb_lineno}\n\n'
         f'''{''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
     )
+    # No matter what, the error message is logged.
+    #
+    # If there is a working logging system, the full details of the error will
+    # be in a safe place for future inspection.
+    #
+    # Best case scenario, there is also a working console and the logging.ERROR
+    # messages will be shown there, too. Worst case scenario, handled below.
+    logging.error('\n%s', message)
     title = 'Unexpected error in {PROGRAM_NAME}'
+
+    # Just in case there is NOT a working console or logging system, show the
+    # message in a popup, depending on the platform, so the end user will be
+    # aware of the problem even though the details may not be very readable.
     if sys.platform == 'win32':
         ctypes.windll.user32.MessageBoxW(None, message, title, 0x30)  # 0x30 = MB_ICONWARNING | MB_OK
-
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         os.system(f'''osascript -e '{script}' >/dev/null''')
