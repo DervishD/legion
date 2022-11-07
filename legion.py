@@ -194,9 +194,7 @@ def munge_oserror(exception):
 
 
 def timestamp():
-    """
-    Produce a timestamp string from current local date and time.
-    """
+    """Produce a timestamp string from current local date and time."""
     return time.strftime('%Y%m%d_%H%M%S')
 
 
@@ -216,6 +214,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
     """
     class MultilineFormatter(logging.Formatter):
         """Simple multiline formatter for logging messages."""
+
         def format(self, record):
             """Format multiline records so they look like multiple records."""
             message = super().format(record)  # Default formatting first.
