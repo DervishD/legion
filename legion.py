@@ -247,7 +247,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
             'detailed': {
                 '()': MultilineFormatter,
                 'style': '{',
-                'format': '{asctime}.{msecs:04.0f} [{levelname}] {message}',
+                'format': '{asctime}.{msecs:04.0f} [{levelname}] {funcName}() {message}',
                 'datefmt': '%Y%m%d_%H%M%S'
             },
             'simple': {
