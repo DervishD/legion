@@ -12,6 +12,7 @@ import os
 import os.path
 import errno
 import logging
+import subprocess
 from logging.config import dictConfig
 import traceback
 import time
@@ -28,6 +29,7 @@ __all__ = (  # pylint: disable=unused-variable
     'excepthook',
     'munge_oserror',
     'setup_logging',
+    'run'
 )
 
 
@@ -308,6 +310,28 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         logging_configuration['loggers']['']['handlers'].append('console')
 
     dictConfig(logging_configuration)
+
+
+def run(*command, **subprocess_args):
+    """
+    Run the command described by 'command', using 'subprocess_args' as arguments
+    to the subsequent subprocess.run() call, since this is just a helper to make
+    such calls more convenient, providing a set of defaults for such arguments.
+
+    For that reason, the keyword arguments accepted in 'subprocess_args' and the
+    return value for this function are the exact same ones accepted and returned
+    by the subprocess.run() function itself.
+    """
+    subprocess_args = {
+        'check': False,
+        'capture_output': True,
+        'text': True,
+        'errors': 'replace',
+        'creationflags': subprocess.CREATE_NO_WINDOW,
+    } | subprocess_args
+
+    # pylint: disable-next=subprocess-run-check
+    return subprocess.run(*command, **subprocess_args)
 
 
 # These tests are a bit incomplete, but for now they'll do.
