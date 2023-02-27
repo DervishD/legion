@@ -20,7 +20,7 @@ if sys.platform == 'win32':
     import ctypes
     import ctypes.wintypes
 
-# cspell: ignore osascript oserror
+# cspell: ignore osascript oserror munge
 
 __all__ = (  # pylint: disable=unused-variable
     'DESKTOP_PATH',
