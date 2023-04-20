@@ -33,8 +33,6 @@ __all__ = (  # pylint: disable=unused-variable
 )
 
 
-# Desktop path.
-#
 # This heavily depends on the operating system used, not only the platform but
 # the particular operating system. For example, under Linux this depends of the
 # particular distribution, and under Windows this depends on the version and
@@ -45,20 +43,16 @@ __all__ = (  # pylint: disable=unused-variable
 DESKTOP_PATH = os.path.expanduser('~')
 
 
-# On Windows it's better to use the ctypes modules.
 if sys.platform == 'win32':
     DESKTOP_PATH = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
     ctypes.windll.shell32.SHGetFolderPathW(0, 0, 0, 0, DESKTOP_PATH)
     DESKTOP_PATH = DESKTOP_PATH.value
 
 
-# This works for modern macOS at least.
 if sys.platform == 'darwin':
     DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 
 
-# On Linux, if xdg-user-dirs exists, it's better to use it.
-# Otherwise the same default as for macOS is used.
 if sys.platform.startswith('linux'):
     try:
         DESKTOP_PATH = os.environ['XDG_DESKTOP_DIR']
@@ -66,21 +60,17 @@ if sys.platform.startswith('linux'):
         DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 
 
-# Current program path and name (without extension).
-#
-# This method is not failproof, because probably there are some situations
-# where the '__file__' attribute of module '__main__' won't exist but there's
-# some filename involved. If one of those situations arise, the code will be
-# modified accordingly.
-#
-# So, this is a best-effort.
-#
 # PROGRAM_PATH is the canonical path for the current program.
 # PROGRAM_NAME is the name for the current program, without any extension.
 try:
     if getattr(sys, 'frozen', False):
         PROGRAM_PATH = sys.executable
     else:
+        # This method is not failproof, because there are probably situations
+        # where the '__file__' attribute of module '__main__' won't exist but
+        # there's some filename involved.
+        #
+        # If one of those situations arise, the code will be modified accordingly.
         PROGRAM_PATH = sys.modules['__main__'].__file__
     PROGRAM_PATH = os.path.realpath(PROGRAM_PATH)
     PROGRAM_NAME = os.path.splitext(os.path.basename(PROGRAM_PATH))[0]
@@ -106,7 +96,8 @@ def excepthook(exc_type, exc_value, exc_traceback):
         ...
         sys.excepthook = legion.excepthook
     """
-    if issubclass(exc_type, KeyboardInterrupt):  # Act like a NOP if the user interrupted the program.
+    # Use the default exception hook if the user interrupted the program.
+    if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
@@ -121,7 +112,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
     # be in a safe place for future inspection.
     #
     # Best case scenario, there is also a working console and the logging.ERROR
-    # messages will be shown there, too. Worst case scenario, handled below.
+    # messages will be shown there, too.
     logging.error('\n%s', message)
     title = 'Unexpected error in {PROGRAM_NAME}'
 
@@ -184,7 +175,6 @@ def munge_oserror(exception):
     errortype = type(exception).__name__
     errorcode = None
 
-    # No need to test for the platform, winerror doesn't exist outside Windows.
     try:
         if exception.winerror:
             errorcode = f'WinError {exception.winerror}'
@@ -230,14 +220,13 @@ def setup_logging(logfile=None, outputfile=None, console=True):
 
         def format(self, record):
             """Format multiline records so they look like multiple records."""
-            message = super().format(record)  # Default formatting first.
+            message = super().format(record)
 
-            # For empty messages return the message as-is, but stripped.
             if record.message.strip() == '':
                 return message.strip()
 
-            # Get the preamble so it can be reproduced on each line.
             preamble = message.split(record.message)[0]
+
             # Return cleaned message: no multiple newlines, no trailing spaces,
             # and the preamble is inserted at the beginning of each line.
             return f'\n{preamble}'.join([line.rstrip() for line in message.splitlines() if line.strip()])
