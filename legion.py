@@ -222,7 +222,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
             """Format multiline records so they look like multiple records."""
             message = super().format(record)
 
-            if record.message.strip() == '':
+            if not record.message.strip():
                 return message.strip()
 
             preamble = message.split(record.message)[0]
