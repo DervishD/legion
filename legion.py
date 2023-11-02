@@ -114,7 +114,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
     # Best case scenario, there is also a working console and the logging.ERROR
     # messages will be shown there, too.
     logging.error('\n%s', message)
-    title = 'Unexpected error in {PROGRAM_NAME}'
+    title = f'Unexpected error in {PROGRAM_NAME}'
 
     # Just in case there is NOT a working console or logging system, show the
     # message in a popup, depending on the platform, so the end user will be
