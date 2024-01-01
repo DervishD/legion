@@ -7,15 +7,16 @@ Legion.
 
 Since the module is many, it's legion.
 """
-import sys
-import os
-import os.path
 import errno
 import logging
-import subprocess
 from logging.config import dictConfig
-import traceback
+import os
+import os.path
+import subprocess
+import sys
 import time
+import traceback
+
 if sys.platform == 'win32':
     import ctypes
     import ctypes.wintypes
