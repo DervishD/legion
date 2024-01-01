@@ -6,6 +6,8 @@ Legion.
 “My name is Legion,” he replied, “for we are many.”
 
 Since the module is many, it's legion.
+
+cspell: ignore osascript oserror munge
 """
 import errno
 import logging
@@ -21,7 +23,6 @@ if sys.platform == 'win32':
     import ctypes
     import ctypes.wintypes
 
-# cspell: ignore osascript oserror munge
 
 __all__ = (  # pylint: disable=unused-variable
     'DESKTOP_PATH',
