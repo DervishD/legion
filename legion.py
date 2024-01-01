@@ -26,12 +26,17 @@ __all__ = (  # pylint: disable=unused-variable
     'DESKTOP_PATH',
     'PROGRAM_NAME',
     'PROGRAM_PATH',
+    'UTF8',
     'excepthook',
     'munge_oserror',
     'setup_logging',
     'fix_output_streams',
     'run'
 )
+
+
+# To avoid mistyping.
+UTF8 = 'utf-8'
 
 
 # This heavily depends on the operating system used, not only the platform but
