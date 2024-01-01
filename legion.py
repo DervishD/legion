@@ -29,6 +29,7 @@ __all__ = (  # pylint: disable=unused-variable
     'excepthook',
     'munge_oserror',
     'setup_logging',
+    'fix_output_streams',
     'run'
 )
 
@@ -92,6 +93,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
 
     To use this function as the default exception hook, do the following:
         import sys
+        ...
         import legion
         ...
         sys.excepthook = legion.excepthook
@@ -299,6 +301,17 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         logging_configuration['loggers']['']['handlers'].append('console')
 
     dictConfig(logging_configuration)
+
+
+def fix_output_streams():
+    """
+    Reconfigure standard output streams so they use UTF-8 encoding even if
+    they are redirected to a file when running the program from a shell.
+    """
+    if sys.stdout:
+        sys.stdout.reconfigure(encoding=UTF8)
+    if sys.stderr:
+        sys.stderr.reconfigure(encoding=UTF8)
 
 
 def run(*command, **subprocess_args):
