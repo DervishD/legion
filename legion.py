@@ -20,8 +20,8 @@ import time
 import traceback
 
 if sys.platform == 'win32':
-    import ctypes
-    import ctypes.wintypes
+    from ctypes import create_unicode_buffer, windll
+    from ctypes.wintypes import MAX_PATH as MAX_PATH_LEN
 
 
 __all__ = (  # pylint: disable=unused-variable
@@ -62,8 +62,8 @@ if sys.platform == 'win32':
     ACCESS_TOKEN = 0
     SHGFP_TYPE_CURRENT = 0
     FLAGS = SHGFP_TYPE_CURRENT
-    DESKTOP_PATH = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(HWND, DESKTOP_CSIDL, ACCESS_TOKEN, FLAGS, DESKTOP_PATH)
+    DESKTOP_PATH = create_unicode_buffer(MAX_PATH_LEN)
+    windll.shell32.SHGetFolderPathW(HWND, DESKTOP_CSIDL, ACCESS_TOKEN, FLAGS, DESKTOP_PATH)
     DESKTOP_PATH = DESKTOP_PATH.value
 
 
@@ -113,7 +113,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        ctypes.windll.user32.MessageBoxW(None, message, title, MB_ICONWARNING | MB_OK)
+        windll.user32.MessageBoxW(None, message, title, MB_ICONWARNING | MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         os.system(f'''osascript -e '{script}' >/dev/null''')
