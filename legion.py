@@ -26,6 +26,7 @@ if sys.platform == 'win32':
 
 __all__ = (  # pylint: disable=unused-variable
     'DESKTOP_PATH',
+    'HOME_PATH',
     'PROGRAM_NAME',
     'PROGRAM_PATH',
     'UTF8',
@@ -43,6 +44,10 @@ MB_ICONWARNING = 0x30
 MB_OK = 0
 
 
+# User's home directory.
+HOME_PATH = os.path.expanduser('~')
+
+
 # This heavily depends on the operating system used, not only the platform but
 # the particular operating system. For example, under Linux this depends of the
 # particular distribution, and under Windows this depends on the version and
@@ -50,7 +55,7 @@ MB_OK = 0
 #
 # The default is just to expand to a home directory, which is far from perfect
 # but works in all platforms, according to the Python Standard Library manual.
-DESKTOP_PATH = os.path.expanduser('~')
+DESKTOP_PATH = HOME_PATH
 
 
 if sys.platform == 'win32':
@@ -60,14 +65,14 @@ if sys.platform == 'win32':
 
 
 if sys.platform == 'darwin':
-    DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
+    DESKTOP_PATH = os.path.join(HOME_PATH, 'Desktop')
 
 
 if sys.platform.startswith('linux'):
     try:
         DESKTOP_PATH = os.environ['XDG_DESKTOP_DIR']
     except KeyError:
-        DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
+        DESKTOP_PATH = os.path.join(HOME_PATH, 'Desktop')
 
 
 try:
