@@ -39,6 +39,8 @@ __all__ = (  # pylint: disable=unused-variable
 
 # Some constants used to prevent mistyping.
 UTF8 = 'utf-8'
+MB_ICONWARNING = 0x30
+MB_OK = 0
 
 
 # This heavily depends on the operating system used, not only the platform but
@@ -103,7 +105,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        ctypes.windll.user32.MessageBoxW(None, message, title, 0x30)  # 0x30 = MB_ICONWARNING | MB_OK
+        ctypes.windll.user32.MessageBoxW(None, message, title, MB_ICONWARNING | MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         os.system(f'''osascript -e '{script}' >/dev/null''')
