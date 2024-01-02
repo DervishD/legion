@@ -37,7 +37,7 @@ __all__ = (  # pylint: disable=unused-variable
 )
 
 
-# To avoid mistyping.
+# Some constants used to prevent mistyping.
 UTF8 = 'utf-8'
 
 
@@ -68,8 +68,6 @@ if sys.platform.startswith('linux'):
         DESKTOP_PATH = os.path.join(os.path.expanduser('~'), 'Desktop')
 
 
-# PROGRAM_PATH is the canonical path for the current program.
-# PROGRAM_NAME is the name for the current program, without any extension.
 try:
     if getattr(sys, 'frozen', False):
         PROGRAM_PATH = sys.executable
@@ -88,24 +86,7 @@ except AttributeError:
 
 
 def excepthook(exc_type, exc_value, exc_traceback):
-    """
-    Handle unhandled exceptions, default exception hook.
-
-    Provides a default exception hook to assign to sys.excepthook, check the
-    documentation for sys.excepthook documentation for further details.
-
-    This module could assign the value itself,
-    but explicit is better than implicit...
-    It's the Tao.
-
-    To use this function as the default exception hook, do the following:
-        import sys
-        ...
-        import legion
-        ...
-        sys.excepthook = legion.excepthook
-    """
-    # Use the default exception hook if the user interrupted the program.
+    """Handle unhandled exceptions, default exception hook."""
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
@@ -115,19 +96,12 @@ def excepthook(exc_type, exc_value, exc_traceback):
         f'at file {exc_traceback.tb_frame.f_code.co_filename}, line {exc_traceback.tb_lineno}\n\n'
         f'''{''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
     )
-    # No matter what, the error message is logged.
-    #
-    # If there is a working logging system, the full details of the error will
-    # be in a safe place for future inspection.
-    #
-    # Best case scenario, there is also a working console and the logging.ERROR
-    # messages will be shown there, too.
     logging.error('\n%s', message)
     title = f'Unexpected error in {PROGRAM_NAME}'
 
-    # Just in case there is NOT a working console or logging system, show the
-    # message in a popup, depending on the platform, so the end user will be
-    # aware of the problem even though the details may not be very readable.
+    # Just in case there is NOT a working console or logging system,
+    # the error message is also shown in a popup window so the end
+    # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
         ctypes.windll.user32.MessageBoxW(None, message, title, 0x30)  # 0x30 = MB_ICONWARNING | MB_OK
     if sys.platform == 'darwin':
@@ -137,15 +111,27 @@ def excepthook(exc_type, exc_value, exc_traceback):
 
 def munge_oserror(exception):
     """
-    Munge exception information for OSError exceptions.
+    Munge information for OSError exception.
 
-    Processes the exception object for OSError exceptions (and its subclasses),
-    and builds a string usable as output message for end users, containing the
+    Process the exception object for OSError exceptions (and its subclasses),
+    and build a string usable as output message for end users, containing the
     actual OSError subclass which was raised, the error code, the error string
     and the filenames involved.
 
     For convenience, the munged (stringified) exception information is returned
-    too as a list: type, error code, error string, filename and filename2.
+    as a tuple. The first element is the generated string, and the rest of the
+    elements used for building the string are also returned, just in case the
+    caller wants to format the string in another way. These additional elements
+    are strings containing the actual OSError subclass which was raised, the
+    error code, the error message and the two filenames, filename and filename2
+    (if any, None otherwise).
+
+    By default the error code, both in the generated string and in the munged
+    information tuple, is the errno code as a string, except on Windows where if
+    WinError exists it takes precedence over errno.
+
+    IMPORTANT: the returned string DOESN'T END IN A PERIOD. The caller must add
+    the proper punctuation needed when outputting the message.
 
     Examples:
         # Using the provided string.
@@ -162,24 +148,6 @@ def munge_oserror(exception):
         except OSError as exc:
             message = '{}: [{}] {} "{}"'.format(*legion.munge_oserror(exc)[1:4])
             sys.exit(message)
-
-    Arguments:
-        exception: The exception object to be munged.
-
-    Returns:
-        A tuple. The first element is the generated string, but for convenience
-        the munged (stringified) elements used for building the string are also
-        returned, just in case the caller wants to format the string in another
-        way. These additional elements are strings containing the actual OSError
-        subclass which was raised, the error code, the error message and the
-        two filenames, filename and filename2 (if any, None otherwise).
-
-        By default the error code, both in the generated string and in the
-        munged information tuple, is the errno code as a string, except on
-        Windows where if WinError exists it takes precedence over errno.
-
-        IMPORTANT: the returned string DOESN'T END IN A PERIOD. The caller must
-        add the proper punctuation needed when outputting the message.
     """
     errortype = type(exception).__name__
     errorcode = None
@@ -195,7 +163,6 @@ def munge_oserror(exception):
 
     message = f'{errortype} [{errorcode}]: {exception.strerror}'
 
-    # Allegedly, if filename2 is non empty, filename won't be, either.
     if exception.filename:
         message += f" ('{exception.filename}'"
         if exception.filename2:
@@ -214,15 +181,15 @@ def setup_logging(logfile=None, outputfile=None, console=True):
     """
     Set up logging system, disabling all existing loggers.
 
-    With the current configuration ALL logging messages are sent to 'logfile'
-    and logging.INFO messages are sent to 'outputfile', timestamped.
+    With the current configuration ALL logging messages are sent to logfile
+    and logging.INFO messages are sent to outputfile, timestamped.
 
-    In addition to that, and if 'console' is True, logging.INFO messages are
-    sent to the console too, but without a timestamp.
+    In addition to that, and if console is True (the default), logging.INFO
+    messages are sent to the console too, but without a timestamp.
 
-    If 'logfile' or 'outputfile' are None, the corresponding files are not
-    created and no logging message will go there. In this case, if 'console' is
-    False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
+    If logfile or outputfile are None, the corresponding files are not created
+    and no logging message will go there. In this case, if console is False, NO
+    LOGGING OUTPUT WILL BE PRODUCED AT ALL.
     """
     class MultilineFormatter(logging.Formatter):
         """Simple multiline formatter for logging messages."""
@@ -235,9 +202,6 @@ def setup_logging(logfile=None, outputfile=None, console=True):
                 return message.strip()
 
             preamble = message.split(record.message)[0]
-
-            # Return cleaned message: no multiple newlines, no trailing spaces,
-            # and the preamble is inserted at the beginning of each line.
             return f'\n{preamble}'.join([line.rstrip() for line in message.splitlines() if line.strip()])
 
     logging_configuration = {
@@ -267,7 +231,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         },
         'handlers': {},
         'loggers': {
-            '': {  # root logger.
+            '': {
                 'level': 'NOTSET',
                 'handlers': [],
                 'propagate': False,
@@ -323,13 +287,13 @@ def fix_output_streams():
 
 def run(*command, **subprocess_args):
     """
-    Run the command described by 'command', using 'subprocess_args' as arguments
-    to the subsequent subprocess.run() call, since this is just a helper to make
-    such calls more convenient, providing a set of defaults for such arguments.
+    Run command, using subprocess_args as arguments. This is just a helper for
+    subprocess.run() to make such calls more convenient by providing a set of
+    defaults for the arguments.
 
-    For that reason, the keyword arguments accepted in 'subprocess_args' and the
+    For that reason, the keyword arguments accepted in subprocess_args and the
     return value for this function are the exact same ones accepted and returned
-    by the subprocess.run() function itself.
+    by subprocess.run() function itself.
     """
     subprocess_args = {
         'check': False,
@@ -343,7 +307,6 @@ def run(*command, **subprocess_args):
     return subprocess.run(*command, **subprocess_args)
 
 
-# These tests are a bit incomplete, but for now they'll do.
 if __name__ == '__main__':
     print(f'Desktop path: [{DESKTOP_PATH}]')
     print(f'Program path: [{PROGRAM_PATH}]')
