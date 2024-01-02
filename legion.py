@@ -38,14 +38,11 @@ __all__ = (  # pylint: disable=unused-variable
 )
 
 
-# Some constants used to prevent mistyping.
 UTF8 = 'utf-8'
+DESKTOP = 'Desktop'
 MB_ICONWARNING = 0x30
 MB_OK = 0
-
-
-# User's home directory.
-HOME_PATH = os.path.expanduser('~')
+TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
 
 # This heavily depends on the operating system used, not only the platform but
@@ -55,24 +52,30 @@ HOME_PATH = os.path.expanduser('~')
 #
 # The default is just to expand to a home directory, which is far from perfect
 # but works in all platforms, according to the Python Standard Library manual.
+HOME_PATH = os.path.expanduser('~')
 DESKTOP_PATH = HOME_PATH
 
 
 if sys.platform == 'win32':
+    HWND = 0
+    DESKTOP_CSIDL = 0
+    ACCESS_TOKEN = 0
+    SHGFP_TYPE_CURRENT = 0
+    FLAGS = SHGFP_TYPE_CURRENT
     DESKTOP_PATH = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(0, 0, 0, 0, DESKTOP_PATH)
+    ctypes.windll.shell32.SHGetFolderPathW(HWND, DESKTOP_CSIDL, ACCESS_TOKEN, FLAGS, DESKTOP_PATH)
     DESKTOP_PATH = DESKTOP_PATH.value
 
 
 if sys.platform == 'darwin':
-    DESKTOP_PATH = os.path.join(HOME_PATH, 'Desktop')
+    DESKTOP_PATH = os.path.join(HOME_PATH, DESKTOP)
 
 
 if sys.platform.startswith('linux'):
     try:
         DESKTOP_PATH = os.environ['XDG_DESKTOP_DIR']
     except KeyError:
-        DESKTOP_PATH = os.path.join(HOME_PATH, 'Desktop')
+        DESKTOP_PATH = os.path.join(HOME_PATH, DESKTOP)
 
 
 try:
@@ -181,7 +184,7 @@ def munge_oserror(exception):
 
 def timestamp():
     """Produce a timestamp string from current local date and time."""
-    return time.strftime('%Y%m%d_%H%M%S')
+    return time.strftime(TIMESTAMP_FORMAT)
 
 
 def setup_logging(logfile=None, outputfile=None, console=True):
@@ -253,7 +256,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
             'class': 'logging.FileHandler',
             'filename': logfile,
             'mode': 'w',
-            'encoding': 'utf8'
+            'encoding': UTF8
         }
         logging_configuration['loggers']['']['handlers'].append('logfile')
 
@@ -265,7 +268,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
             'class': 'logging.FileHandler',
             'filename': outputfile,
             'mode': 'w',
-            'encoding': 'utf8'
+            'encoding': UTF8
         }
         logging_configuration['loggers']['']['handlers'].append('outputfile')
 
