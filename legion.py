@@ -31,10 +31,10 @@ __all__ = (  # pylint: disable=unused-variable
     'PROGRAM_PATH',
     'UTF8',
     'excepthook',
-    'munge_oserror',
-    'setup_logging',
     'fix_output_streams',
-    'run'
+    'munge_oserror',
+    'run',
+    'setup_logging',
 )
 
 
@@ -119,6 +119,17 @@ def excepthook(exc_type, exc_value, exc_traceback):
         os.system(f'''osascript -e '{script}' >/dev/null''')
 
 
+def fix_output_streams():
+    """
+    Reconfigure standard output streams so they use UTF-8 encoding even if
+    they are redirected to a file when running the program from a shell.
+    """
+    if sys.stdout:
+        sys.stdout.reconfigure(encoding=UTF8)
+    if sys.stderr:
+        sys.stderr.reconfigure(encoding=UTF8)
+
+
 def munge_oserror(exception):
     """
     Munge information for OSError exception.
@@ -185,6 +196,28 @@ def munge_oserror(exception):
 def timestamp():
     """Produce a timestamp string from current local date and time."""
     return time.strftime(TIMESTAMP_FORMAT)
+
+
+def run(*command, **subprocess_args):
+    """
+    Run command, using subprocess_args as arguments. This is just a helper for
+    subprocess.run() to make such calls more convenient by providing a set of
+    defaults for the arguments.
+
+    For that reason, the keyword arguments accepted in subprocess_args and the
+    return value for this function are the exact same ones accepted and returned
+    by subprocess.run() function itself.
+    """
+    subprocess_args = {
+        'check': False,
+        'capture_output': True,
+        'text': True,
+        'errors': 'replace',
+        'creationflags': subprocess.CREATE_NO_WINDOW,
+    } | subprocess_args
+
+    # pylint: disable-next=subprocess-run-check
+    return subprocess.run(*command, **subprocess_args)
 
 
 def setup_logging(logfile=None, outputfile=None, console=True):
@@ -282,39 +315,6 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         logging_configuration['loggers']['']['handlers'].append('console')
 
     dictConfig(logging_configuration)
-
-
-def fix_output_streams():
-    """
-    Reconfigure standard output streams so they use UTF-8 encoding even if
-    they are redirected to a file when running the program from a shell.
-    """
-    if sys.stdout:
-        sys.stdout.reconfigure(encoding=UTF8)
-    if sys.stderr:
-        sys.stderr.reconfigure(encoding=UTF8)
-
-
-def run(*command, **subprocess_args):
-    """
-    Run command, using subprocess_args as arguments. This is just a helper for
-    subprocess.run() to make such calls more convenient by providing a set of
-    defaults for the arguments.
-
-    For that reason, the keyword arguments accepted in subprocess_args and the
-    return value for this function are the exact same ones accepted and returned
-    by subprocess.run() function itself.
-    """
-    subprocess_args = {
-        'check': False,
-        'capture_output': True,
-        'text': True,
-        'errors': 'replace',
-        'creationflags': subprocess.CREATE_NO_WINDOW,
-    } | subprocess_args
-
-    # pylint: disable-next=subprocess-run-check
-    return subprocess.run(*command, **subprocess_args)
 
 
 if __name__ == '__main__':
