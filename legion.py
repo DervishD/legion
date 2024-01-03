@@ -20,8 +20,9 @@ import time
 import traceback
 
 if sys.platform == 'win32':
-    from ctypes import create_unicode_buffer, windll
+    from ctypes import byref, c_uint, create_unicode_buffer, windll
     from ctypes.wintypes import MAX_PATH as MAX_PATH_LEN
+    from msvcrt import get_osfhandle, getch
 
 
 __all__ = (  # pylint: disable=unused-variable
@@ -35,11 +36,13 @@ __all__ = (  # pylint: disable=unused-variable
     'munge_oserror',
     'run',
     'setup_logging',
+    'wait_for_keypress',
 )
 
 
 UTF8 = 'utf-8'
 DESKTOP = 'Desktop'
+PYTHON_LAUNCHER = 'py.exe'
 MB_ICONWARNING = 0x30
 MB_OK = 0
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
@@ -315,6 +318,52 @@ def setup_logging(logfile=None, outputfile=None, console=True):
         logging_configuration['loggers']['']['handlers'].append('console')
 
     dictConfig(logging_configuration)
+
+
+def wait_for_keypress():
+    """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
+    if sys.platform != 'win32':
+        logging.debug('sys.platform is not win32.')
+        return
+
+    # If no console is attached, then the application must NOT pause.
+    #
+    # Since sys.stdout.isatty() returns True under Windows when sys.stdout
+    # is redirected to NUL, another (more complex) method, is needed here.
+    # The test below has been adapted from https://stackoverflow.com/a/33168697
+    if not windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint())):
+        return
+
+    # If there is a console attached, the application must pause ONLY if that
+    # console will automatically close when the application finishes, hiding
+    # any messages printed by the application. In other words, pause only if
+    # the console is transient.
+    #
+    # Determining if a console is transient is not easy as there is no
+    # bulletproof method available for every possible circumstance.
+    #
+    # There are TWO main scenarios: a frozen executable and a .py file.
+    # In both cases, the console title has to be obtained.
+    buffer_size = MAX_PATH_LEN + 1
+    console_title = create_unicode_buffer(buffer_size)
+    if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
+        return
+    console_title = console_title.value
+
+    # If the console is transient the program has to wait for a keypress.
+    #
+    # For a frozen executable, the test is more or less easy because the console
+    # title will be set to sys.executable. But for a .py file, it is a bit more
+    # complicated. In most cases, the console will be transient if the title is
+    # set to the Python launcher executable. That is good enough.
+    if getattr(sys, 'frozen', False):
+        if console_title != sys.executable:
+            return
+    elif os.path.basename(console_title).lower() == PYTHON_LAUNCHER:
+        return
+
+    print('\nPress any key to continue...', end='', flush=True)
+    getch()
 
 
 if __name__ == '__main__':
