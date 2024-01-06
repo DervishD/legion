@@ -323,7 +323,6 @@ def setup_logging(logfile=None, outputfile=None, console=True):
 def wait_for_keypress():
     """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
     if sys.platform != 'win32':
-        logging.debug('sys.platform is not win32.')
         return
 
     # If no console is attached, then the application must NOT pause.
@@ -359,7 +358,7 @@ def wait_for_keypress():
     if getattr(sys, 'frozen', False):
         if console_title != sys.executable:
             return
-    elif os.path.basename(console_title).lower() == PYTHON_LAUNCHER:
+    elif os.path.basename(console_title).lower() != PYTHON_LAUNCHER:
         return
 
     print('\nPress any key to continue...', end='', flush=True)
