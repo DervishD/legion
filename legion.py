@@ -25,19 +25,7 @@ if sys.platform == 'win32':
     from msvcrt import get_osfhandle, getch
 
 
-__all__ = (  # pylint: disable=unused-variable
-    'DESKTOP_PATH',
-    'HOME_PATH',
-    'PROGRAM_NAME',
-    'PROGRAM_PATH',
-    'UTF8',
-    'excepthook',
-    'fix_output_streams',
-    'munge_oserror',
-    'run',
-    'setup_logging',
-    'wait_for_keypress',
-)
+__all__ = []  # pylint: disable=unused-variable
 
 
 UTF8 = 'utf-8'
@@ -98,7 +86,7 @@ except AttributeError:
     PROGRAM_NAME = '<stdin>'
 
 
-def excepthook(exc_type, exc_value, exc_traceback):
+def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
     """Handle unhandled exceptions, default exception hook."""
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -122,7 +110,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
         os.system(f'''osascript -e '{script}' >/dev/null''')
 
 
-def fix_output_streams():
+def fix_output_streams():  # pylint: disable=unused-variable
     """
     Reconfigure standard output streams so they use UTF-8 encoding even if
     they are redirected to a file when running the program from a shell.
@@ -133,7 +121,7 @@ def fix_output_streams():
         sys.stderr.reconfigure(encoding=UTF8)
 
 
-def munge_oserror(exception):
+def munge_oserror(exception):  # pylint: disable=unused-variable
     """
     Munge information for OSError exception.
 
@@ -196,12 +184,12 @@ def munge_oserror(exception):
     return (message, errortype, errorcode, exception.strerror, exception.filename, exception.filename2)
 
 
-def timestamp():
+def timestamp():  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
     return time.strftime(TIMESTAMP_FORMAT)
 
 
-def run(*command, **subprocess_args):
+def run(*command, **subprocess_args):  # pylint: disable=unused-variable
     """
     Run command, using subprocess_args as arguments. This is just a helper for
     subprocess.run() to make such calls more convenient by providing a set of
@@ -223,7 +211,7 @@ def run(*command, **subprocess_args):
     return subprocess.run(*command, **subprocess_args)
 
 
-def setup_logging(logfile=None, outputfile=None, console=True):
+def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disable=unused-variable
     """
     Set up logging system, disabling all existing loggers.
 
@@ -320,7 +308,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):
     dictConfig(logging_configuration)
 
 
-def wait_for_keypress():
+def wait_for_keypress():  # pylint: disable=unused-variable
     """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
     if sys.platform != 'win32':
         return
