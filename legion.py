@@ -231,6 +231,29 @@ def run(*command, **subprocess_args):  # pylint: disable=unused-variable
     return subprocess.run(*command, **subprocess_args)
 
 
+class CustomFormatter(logging.Formatter):
+    """Simple custom formatter for logging messages."""
+    def format(self, record):
+        """
+        Format multiline records so they look like multiple records.
+        Indent message according to current indentation level.
+        """
+        message = super().format(record)
+        preamble, message = message.partition(record.message)[:2]
+        return '\n'.join([f'{preamble}{record.indent}{line.strip()}'.rstrip() for line in message.splitlines()])
+
+
+# Needed for having VERY basic logging when setup_logging() is not used.
+logging.basicConfig(
+    level=logging.NOTSET,
+    style=Config.LOGGING_FORMAT_STYLE,
+    format=Config.LOGGING_FALLBACK_FORMAT,
+    force=True
+)
+logging.indent = lambda level=None: None
+logging.dedent = lambda level=None: None
+
+
 def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disable=unused-variable
     """
     Set up logging system, disabling all existing loggers.
@@ -245,48 +268,38 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
     and no logging message will go there. In this case, if console is False, NO
     LOGGING OUTPUT WILL BE PRODUCED AT ALL.
     """
-    class MultilineFormatter(logging.Formatter):
-        """Simple multiline formatter for logging messages."""
-
-        def format(self, record):
-            """Format multiline records so they look like multiple records."""
-            message = super().format(record)
-
-            if not record.message.strip():
-                return message.strip()
-
-            preamble = message.split(record.message)[0]
-            return f'\n{preamble}'.join([line.rstrip() for line in message.splitlines() if line.strip()])
-
     logging_configuration = {
         'version': 1,
         'disable_existing_loggers': True,
         'formatters': {
-            'detailed': {
-                '()': MultilineFormatter,
-                'style': '{',
-                'format': '{asctime}.{msecs:04.0f} [{levelname}] {funcName}() {message}',
-                'datefmt': '%Y%m%d_%H%M%S'
+            'logfile_formatter': {
+                '()': CustomFormatter,
+                'style': Config.LOGGING_FORMAT_STYLE,
+                'format': Config.LOGGING_LOGFILE_FORMAT,
+                'datefmt': Config.TIMESTAMP_FORMAT
             },
-            'simple': {
-                '()': MultilineFormatter,
-                'style': '{',
-                'format': '{asctime} {message}',
-                'datefmt': '%Y%m%d_%H%M%S'
+            'outputfile_formatter': {
+                '()': CustomFormatter,
+                'style': Config.LOGGING_FORMAT_STYLE,
+                'format': Config.LOGGING_OUTPUTFILE_FORMAT,
+                'datefmt': Config.TIMESTAMP_FORMAT
             },
-            'console': {
-                'style': '{',
-                'format': '{message}',
+            'console_formatter': {
+                '()': CustomFormatter,
+                'style': Config.LOGGING_FORMAT_STYLE,
+                'format': Config.LOGGING_CONSOLE_FORMAT,
             },
         },
         'filters': {
-            'output': {'()': lambda: lambda log_record: log_record.levelno == logging.INFO},
-            'console': {'()': lambda: lambda log_record: log_record.levelno in (logging.ERROR, logging.INFO)}
+            'logfile_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno > logging.NOTSET},
+            'outputfile_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno >= logging.INFO},
+            'stdout_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno == logging.INFO},
+            'stderr_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno > logging.INFO},
         },
         'handlers': {},
         'loggers': {
             '': {
-                'level': 'NOTSET',
+                'level': logging.NOTSET,
                 'handlers': [],
                 'propagate': False,
             },
@@ -295,9 +308,10 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
 
     if logfile:
         logging_configuration['handlers']['logfile'] = {
-            'level': 'NOTSET',
-            'formatter': 'detailed',
-            'class': 'logging.FileHandler',
+            'level': logging.NOTSET,
+            'formatter': 'logfile_formatter',
+            'filters': ['logfile_filter'],
+            'class': logging.FileHandler,
             'filename': logfile,
             'mode': 'w',
             'encoding': UTF8
@@ -306,10 +320,10 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
 
     if outputfile:
         logging_configuration['handlers']['outputfile'] = {
-            'level': 'NOTSET',
-            'formatter': 'simple',
-            'filters': ['output'],
-            'class': 'logging.FileHandler',
+            'level': logging.NOTSET,
+            'formatter': 'outputfile_formatter',
+            'filters': ['outputfile_filter'],
+            'class': logging.FileHandler,
             'filename': outputfile,
             'mode': 'w',
             'encoding': UTF8
@@ -317,15 +331,59 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
         logging_configuration['loggers']['']['handlers'].append('outputfile')
 
     if console:
-        logging_configuration['handlers']['console'] = {
-            'level': 'NOTSET',
-            'formatter': 'console',
-            'filters': ['console'],
-            'class': 'logging.StreamHandler',
+        logging_configuration['handlers']['stdout_handler'] = {
+            'level': logging.NOTSET,
+            'formatter': 'console_formatter',
+            'filters': ['stdout_filter'],
+            'class': logging.StreamHandler,
+            'stream': sys.stdout,
         }
-        logging_configuration['loggers']['']['handlers'].append('console')
+        logging_configuration['loggers']['']['handlers'].append('stdout_handler')
+        logging_configuration['handlers']['stderr_handler'] = {
+            'level': logging.NOTSET,
+            'formatter': 'console_formatter',
+            'filters': ['stderr_filter'],
+            'class': logging.StreamHandler,
+            'stream': sys.stderr,
+        }
+        logging_configuration['loggers']['']['handlers'].append('stderr_handler')
 
     dictConfig(logging_configuration)
+
+    setattr(logging.getLogger(), 'indentlevel', 0)
+    current_factory = logging.getLogRecordFactory()
+    levelname_template = f'{{:{len(max(logging.getLevelNamesMapping(), key=len))}}}'
+    def record_factory(*args, **kwargs):
+        """LogRecord factory which supports indentation."""
+        record = current_factory(*args, **kwargs)
+        record.indent = Config.LOGGING_INDENTCHAR * logging.getLogger().indentlevel
+        record.levelname = levelname_template.format(record.levelname)
+        return record
+    logging.setLogRecordFactory(record_factory)
+
+    increase_indent_symbol = '+'
+    decrease_indent_symbol = '-'
+    def set_indent_level(level):
+        """
+        Set current indentation level.
+
+        If level is increase_indent_symbol, current indentation level is increased.
+        If level is decrease_indent_symbol, current indentation level is decreased.
+        For any other value, indentation level is set to the provided value.
+        """
+        if level == '+':
+            logging.getLogger().indentlevel += 1
+            return
+        if level == '-':
+            logging.getLogger().indentlevel -= 1
+            return
+        logging.getLogger().indentlevel = level
+    # Both logging.indent() and logging.dedent() support a parameter specifying an
+    # exact FINAL indentation level, not an indentation increment/decrement!
+    # These two helpers are provided in order to improve readability, since the
+    # set_logging_indent_level() function can be used directly.
+    logging.indent = lambda level=None: set_indent_level(increase_indent_symbol if level is None else level)
+    logging.dedent = lambda level=None: set_indent_level(decrease_indent_symbol if level is None else level)
 
 
 def wait_for_keypress():  # pylint: disable=unused-variable
