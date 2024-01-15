@@ -28,11 +28,27 @@ if sys.platform == 'win32':
 __all__ = []  # pylint: disable=unused-variable
 
 
+# Some constants used to prevent mistyping.
 UTF8 = 'utf-8'
-PYTHON_LAUNCHER = 'py.exe'
-MB_ICONWARNING = 0x30
-MB_OK = 0
-TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+
+
+class Config():  # pylint: disable=too-few-public-methods
+    """Application configuration values."""
+    FALLBACK_PROGRAM_NAME = '<stdin>'
+
+    TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+
+    LOGGING_INDENTCHAR = ' '
+    LOGGING_FORMAT_STYLE = '{'
+    LOGGING_FALLBACK_FORMAT = '{message}'
+    LOGGING_LOGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
+    LOGGING_OUTPUTFILE_FORMAT = '{asctime} {message}'
+    LOGGING_CONSOLE_FORMAT = '{message}'
+
+    if sys.platform == 'win32':
+        PYTHON_LAUNCHER = 'py.exe'
+        MB_ICONWARNING = 0x30
+        MB_OK = 0
 
 
 # This heavily depends on the operating system used, not only the platform but
@@ -87,7 +103,7 @@ try:
     PROGRAM_NAME = os.path.splitext(os.path.basename(PROGRAM_PATH))[0]
 except AttributeError:
     PROGRAM_PATH = None
-    PROGRAM_NAME = '<stdin>'
+    PROGRAM_NAME = Config.FALLBACK_PROGRAM_NAME
 
 
 def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
@@ -108,7 +124,7 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        windll.user32.MessageBoxW(None, message, title, MB_ICONWARNING | MB_OK)
+        windll.user32.MessageBoxW(None, message, title, Config.MB_ICONWARNING | Config.MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         os.system(f'''osascript -e '{script}' >/dev/null''')
@@ -190,7 +206,7 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
 
 def timestamp():  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
-    return time.strftime(TIMESTAMP_FORMAT)
+    return time.strftime(Config.TIMESTAMP_FORMAT)
 
 
 def run(*command, **subprocess_args):  # pylint: disable=unused-variable
@@ -350,7 +366,7 @@ def wait_for_keypress():  # pylint: disable=unused-variable
     if getattr(sys, 'frozen', False):
         if console_title != sys.executable:
             return
-    elif os.path.basename(console_title).lower() != PYTHON_LAUNCHER:
+    elif os.path.basename(console_title).lower() != Config.PYTHON_LAUNCHER:
         return
 
     print('\nPress any key to continue...', end='', flush=True)
