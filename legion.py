@@ -29,7 +29,6 @@ __all__ = []  # pylint: disable=unused-variable
 
 
 UTF8 = 'utf-8'
-DESKTOP = 'Desktop'
 PYTHON_LAUNCHER = 'py.exe'
 MB_ICONWARNING = 0x30
 MB_OK = 0
@@ -44,29 +43,34 @@ TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 # The default is just to expand to a home directory, which is far from perfect
 # but works in all platforms, according to the Python Standard Library manual.
 HOME_PATH = os.path.expanduser('~')
-DESKTOP_PATH = HOME_PATH
 
 
-if sys.platform == 'win32':
-    HWND = 0
-    DESKTOP_CSIDL = 0
-    ACCESS_TOKEN = 0
-    SHGFP_TYPE_CURRENT = 0
-    FLAGS = SHGFP_TYPE_CURRENT
-    DESKTOP_PATH = create_unicode_buffer(MAX_PATH_LEN)
-    windll.shell32.SHGetFolderPathW(HWND, DESKTOP_CSIDL, ACCESS_TOKEN, FLAGS, DESKTOP_PATH)
-    DESKTOP_PATH = DESKTOP_PATH.value
+def __get_desktop_path():  # pylint: disable=unused-variable
+    """Get the path of the desktop directory depending on the platform."""
+    desktop_basename = 'Desktop'
 
+    if sys.platform == 'win32':
+        hwnd = 0
+        desktop_csidl = 0
+        access_token = 0
+        shgfp_type_current = 0
+        flags = shgfp_type_current
+        buffer = create_unicode_buffer(MAX_PATH_LEN)
+        windll.shell32.SHGetFolderPathW(hwnd, desktop_csidl, access_token, flags, buffer)
+        return buffer.value
 
-if sys.platform == 'darwin':
-    DESKTOP_PATH = os.path.join(HOME_PATH, DESKTOP)
+    if sys.platform == 'darwin':
+        return os.path.join(HOME_PATH, desktop_basename)
 
+    if sys.platform.startswith('linux'):
+        try:
+            return os.environ['XDG_DESKTOP_DIR']
+        except KeyError:
+            return os.path.join(HOME_PATH, desktop_basename)
 
-if sys.platform.startswith('linux'):
-    try:
-        DESKTOP_PATH = os.environ['XDG_DESKTOP_DIR']
-    except KeyError:
-        DESKTOP_PATH = os.path.join(HOME_PATH, DESKTOP)
+    return HOME_PATH
+
+DESKTOP_PATH = __get_desktop_path()
 
 
 try:
