@@ -154,14 +154,12 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
     For convenience, the munged (stringified) exception information is returned
     as a tuple. The first element is the generated string, and the rest of the
     elements used for building the string are also returned, just in case the
-    caller wants to format the string in another way. These additional elements
+    caller wants to format the string in another way. The additional elements
     are strings containing the actual OSError subclass which was raised, the
-    error code, the error message and the two filenames, filename and filename2
-    (if any, None otherwise).
-
-    By default the error code, both in the generated string and in the munged
-    information tuple, is the errno code as a string, except on Windows where if
-    WinError exists it takes precedence over errno.
+    errno code, the winerror code (which will be None if it is not used by the
+    current platform), the error message and the two filenames, filename and
+    filename2. Except maybe for the error message, any member of the tuple can
+    be None if not defined by the actual error which raised the exception.
 
     IMPORTANT: the returned string DOESN'T END IN A PERIOD. The caller must add
     the proper punctuation needed when outputting the message.
@@ -182,19 +180,21 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
             message = '{}: [{}] {} "{}"'.format(*legion.munge_oserror(exc)[1:4])
             sys.exit(message)
     """
-    errortype = type(exception).__name__
-    errorcode = None
+    err_type = type(exception).__name__
+    err_errno = None
+    err_winerror = None
 
     try:
-        if exception.winerror:
-            errorcode = f'WinError {exception.winerror}'
+        err_winerror = f'WinError{exception.winerror}'
     except AttributeError:
         pass
+    try:
+        err_errno = errno.errorcode[exception.errno]
+    except KeyError:
+        pass
 
-    if errorcode is None:
-        errorcode = errno.errorcode[exception.errno]
-
-    message = f'{errortype} [{errorcode}]: {exception.strerror}'
+    err_codestring = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
+    message = f'{err_type}{f" [{err_codestring}]" if err_codestring else ""}: {exception.strerror}'
 
     if exception.filename:
         message += f" ('{exception.filename}'"
@@ -202,7 +202,7 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
             message += f" -> '{exception.filename2}'"
         message += ')'
 
-    return (message, errortype, errorcode, exception.strerror, exception.filename, exception.filename2)
+    return (message, err_type, err_errno, err_winerror, exception.strerror, exception.filename, exception.filename2)
 
 
 def timestamp():  # pylint: disable=unused-variable
