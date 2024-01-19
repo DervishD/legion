@@ -32,6 +32,14 @@ __all__ = []  # pylint: disable=unused-variable
 UTF8 = 'utf-8'
 
 
+# Reconfigure standard output streams so they use UTF-8 encoding even if
+# they are redirected to a file when running the application from a shell.
+if sys.stdout:
+    sys.stdout.reconfigure(encoding=UTF8)
+if sys.stderr:
+    sys.stderr.reconfigure(encoding=UTF8)
+
+
 class Config():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
     ERROR_HEADER = '\n*** Error'
@@ -130,17 +138,6 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
-
-
-def fix_output_streams():  # pylint: disable=unused-variable
-    """
-    Reconfigure standard output streams so they use UTF-8 encoding even if
-    they are redirected to a file when running the program from a shell.
-    """
-    if sys.stdout:
-        sys.stdout.reconfigure(encoding=UTF8)
-    if sys.stderr:
-        sys.stderr.reconfigure(encoding=UTF8)
 
 
 def munge_oserror(exception):  # pylint: disable=unused-variable
