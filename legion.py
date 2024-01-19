@@ -35,7 +35,7 @@ UTF8 = 'utf-8'
 
 class Config():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
-    ERROR_HEADER = '*** Error'
+    ERROR_HEADER = '\n*** Error'
 
     FALLBACK_PROGRAM_NAME = '<stdin>'
 
