@@ -35,6 +35,8 @@ UTF8 = 'utf-8'
 
 class Config():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
+    ERROR_HEADER = '*** Error'
+
     FALLBACK_PROGRAM_NAME = '<stdin>'
 
     LOGGING_CONSOLE_FORMAT = '{message}'
@@ -203,6 +205,17 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
         message += ')'
 
     return (message, err_type, err_errno, err_winerror, exception.strerror, exception.filename, exception.filename2)
+
+
+def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
+    """Generates a pretty-printed OSError message using reason and exc information."""
+    err_errno, err_winerror, error_message, filename = munge_oserror(exc)[2:6]
+    err_code = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
+    err_code = f'{f" [{err_code}]" if err_code else " desconocido"}'
+
+    logging.error("%s%s %s '%s'.\n", Config.ERROR_HEADER, err_code, reason, filename)
+    logging.indent(len(Config.ERROR_HEADER.lstrip().split(' ', maxsplit=1)[0]) + 1)
+    logging.error('%s.', error_message)
 
 
 def timestamp():  # pylint: disable=unused-variable
