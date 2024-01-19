@@ -37,14 +37,14 @@ class Config():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
     FALLBACK_PROGRAM_NAME = '<stdin>'
 
-    TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
-
-    LOGGING_INDENTCHAR = ' '
-    LOGGING_FORMAT_STYLE = '{'
+    LOGGING_CONSOLE_FORMAT = '{message}'
     LOGGING_FALLBACK_FORMAT = '{message}'
+    LOGGING_FORMAT_STYLE = '{'
+    LOGGING_INDENTCHAR = ' '
     LOGGING_LOGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
     LOGGING_OUTPUTFILE_FORMAT = '{asctime} {message}'
-    LOGGING_CONSOLE_FORMAT = '{message}'
+
+    TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
     if sys.platform == 'win32':
         PYTHON_LAUNCHER = 'py.exe'
