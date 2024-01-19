@@ -460,6 +460,8 @@ if sys.platform == 'win32':
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
 
+sys.excepthook = excepthook
+
 if __name__ == '__main__':
     print(f'Desktop path: [{DESKTOP_PATH}]')
     print(f'Program path: [{PROGRAM_PATH}]')
