@@ -9,15 +9,14 @@ Since the module is many, it's legion.
 
 cspell: ignore osascript oserror munge
 """
-import errno
+from errno import errorcode
 import logging
 from logging.config import dictConfig
-import os
-import os.path
-import subprocess
+from os import environ, path, system
+from subprocess import CREATE_NO_WINDOW, run as runcommand
 import sys
-import time
-import traceback
+from time import strftime
+from traceback import format_exception
 
 if sys.platform == 'win32':
     from enum import auto, IntEnum
@@ -61,7 +60,7 @@ class Config():  # pylint: disable=too-few-public-methods
 #
 # The default is just to expand to a home directory, which is far from perfect
 # but works in all platforms, according to the Python Standard Library manual.
-HOME_PATH = os.path.expanduser('~')
+HOME_PATH = path.expanduser('~')
 
 
 def __get_desktop_path():  # pylint: disable=unused-variable
@@ -79,13 +78,13 @@ def __get_desktop_path():  # pylint: disable=unused-variable
         return buffer.value
 
     if sys.platform == 'darwin':
-        return os.path.join(HOME_PATH, desktop_basename)
+        return path.join(HOME_PATH, desktop_basename)
 
     if sys.platform.startswith('linux'):
         try:
-            return os.environ['XDG_DESKTOP_DIR']
+            return environ['XDG_DESKTOP_DIR']
         except KeyError:
-            return os.path.join(HOME_PATH, desktop_basename)
+            return path.join(HOME_PATH, desktop_basename)
 
     return HOME_PATH
 
@@ -102,8 +101,8 @@ try:
         #
         # If one of those situations arise, the code will be modified accordingly.
         PROGRAM_PATH = sys.modules['__main__'].__file__
-    PROGRAM_PATH = os.path.realpath(PROGRAM_PATH)
-    PROGRAM_NAME = os.path.splitext(os.path.basename(PROGRAM_PATH))[0]
+    PROGRAM_PATH = path.realpath(PROGRAM_PATH)
+    PROGRAM_NAME = path.splitext(path.basename(PROGRAM_PATH))[0]
 except AttributeError:
     PROGRAM_PATH = None
     PROGRAM_NAME = Config.FALLBACK_PROGRAM_NAME
@@ -118,7 +117,7 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
     message = (
         f'Unhandled exception {exc_type.__name__}.\n'
         f'at file {exc_traceback.tb_frame.f_code.co_filename}, line {exc_traceback.tb_lineno}\n\n'
-        f'''{''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
+        f'''{''.join(format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
     )
     logging.error('\n%s', message)
     title = f'Unexpected error in {PROGRAM_NAME}'
@@ -130,7 +129,7 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
         windll.user32.MessageBoxW(None, message, title, Config.MB_ICONWARNING | Config.MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
-        os.system(f'''osascript -e '{script}' >/dev/null''')
+        system(f'''osascript -e '{script}' >/dev/null''')
 
 
 def fix_output_streams():  # pylint: disable=unused-variable
@@ -191,7 +190,7 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
     except AttributeError:
         pass
     try:
-        err_errno = errno.errorcode[exception.errno]
+        err_errno = errorcode[exception.errno]
     except KeyError:
         pass
 
@@ -220,7 +219,7 @@ def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
 
 def timestamp():  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
-    return time.strftime(Config.TIMESTAMP_FORMAT)
+    return strftime(Config.TIMESTAMP_FORMAT)
 
 
 def run(*command, **subprocess_args):  # pylint: disable=unused-variable
@@ -238,11 +237,11 @@ def run(*command, **subprocess_args):  # pylint: disable=unused-variable
         'capture_output': True,
         'text': True,
         'errors': 'replace',
-        'creationflags': subprocess.CREATE_NO_WINDOW,
+        'creationflags': CREATE_NO_WINDOW,
     } | subprocess_args
 
     # pylint: disable-next=subprocess-run-check
-    return subprocess.run(*command, **subprocess_args)
+    return runcommand(*command, **subprocess_args)
 
 
 # Needed for having VERY basic logging when setup_logging() is not used.
@@ -453,7 +452,7 @@ if sys.platform == 'win32':
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
                 return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif os.path.basename(console_title).lower() != Config.PYTHON_LAUNCHER:
+        elif path.basename(console_title).lower() != Config.PYTHON_LAUNCHER:
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
         print('\nPress any key to continue...', end='', flush=True)
