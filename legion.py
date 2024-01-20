@@ -9,6 +9,7 @@ Since the module is many, it's legion.
 
 cspell: ignore osascript oserror munge
 """
+import atexit
 from errno import errorcode
 import logging
 from logging.config import dictConfig
@@ -138,6 +139,7 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
+sys.excepthook = excepthook
 
 
 def munge_oserror(exception):  # pylint: disable=unused-variable
@@ -405,6 +407,7 @@ if sys.platform == 'win32':
         NO_TRANSIENT_PYTHON = auto()
         WAIT_FOR_KEYPRESS = auto()
 
+    @atexit.register
     def wait_for_keypress():  # pylint: disable=unused-variable,too-many-return-statements
         """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
         if sys.platform != 'win32':
@@ -452,8 +455,6 @@ if sys.platform == 'win32':
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
-
-sys.excepthook = excepthook
 
 if __name__ == '__main__':
     print(f'Desktop path: [{DESKTOP_PATH}]')
