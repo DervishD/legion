@@ -399,7 +399,6 @@ if sys.platform == 'win32':
     class WFKStatuses(IntEnum):
         """Return statuses for wait_for_keypress()."""
         NO_WIN32 = auto()
-        IMPORTED = auto()
         NO_CONSOLE_ATTACHED = auto()
         NO_CONSOLE_TITLE = auto()
         NO_TRANSIENT_FROZEN = auto()
@@ -410,9 +409,6 @@ if sys.platform == 'win32':
         """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
-
-        if __name__ != '__main__':
-            return WFKStatuses.IMPORTED
 
         # If no console is attached, then the application must NOT pause.
         #
