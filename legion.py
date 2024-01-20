@@ -14,7 +14,7 @@ from errno import errorcode
 import logging
 from logging.config import dictConfig
 from os import environ, path, system
-from subprocess import CREATE_NO_WINDOW, run as runcommand
+from subprocess import run as runcommand
 import sys
 from time import strftime
 from traceback import format_exception
@@ -24,6 +24,7 @@ if sys.platform == 'win32':
     from ctypes import byref, c_uint, create_unicode_buffer, windll
     from ctypes.wintypes import MAX_PATH as MAX_PATH_LEN
     from msvcrt import get_osfhandle, getch
+    from subprocess import CREATE_NO_WINDOW  # pylint: disable=ungrouped-imports
 
 
 __all__ = []  # pylint: disable=unused-variable
@@ -236,8 +237,10 @@ def run(*command, **subprocess_args):  # pylint: disable=unused-variable
         'capture_output': True,
         'text': True,
         'errors': 'replace',
-        'creationflags': CREATE_NO_WINDOW,
     } | subprocess_args
+
+    if sys.platform == 'win32':
+        subprocess_args['creationflags'] |= CREATE_NO_WINDOW
 
     # pylint: disable-next=subprocess-run-check
     return runcommand(*command, **subprocess_args)
