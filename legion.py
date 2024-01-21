@@ -280,7 +280,7 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
             """
             message = super().format(record)
             preamble, message = message.partition(record.message)[:2]
-            return '\n'.join([f'{preamble}{record.indent}{line.strip()}'.rstrip() for line in message.splitlines()])
+            return '\n'.join([f'{preamble}{record.indent}{line.rstrip()}'.rstrip() for line in message.splitlines()])
 
     logging_configuration = {
         'version': 1,
