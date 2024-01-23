@@ -51,8 +51,8 @@ class Config():  # pylint: disable=too-few-public-methods
     LOGGING_FALLBACK_FORMAT = '{message}'
     LOGGING_FORMAT_STYLE = '{'
     LOGGING_INDENTCHAR = ' '
-    LOGGING_LOGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
-    LOGGING_OUTPUTFILE_FORMAT = '{asctime} {message}'
+    LOGGING_DEBUGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
+    LOGGING_LOGFILE_FORMAT = '{asctime} {message}'
 
     TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
@@ -257,19 +257,19 @@ logging.indent = lambda level=None: None
 logging.dedent = lambda level=None: None
 
 
-def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disable=unused-variable
+def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disable=unused-variable
     """
     Set up logging system, disabling all existing loggers.
 
-    With the current configuration ALL logging messages are sent to logfile
-    and logging.INFO messages are sent to outputfile, timestamped.
+    With the current configuration ALL logging messages are sent to debugfile
+    and logging.INFO messages are sent to logfile, timestamped.
 
-    In addition to that, and if console is True (the default), logging.INFO
+    In addition to that, and if console is True (the default), all logging.INFO
     messages are sent to the console too, but without a timestamp.
 
-    If logfile or outputfile are None, the corresponding files are not created
-    and no logging message will go there. In this case, if console is False, NO
-    LOGGING OUTPUT WILL BE PRODUCED AT ALL.
+    If debugfile or logfile are None, the corresponding files are not created
+    and no logging message will go there. In this case, if console is False,
+    NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
     """
     class CustomFormatter(logging.Formatter):
         """Simple custom formatter for logging messages."""
@@ -286,16 +286,16 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
         'version': 1,
         'disable_existing_loggers': True,
         'formatters': {
+            'debugfile_formatter': {
+                '()': CustomFormatter,
+                'style': Config.LOGGING_FORMAT_STYLE,
+                'format': Config.LOGGING_DEBUGFILE_FORMAT,
+                'datefmt': Config.TIMESTAMP_FORMAT
+            },
             'logfile_formatter': {
                 '()': CustomFormatter,
                 'style': Config.LOGGING_FORMAT_STYLE,
                 'format': Config.LOGGING_LOGFILE_FORMAT,
-                'datefmt': Config.TIMESTAMP_FORMAT
-            },
-            'outputfile_formatter': {
-                '()': CustomFormatter,
-                'style': Config.LOGGING_FORMAT_STYLE,
-                'format': Config.LOGGING_OUTPUTFILE_FORMAT,
                 'datefmt': Config.TIMESTAMP_FORMAT
             },
             'console_formatter': {
@@ -305,8 +305,8 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
             },
         },
         'filters': {
-            'logfile_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno > logging.NOTSET},
-            'outputfile_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno >= logging.INFO},
+            'debugfile_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno > logging.NOTSET},
+            'logfile_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno >= logging.INFO},
             'stdout_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno == logging.INFO},
             'stderr_filter': {'()': lambda: lambda record: record.msg.strip() and record.levelno > logging.INFO},
         },
@@ -320,6 +320,18 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
         },
     }
 
+    if debugfile:
+        logging_configuration['handlers']['debugfile'] = {
+            'level': logging.NOTSET,
+            'formatter': 'debugfile_formatter',
+            'filters': ['debugfile_filter'],
+            'class': logging.FileHandler,
+            'filename': debugfile,
+            'mode': 'w',
+            'encoding': UTF8
+        }
+        logging_configuration['loggers']['']['handlers'].append('debugfile')
+
     if logfile:
         logging_configuration['handlers']['logfile'] = {
             'level': logging.NOTSET,
@@ -331,18 +343,6 @@ def setup_logging(logfile=None, outputfile=None, console=True):  # pylint: disab
             'encoding': UTF8
         }
         logging_configuration['loggers']['']['handlers'].append('logfile')
-
-    if outputfile:
-        logging_configuration['handlers']['outputfile'] = {
-            'level': logging.NOTSET,
-            'formatter': 'outputfile_formatter',
-            'filters': ['outputfile_filter'],
-            'class': logging.FileHandler,
-            'filename': outputfile,
-            'mode': 'w',
-            'encoding': UTF8
-        }
-        logging_configuration['loggers']['']['handlers'].append('outputfile')
 
     if console:
         logging_configuration['handlers']['stdout_handler'] = {
