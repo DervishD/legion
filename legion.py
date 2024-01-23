@@ -457,7 +457,7 @@ if sys.platform == 'win32':
         elif Path(console_title).name.lower() != Constants.PYTHON_LAUNCHER.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
-        print(, end='', flush=True)
+        print(Constants.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
