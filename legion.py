@@ -13,7 +13,8 @@ import atexit
 from errno import errorcode
 import logging
 from logging.config import dictConfig
-from os import environ, path, system
+from os import environ, system
+from pathlib import Path
 import subprocess
 import sys
 from time import strftime
@@ -69,7 +70,7 @@ class Config():  # pylint: disable=too-few-public-methods
 #
 # The default is just to expand to a home directory, which is far from perfect
 # but works in all platforms, according to the Python Standard Library manual.
-HOME_PATH = path.expanduser('~')
+HOME_PATH = Path.home()
 
 
 def __get_desktop_path():  # pylint: disable=unused-variable
@@ -84,16 +85,16 @@ def __get_desktop_path():  # pylint: disable=unused-variable
         flags = shgfp_type_current
         buffer = create_unicode_buffer(MAX_PATH_LEN)
         windll.shell32.SHGetFolderPathW(hwnd, desktop_csidl, access_token, flags, buffer)
-        return buffer.value
+        return Path(buffer.value)
 
     if sys.platform == 'darwin':
-        return path.join(HOME_PATH, desktop_basename)
+        return HOME_PATH / desktop_basename
 
     if sys.platform.startswith('linux'):
         try:
-            return environ['XDG_DESKTOP_DIR']
+            return Path(environ['XDG_DESKTOP_DIR'])
         except KeyError:
-            return path.join(HOME_PATH, desktop_basename)
+            return HOME_PATH / desktop_basename
 
     return HOME_PATH
 
@@ -110,8 +111,8 @@ try:
         #
         # If one of those situations arise, the code will be modified accordingly.
         PROGRAM_PATH = sys.modules['__main__'].__file__
-    PROGRAM_PATH = path.realpath(PROGRAM_PATH)
-    PROGRAM_NAME = path.splitext(path.basename(PROGRAM_PATH))[0]
+    PROGRAM_PATH = Path(PROGRAM_PATH).resolve()
+    PROGRAM_NAME = PROGRAM_PATH.stem
 except AttributeError:
     PROGRAM_PATH = None
     PROGRAM_NAME = Config.FALLBACK_PROGRAM_NAME
@@ -451,7 +452,7 @@ if sys.platform == 'win32':
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
                 return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif path.basename(console_title).lower() != Config.PYTHON_LAUNCHER:
+        elif Path(console_title).name.lower() != Config.PYTHON_LAUNCHER.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
         print('\nPress any key to continue...', end='', flush=True)
