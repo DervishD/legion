@@ -42,7 +42,7 @@ if sys.stderr:
     sys.stderr.reconfigure(encoding=UTF8)
 
 
-class Config():  # pylint: disable=too-few-public-methods
+class Constants():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
     ERROR_HEADER = '\n*** Error'
 
@@ -56,6 +56,8 @@ class Config():  # pylint: disable=too-few-public-methods
     LOGGING_LOGFILE_FORMAT = '{asctime} {message}'
 
     TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+
+    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
     if sys.platform == 'win32':
         PYTHON_LAUNCHER = 'py.exe'
@@ -115,7 +117,7 @@ try:
     PROGRAM_NAME = PROGRAM_PATH.stem
 except AttributeError:
     PROGRAM_PATH = None
-    PROGRAM_NAME = Config.FALLBACK_PROGRAM_NAME
+    PROGRAM_NAME = Constants.FALLBACK_PROGRAM_NAME
 
 
 def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
@@ -136,7 +138,7 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        windll.user32.MessageBoxW(None, message, title, Config.MB_ICONWARNING | Config.MB_OK)
+        windll.user32.MessageBoxW(None, message, title, Constants.MB_ICONWARNING | Constants.MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
@@ -212,14 +214,14 @@ def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
     err_code = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
     err_code = f'{f" [{err_code}]" if err_code else " desconocido"}'
 
-    logging.error("%s%s %s '%s'.\n", Config.ERROR_HEADER, err_code, reason, filename)
-    logging.indent(len(Config.ERROR_HEADER.lstrip().split(' ', maxsplit=1)[0]) + 1)
+    logging.error("%s%s %s '%s'.\n", Constants.ERROR_HEADER, err_code, reason, filename)
+    logging.indent(len(Constants.ERROR_HEADER.lstrip().split(' ', maxsplit=1)[0]) + 1)
     logging.error('%s.', error_message)
 
 
 def timestamp():  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
-    return strftime(Config.TIMESTAMP_FORMAT)
+    return strftime(Constants.TIMESTAMP_FORMAT)
 
 
 def run(*command, **subprocess_args):  # pylint: disable=unused-variable
@@ -250,8 +252,8 @@ def run(*command, **subprocess_args):  # pylint: disable=unused-variable
 # Needed for having VERY basic logging when setup_logging() is not used.
 logging.basicConfig(
     level=logging.NOTSET,
-    style=Config.LOGGING_FORMAT_STYLE,
-    format=Config.LOGGING_FALLBACK_FORMAT,
+    style=Constants.LOGGING_FORMAT_STYLE,
+    format=Constants.LOGGING_FALLBACK_FORMAT,
     force=True
 )
 logging.indent = lambda level=None: None
@@ -289,20 +291,20 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
         'formatters': {
             'debugfile_formatter': {
                 '()': CustomFormatter,
-                'style': Config.LOGGING_FORMAT_STYLE,
-                'format': Config.LOGGING_DEBUGFILE_FORMAT,
-                'datefmt': Config.TIMESTAMP_FORMAT
+                'style': Constants.LOGGING_FORMAT_STYLE,
+                'format': Constants.LOGGING_DEBUGFILE_FORMAT,
+                'datefmt': Constants.TIMESTAMP_FORMAT
             },
             'logfile_formatter': {
                 '()': CustomFormatter,
-                'style': Config.LOGGING_FORMAT_STYLE,
-                'format': Config.LOGGING_LOGFILE_FORMAT,
-                'datefmt': Config.TIMESTAMP_FORMAT
+                'style': Constants.LOGGING_FORMAT_STYLE,
+                'format': Constants.LOGGING_LOGFILE_FORMAT,
+                'datefmt': Constants.TIMESTAMP_FORMAT
             },
             'console_formatter': {
                 '()': CustomFormatter,
-                'style': Config.LOGGING_FORMAT_STYLE,
-                'format': Config.LOGGING_CONSOLE_FORMAT,
+                'style': Constants.LOGGING_FORMAT_STYLE,
+                'format': Constants.LOGGING_CONSOLE_FORMAT,
             },
         },
         'filters': {
@@ -371,7 +373,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
     def record_factory(*args, **kwargs):
         """LogRecord factory which supports indentation."""
         record = current_factory(*args, **kwargs)
-        record.indent = Config.LOGGING_INDENTCHAR * logging.getLogger().indentlevel
+        record.indent = Constants.LOGGING_INDENTCHAR * logging.getLogger().indentlevel
         record.levelname = levelname_template.format(record.levelname)
         return record
     logging.setLogRecordFactory(record_factory)
@@ -452,10 +454,10 @@ if sys.platform == 'win32':
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
                 return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif Path(console_title).name.lower() != Config.PYTHON_LAUNCHER.lower():
+        elif Path(console_title).name.lower() != Constants.PYTHON_LAUNCHER.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
-        print('\nPress any key to continue...', end='', flush=True)
+        print(, end='', flush=True)
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
