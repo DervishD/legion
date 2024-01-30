@@ -44,7 +44,10 @@ if sys.stderr:
 
 class Constants():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
-    ERROR_HEADER = '\n*** Error'
+    ERROR_MARKER = '*** '
+    ERROR_HEADER = f'\n{ERROR_MARKER} Error'
+    ERROR_PAYLOAD_INDENT = len(ERROR_HEADER.lstrip().split(' ', maxsplit=1)[0]) + 1
+
     ARROW_R = '⟶'
     ARROW_L = '⟵'
 
@@ -217,7 +220,7 @@ def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
     err_code = f'{f" [{err_code}]" if err_code else " desconocido"}'
 
     logging.error("%s%s %s '%s'.\n", Constants.ERROR_HEADER, err_code, reason, filename)
-    logging.indent(len(Constants.ERROR_HEADER.lstrip().split(' ', maxsplit=1)[0]) + 1)
+    logging.indent(Constants.ERROR_PAYLOAD_INDENT)
     logging.error('%s.', error_message)
 
 
@@ -285,7 +288,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
             """
             message = super().format(record)
             preamble, message = message.partition(record.message)[:2]
-            return '\n'.join([f'{preamble}{record.indent}{line.rstrip()}'.rstrip() for line in message.splitlines()])
+            return '\n'.join(f'{preamble}{record.indent}{line}' for line in message.split('\n'))
 
     logging_configuration = {
         'version': 1,
