@@ -45,6 +45,8 @@ if sys.stderr:
 class Constants():  # pylint: disable=too-few-public-methods
     """Application configuration values."""
     ERROR_HEADER = '\n*** Error'
+    ARROW_R = '⟶'
+    ARROW_L = '⟵'
 
     FALLBACK_PROGRAM_NAME = '<stdin>'
 
