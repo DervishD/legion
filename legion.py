@@ -18,8 +18,9 @@ from os import environ, system
 from pathlib import Path
 import subprocess
 import sys
+from textwrap import dedent
 from time import strftime
-from traceback import format_exception
+import traceback as tb
 
 if sys.platform == 'win32':
     from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
@@ -113,10 +114,30 @@ class Constants():  # pylint: disable=too-few-public-methods
 
 class Messages(StrEnum):
     """Module messages."""
-    ERROR_HEADER = f'\n{_Config.ERROR_MARKER} Error'
-    ERROR_DETAILS_HEADING = '\nInformación adicional sobre el error:'
+    ERROR_HEADER = f'\n{_Config.ERROR_MARKER}Error in {Constants.PROGRAM_NAME}.'
+    ERROR_DETAILS_HEADING = '\nAdditional error information:'
     ERROR_DETAILS_PREAMBLE = '│ '
     ERROR_DETAILS_TAIL = '╰'
+
+    UNEXPECTED_OSERROR = 'Unexpected OSError.'
+    OSERROR_DETAILS = dedent('''
+         type = {}
+        errno = {}
+     winerror = {}
+     strerror = {}
+     filename = {}
+    filename2 = {}
+    ''').strip('\n')
+    OSERROR_DETAIL_NA = 'N/A'
+    UNHANDLED_EXCEPTION = 'Unhandled exception.'
+    EXCEPTION_DETAILS = 'type = {}\nvalue = {}\nargs: {}'
+    EXCEPTION_DETAILS_ARG = '\n  [{}] {}'
+    TRACEBACK_HEADER = '\n\ntraceback:\n{}'
+    TRACEBACK_FRAME_HEADER = '▸ {}\n'
+    TRACEBACK_FRAME_LINE = '  {}, {}: {}\n'
+    TRACEBACK_TOPLEVEL_FRAME = '<module>'
+    UNKNOWN_ERRNO = 'unknown'
+    ERRDIALOG_TITLE = 'Unexpected error in {Constants.PROGRAM_NAME}'
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
@@ -153,21 +174,40 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    message = (
-        f'Unhandled exception {exc_type.__name__}.\n'
-        f'at file {exc_traceback.tb_frame.f_code.co_filename}, line {exc_traceback.tb_lineno}\n\n'
-        f'''{''.join(format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
-    )
-    logging.error('\n%s', message)
-    title = f'Unexpected error in {Constants.PROGRAM_NAME}'
+    if isinstance(exc_value, OSError):
+        message = Messages.UNEXPECTED_OSERROR
+        details = Messages.OSERROR_DETAILS.format(
+            exc_type.__name__,
+            Messages.OSERROR_DETAIL_NA if exc_value.errno is None else errorcode[exc_value.errno],
+            Messages.OSERROR_DETAIL_NA if exc_value.winerror is None else exc_value.winerror,
+            exc_value.strerror,
+            Messages.OSERROR_DETAIL_NA if exc_value.filename is None else exc_value.filename,
+            Messages.OSERROR_DETAIL_NA if exc_value.filename2 is None else exc_value.filename2,
+        )
+    else:
+        message = Messages.UNHANDLED_EXCEPTION
+        args = ''
+        for arg in exc_value.args:
+            args += Messages.EXCEPTION_DETAILS_ARG.format(type(arg).__name__, arg)
+        details = Messages.EXCEPTION_DETAILS.format(exc_type.__name__, str(exc_value), args)
+    current_filename = None
+    traceback = ''
+    for frame in tb.extract_tb(exc_traceback):
+        if current_filename != frame.filename:
+            traceback += Messages.TRACEBACK_FRAME_HEADER.format(frame.filename)
+            current_filename = frame.filename
+        frame.name = Constants.PROGRAM_NAME if frame.name == Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
+        traceback += Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
+    details += Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
+    error(message, details)
 
     # Just in case there is NOT a working console or logging system,
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        windll.user32.MessageBoxW(None, message, title, _Config.MB_ICONWARNING | _Config.MB_OK)
+        windll.user32.MessageBoxW(None, message, Messages.ERRDIALOG_TITLE, _Config.MB_ICONWARNING | _Config.MB_OK)
     if sys.platform == 'darwin':
-        script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
+        script = f'display dialog "{message}" with title "{Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
 sys.excepthook = excepthook
 
