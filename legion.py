@@ -82,7 +82,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     FALLBACK_PROGRAM_NAME = '<stdin>'
 
     ERROR_MARKER = '*** '
-    ERROR_HEADER = f'\n{ERROR_MARKER} Error'
     ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 
     TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
@@ -114,7 +113,13 @@ class Constants():  # pylint: disable=too-few-public-methods
 
 class Messages(StrEnum):
     """Module messages."""
+    ERROR_HEADER = f'\n{_Config.ERROR_MARKER} Error'
+    ERROR_DETAILS_HEADING = '\nInformación adicional sobre el error:'
+    ERROR_DETAILS_PREAMBLE = '│ '
+    ERROR_DETAILS_TAIL = '╰'
+
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
+
     DEMO_TIMESTAMP = 'Timestamp is {}\n'
     DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧'
 
@@ -125,6 +130,21 @@ if sys.stdout:
     sys.stdout.reconfigure(encoding=Constants.UTF8)
 if sys.stderr:
     sys.stderr.reconfigure(encoding=Constants.UTF8)
+
+
+def error(message, details=''):
+    """Helper for preprocessing error messages."""
+    message = str(message)
+    details = str(details)
+    logging.indent(0)
+    logging.error(Messages.ERROR_HEADER)
+    logging.indent(_Config.ERROR_PAYLOAD_INDENT)
+    logging.error(message)
+    if details.strip():
+        logging.error(Messages.ERROR_DETAILS_HEADING)
+        logging.error('\n'.join(f'{Messages.ERROR_DETAILS_PREAMBLE}{line}' for line in details.split('\n')))
+        logging.error(Messages.ERROR_DETAILS_TAIL)
+    logging.indent(0)
 
 
 def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
@@ -221,7 +241,7 @@ def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
     err_code = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
     err_code = f'{f" [{err_code}]" if err_code else " desconocido"}'
 
-    logging.error("%s%s %s '%s'.\n", _Config.ERROR_HEADER, err_code, reason, filename)
+    logging.error("%s%s %s '%s'.\n", Messages.ERROR_HEADER, err_code, reason, filename)
     logging.indent(_Config.ERROR_PAYLOAD_INDENT)
     logging.error('%s.', error_message)
 
