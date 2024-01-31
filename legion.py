@@ -10,6 +10,7 @@ Since the module is many, it's legion.
 cspell: ignore osascript oserror munge
 """
 import atexit
+from enum import StrEnum
 from errno import errorcode
 import logging
 from logging.config import dictConfig
@@ -21,7 +22,7 @@ from time import strftime
 from traceback import format_exception
 
 if sys.platform == 'win32':
-    from enum import auto, IntEnum
+    from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
     from ctypes import byref, c_uint, create_unicode_buffer, windll
     from ctypes.wintypes import MAX_PATH as MAX_PATH_LEN
     from msvcrt import get_osfhandle, getch
@@ -30,58 +31,9 @@ if sys.platform == 'win32':
 __all__ = []  # pylint: disable=unused-variable
 
 
-# Some constants used to prevent mistyping.
-UTF8 = 'utf-8'
-
-
-# Reconfigure standard output streams so they use UTF-8 encoding even if
-# they are redirected to a file when running the application from a shell.
-if sys.stdout:
-    sys.stdout.reconfigure(encoding=UTF8)
-if sys.stderr:
-    sys.stderr.reconfigure(encoding=UTF8)
-
-
-class Constants():  # pylint: disable=too-few-public-methods
-    """Application configuration values."""
-    ERROR_MARKER = '*** '
-    ERROR_HEADER = f'\n{ERROR_MARKER} Error'
-    ERROR_PAYLOAD_INDENT = len(ERROR_HEADER.lstrip().split(' ', maxsplit=1)[0]) + 1
-
-    ARROW_R = '⟶'
-    ARROW_L = '⟵'
-
-    FALLBACK_PROGRAM_NAME = '<stdin>'
-
-    LOGGING_CONSOLE_FORMAT = '{message}'
-    LOGGING_FALLBACK_FORMAT = '{message}'
-    LOGGING_FORMAT_STYLE = '{'
-    LOGGING_INDENTCHAR = ' '
-    LOGGING_DEBUGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
-    LOGGING_LOGFILE_FORMAT = '{asctime} {message}'
-
-    TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
-
-    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
-
-    if sys.platform == 'win32':
-        PYTHON_LAUNCHER = 'py.exe'
-        MB_ICONWARNING = 0x30
-        MB_OK = 0
-
-
-# This heavily depends on the operating system used, not only the platform but
-# the particular operating system. For example, under Linux this depends of the
-# particular distribution, and under Windows this depends on the version and
-# the end-user language, as the path may be localized.
-#
-# The default is just to expand to a home directory, which is far from perfect
-# but works in all platforms, according to the Python Standard Library manual.
-HOME_PATH = Path.home()
-
-
-def __get_desktop_path():  # pylint: disable=unused-variable
+def _get_desktop_path():
     """Get the path of the desktop directory depending on the platform."""
+    home_path = Path.home()
     desktop_basename = 'Desktop'
 
     if sys.platform == 'win32':
@@ -95,34 +47,82 @@ def __get_desktop_path():  # pylint: disable=unused-variable
         return Path(buffer.value)
 
     if sys.platform == 'darwin':
-        return HOME_PATH / desktop_basename
+        return home_path / desktop_basename
 
     if sys.platform.startswith('linux'):
         try:
             return Path(environ['XDG_DESKTOP_DIR'])
         except KeyError:
-            return HOME_PATH / desktop_basename
+            return home_path / desktop_basename
 
-    return HOME_PATH
-
-DESKTOP_PATH = __get_desktop_path()
+    return home_path
 
 
-try:
-    if getattr(sys, 'frozen', False):
-        PROGRAM_PATH = sys.executable
-    else:
-        # This method is not failproof, because there are probably situations
-        # where the '__file__' attribute of module '__main__' won't exist but
-        # there's some filename involved.
-        #
-        # If one of those situations arise, the code will be modified accordingly.
-        PROGRAM_PATH = sys.modules['__main__'].__file__
-    PROGRAM_PATH = Path(PROGRAM_PATH).resolve()
-    PROGRAM_NAME = PROGRAM_PATH.stem
-except AttributeError:
-    PROGRAM_PATH = None
-    PROGRAM_NAME = Constants.FALLBACK_PROGRAM_NAME
+def _get_program_path():
+    """Get the full, resolved path of the currently executing program."""
+    program_path = None
+    try:
+        if getattr(sys, 'frozen', False):
+            program_path = sys.executable
+        else:
+            # This method is not failproof, because there are probably situations
+            # where the '__file__' attribute of module '__main__' won't exist but
+            # there's some filename involved.
+            #
+            # If one of those situations arise, the code will be modified accordingly.
+            program_path = sys.modules['__main__'].__file__
+        return Path(program_path).resolve()
+    except AttributeError:
+        return program_path
+
+
+class _Config():  # pylint: disable=too-few-public-methods
+    """Module configuration values."""
+    DESKTOP_BASENAME = 'Desktop'
+    FALLBACK_PROGRAM_NAME = '<stdin>'
+
+    ERROR_MARKER = '*** '
+    ERROR_HEADER = f'\n{ERROR_MARKER} Error'
+    ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
+
+    TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+
+    LOGGING_CONSOLE_FORMAT = '{message}'
+    LOGGING_FALLBACK_FORMAT = '{message}'
+    LOGGING_FORMAT_STYLE = '{'
+    LOGGING_INDENTCHAR = ' '
+    LOGGING_DEBUGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
+    LOGGING_LOGFILE_FORMAT = '{asctime} {message}'
+
+    if sys.platform == 'win32':
+        PYTHON_LAUNCHER = 'py.exe'
+        MB_ICONWARNING = 0x30
+        MB_OK = 0
+
+
+class Constants():  # pylint: disable=too-few-public-methods
+    """Exportable constants."""
+    DESKTOP_PATH = _get_desktop_path()
+    PROGRAM_PATH = _get_program_path()
+    PROGRAM_NAME = PROGRAM_PATH.stem if PROGRAM_PATH else _Config.FALLBACK_PROGRAM_NAME
+
+    ARROW_R = '⟶'
+    ARROW_L = '⟵'
+
+    UTF8 = 'utf-8'
+
+
+class Messages(StrEnum):
+    """Module messages."""
+    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
+
+
+# Reconfigure standard output streams so they use UTF-8 encoding even if
+# they are redirected to a file when running the application from a shell.
+if sys.stdout:
+    sys.stdout.reconfigure(encoding=Constants.UTF8)
+if sys.stderr:
+    sys.stderr.reconfigure(encoding=Constants.UTF8)
 
 
 def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
@@ -137,13 +137,13 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
         f'''{''.join(format_exception(exc_type, exc_value, exc_traceback)).replace('"', '')}'''
     )
     logging.error('\n%s', message)
-    title = f'Unexpected error in {PROGRAM_NAME}'
+    title = f'Unexpected error in {Constants.PROGRAM_NAME}'
 
     # Just in case there is NOT a working console or logging system,
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        windll.user32.MessageBoxW(None, message, title, Constants.MB_ICONWARNING | Constants.MB_OK)
+        windll.user32.MessageBoxW(None, message, title, _Config.MB_ICONWARNING | _Config.MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{title}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
@@ -219,14 +219,14 @@ def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
     err_code = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
     err_code = f'{f" [{err_code}]" if err_code else " desconocido"}'
 
-    logging.error("%s%s %s '%s'.\n", Constants.ERROR_HEADER, err_code, reason, filename)
-    logging.indent(Constants.ERROR_PAYLOAD_INDENT)
+    logging.error("%s%s %s '%s'.\n", _Config.ERROR_HEADER, err_code, reason, filename)
+    logging.indent(_Config.ERROR_PAYLOAD_INDENT)
     logging.error('%s.', error_message)
 
 
 def timestamp():  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
-    return strftime(Constants.TIMESTAMP_FORMAT)
+    return strftime(_Config.TIMESTAMP_FORMAT)
 
 
 def run(*command, **subprocess_args):  # pylint: disable=unused-variable
@@ -257,8 +257,8 @@ def run(*command, **subprocess_args):  # pylint: disable=unused-variable
 # Needed for having VERY basic logging when setup_logging() is not used.
 logging.basicConfig(
     level=logging.NOTSET,
-    style=Constants.LOGGING_FORMAT_STYLE,
-    format=Constants.LOGGING_FALLBACK_FORMAT,
+    style=_Config.LOGGING_FORMAT_STYLE,
+    format=_Config.LOGGING_FALLBACK_FORMAT,
     force=True
 )
 logging.indent = lambda level=None: None
@@ -296,20 +296,20 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
         'formatters': {
             'debugfile_formatter': {
                 '()': CustomFormatter,
-                'style': Constants.LOGGING_FORMAT_STYLE,
-                'format': Constants.LOGGING_DEBUGFILE_FORMAT,
-                'datefmt': Constants.TIMESTAMP_FORMAT
+                'style': _Config.LOGGING_FORMAT_STYLE,
+                'format': _Config.LOGGING_DEBUGFILE_FORMAT,
+                'datefmt': _Config.TIMESTAMP_FORMAT
             },
             'logfile_formatter': {
                 '()': CustomFormatter,
-                'style': Constants.LOGGING_FORMAT_STYLE,
-                'format': Constants.LOGGING_LOGFILE_FORMAT,
-                'datefmt': Constants.TIMESTAMP_FORMAT
+                'style': _Config.LOGGING_FORMAT_STYLE,
+                'format': _Config.LOGGING_LOGFILE_FORMAT,
+                'datefmt': _Config.TIMESTAMP_FORMAT
             },
             'console_formatter': {
                 '()': CustomFormatter,
-                'style': Constants.LOGGING_FORMAT_STYLE,
-                'format': Constants.LOGGING_CONSOLE_FORMAT,
+                'style': _Config.LOGGING_FORMAT_STYLE,
+                'format': _Config.LOGGING_CONSOLE_FORMAT,
             },
         },
         'filters': {
@@ -336,7 +336,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
             'class': logging.FileHandler,
             'filename': debugfile,
             'mode': 'w',
-            'encoding': UTF8
+            'encoding': Constants.UTF8
         }
         logging_configuration['loggers']['']['handlers'].append('debugfile')
 
@@ -348,7 +348,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
             'class': logging.FileHandler,
             'filename': logfile,
             'mode': 'w',
-            'encoding': UTF8
+            'encoding': Constants.UTF8
         }
         logging_configuration['loggers']['']['handlers'].append('logfile')
 
@@ -378,7 +378,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
     def record_factory(*args, **kwargs):
         """LogRecord factory which supports indentation."""
         record = current_factory(*args, **kwargs)
-        record.indent = Constants.LOGGING_INDENTCHAR * logging.getLogger().indentlevel
+        record.indent = _Config.LOGGING_INDENTCHAR * logging.getLogger().indentlevel
         record.levelname = levelname_template.format(record.levelname)
         return record
     logging.setLogRecordFactory(record_factory)
@@ -459,16 +459,17 @@ if sys.platform == 'win32':
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
                 return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif Path(console_title).name.lower() != Constants.PYTHON_LAUNCHER.lower():
+        elif Path(console_title).name.lower() != _Config.PYTHON_LAUNCHER.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
-        print(Constants.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
+        print(Messages.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
 
 if __name__ == '__main__':
-    print(f'Desktop path: [{DESKTOP_PATH}]')
-    print(f'Program path: [{PROGRAM_PATH}]')
-    print(f'Program name: [{PROGRAM_NAME}]')
-    print(f'Timestamp is {timestamp()}')
+    print(f'Timestamp is {timestamp()}\n')
+    constants = {f'{k} ':v for k,v in vars(Constants).items() if not k.startswith('__')}
+    width = max(len(name) for name in constants) + 1
+    for constant, value in constants.items():
+        print(f'{constant:┄<{width}}⟶ ⟦{value}⟧')
