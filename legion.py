@@ -139,6 +139,10 @@ class Messages(StrEnum):
     UNKNOWN_ERRNO = 'unknown'
     ERRDIALOG_TITLE = 'Unexpected error in {Constants.PROGRAM_NAME}'
 
+    OSERROR_WINERROR = 'WinError{}'
+    OSERROR_ERRORCODES = '{}/{}'
+    OSERROR_PRETTYPRINT = 'Error [{}] {} {}.\n{}'
+
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
     DEMO_TIMESTAMP = 'Timestamp is {}\n'
@@ -214,76 +218,53 @@ sys.excepthook = excepthook
 
 def munge_oserror(exception):  # pylint: disable=unused-variable
     """
-    Munge information for OSError exception.
+    Munge information for OSError exceptions.
 
     Process the exception object for OSError exceptions (and its subclasses),
-    and build a string usable as output message for end users, containing the
-    actual OSError subclass which was raised, the error code, the error string
-    and the filenames involved.
+    and build a tuple containing the processed information.
 
-    For convenience, the munged (stringified) exception information is returned
-    as a tuple. The first element is the generated string, and the rest of the
-    elements used for building the string are also returned, just in case the
-    caller wants to format the string in another way. The additional elements
-    are strings containing the actual OSError subclass which was raised, the
-    errno code, the winerror code (which will be None if it is not used by the
-    current platform), the error message and the two filenames, filename and
-    filename2. Except maybe for the error message, any member of the tuple can
-    be None if not defined by the actual error which raised the exception.
+    First item is the actual OSError subclass which was raised, as a string.
 
-    IMPORTANT: the returned string DOESN'T END IN A PERIOD. The caller must add
-    the proper punctuation needed when outputting the message.
+    Second item is the errno and winerror codes, separated by a slash if both
+    are present. If no error codes exist in the exception object, this item is
+    replaced by an informative placeholder.
 
-    Examples:
-        # Using the provided string.
-        import legion
-        try:
-            [...]
-        except OSError as exc:
-            sys.exit(legion.munge_oserror(exc)[0])
-        ··································································
-        # Using the convenience tuple.
-        import legion
-        try:
-            [...]
-        except OSError as exc:
-            message = '{}: [{}] {} "{}"'.format(*legion.munge_oserror(exc)[1:4])
-            sys.exit(message)
+    The third item is the error message, starting with an uppercase letter and
+    ending in a period. If it does not exist, it will be an empty string.
+
+    Final two items are the filenames involved in the exception. Depending on
+    the actual exception, there may be zero, one or two filenames involved. If
+    some of the filenames is not present in the exception object, it will still
+    be in the tuple but it's value will be None.
     """
-    err_type = type(exception).__name__
-    err_errno = None
-    err_winerror = None
+    exc_type = type(exception).__name__
+    exc_errno = None
+    exc_winerror = None
+    exc_errorcodes = None
 
     try:
-        err_winerror = f'WinError{exception.winerror}'
+        exc_winerror = Messages.OSERROR_WINERROR.format(exception.winerror) if exception.winerror else None
     except AttributeError:
         pass
     try:
-        err_errno = errorcode[exception.errno]
+        exc_errno = errorcode[exception.errno]
     except KeyError:
         pass
 
-    err_codestring = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
-    message = f'{err_type}{f" [{err_codestring}]" if err_codestring else ""}: {exception.strerror}'
+    if exc_errno and exc_winerror:
+        exc_errorcodes = Messages.OSERROR_ERRORCODES.format(exc_errno, exc_winerror)
+    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or Messages.OSERROR_DETAIL_NA
+    exc_message = f'{exception.strerror[0].upper()}{exception.strerror[1:].rstrip(".")}.'
 
-    if exception.filename:
-        message += f" ('{exception.filename}'"
-        if exception.filename2:
-            message += f" -> '{exception.filename2}'"
-        message += ')'
-
-    return (message, err_type, err_errno, err_winerror, exception.strerror, exception.filename, exception.filename2)
+    return exc_type, exc_errorcodes, exc_message, exception.filename, exception.filename2
 
 
 def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
-    """Generates a pretty-printed OSError message using reason and exc information."""
-    err_errno, err_winerror, error_message, filename = munge_oserror(exc)[2:6]
-    err_code = f'{err_errno}/{err_winerror}' if err_errno and err_winerror else err_errno or err_winerror
-    err_code = f'{f" [{err_code}]" if err_code else " desconocido"}'
+    """Print a very simple OSError message using reason and exc information."""
+    errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
-    logging.error("%s%s %s '%s'.\n", Messages.ERROR_HEADER, err_code, reason, filename)
-    logging.indent(_Config.ERROR_PAYLOAD_INDENT)
-    logging.error('%s.', error_message)
+    filenames = f"'{filename}'{f" {Constants.ARROW_R} '{filename2}'" if filename2 else ''}"
+    logging.error(Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
 
 
 def timestamp():  # pylint: disable=unused-variable
