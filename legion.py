@@ -115,6 +115,8 @@ class Constants():  # pylint: disable=too-few-public-methods
 class Messages(StrEnum):
     """Module messages."""
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
+    DEMO_TIMESTAMP = 'Timestamp is {}\n'
+    DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧'
 
 
 # Reconfigure standard output streams so they use UTF-8 encoding even if
@@ -468,8 +470,9 @@ if sys.platform == 'win32':
 
 
 if __name__ == '__main__':
-    print(f'Timestamp is {timestamp()}\n')
-    constants = {f'{k} ':v for k,v in vars(Constants).items() if not k.startswith('__')}
+    print(Messages.DEMO_TIMESTAMP.format(timestamp()))
+
+    constants = {k:v for k,v in vars(Constants).items() if not k.startswith('__')}
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
-        print(f'{constant:┄<{width}}⟶ ⟦{value}⟧')
+        print(Messages.DEMO_CONSTANT.format(constant, width, value))
