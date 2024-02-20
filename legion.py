@@ -20,6 +20,7 @@ import subprocess
 import sys
 from textwrap import dedent
 from time import strftime
+import tomllib
 import traceback as tb
 
 if sys.platform == 'win32':
@@ -81,6 +82,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     """Module configuration values."""
     DESKTOP_BASENAME = 'Desktop'
     FALLBACK_PROGRAM_NAME = '<stdin>'
+
+    CREDENTIALS_FILE = Path.home() / '.credentials'
 
     ERROR_MARKER = '*** '
     ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
@@ -508,6 +511,25 @@ if sys.platform == 'win32':
         print(Messages.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
+
+
+def get_credentials():  # pylint: disable=unused-variable
+    """
+    Get credentials for current user, from its credentials file.
+
+    No matter the actual syntax of the file, which may change in the future, the
+    credentials are returned as a simple two-levels dictionary. The first level
+    are the different sections, intended to group credentials. The second level
+    are the credentials themselves. They are accessed by credential identifier
+    and returned as strings.
+
+    If credentials file cannot be read or has syntax problems, None is returned.
+    """
+    try:
+        with open(_Config.CREDENTIALS_FILE, 'rb') as credentials_file:
+            return tomllib.load(credentials_file)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
 
 
 if __name__ == '__main__':
