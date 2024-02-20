@@ -221,7 +221,7 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
     Munge information for OSError exceptions.
 
     Process the exception object for OSError exceptions (and its subclasses),
-    and build a tuple containing the processed information.
+    and return a tuple containing the processed information.
 
     First item is the actual OSError subclass which was raised, as a string.
 
