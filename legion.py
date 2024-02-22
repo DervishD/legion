@@ -513,7 +513,7 @@ if sys.platform == 'win32':
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
 
-def get_credentials():  # pylint: disable=unused-variable
+def get_credentials(credentials_path=_Config.CREDENTIALS_FILE):  # pylint: disable=unused-variable
     """
     Get credentials for current user, from its credentials file.
 
@@ -526,7 +526,7 @@ def get_credentials():  # pylint: disable=unused-variable
     If credentials file cannot be read or has syntax problems, None is returned.
     """
     try:
-        with open(_Config.CREDENTIALS_FILE, 'rb') as credentials_file:
+        with open(credentials_path, 'rb') as credentials_file:
             return tomllib.load(credentials_file)
     except (OSError, tomllib.TOMLDecodeError):
         return None
