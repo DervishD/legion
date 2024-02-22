@@ -161,7 +161,14 @@ if sys.stderr:
 
 
 def error(message, details=''):
-    """Helper for preprocessing error messages."""
+    """
+    Preprocess and log error message, optionally including details.
+
+    A header/marker is prepended to the message, and a visual separator is
+    prepended to the details. Both the message and the details are indented.
+
+    Finally, everything is logged using logging.error().
+    """
     message = str(message)
     details = str(details)
     logging.indent(0)
@@ -176,7 +183,25 @@ def error(message, details=''):
 
 
 def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
-    """Handle unhandled exceptions, default exception hook."""
+    """
+    Log information about unhandled exceptions using the provided exception
+    information, that is, the exception type, its value and the associated
+    traceback.
+
+    For KeyboardInterrupt exceptions, no logging is performed, the default
+    exception hook is used instead.
+
+    For OSError exceptions, a different message is logged, including particular
+    OSError information, and no traceback is logged.
+
+    For any other unhandled exception, a generic message is logged together with
+    the traceback, if available.
+
+    Finally, depending on the platform, some kind of modal dialog is shown so
+    the end user does not miss the error.
+
+    Intended to be used as default exception hook (sys.excepthook).
+    """
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
@@ -515,7 +540,9 @@ if sys.platform == 'win32':
 
 def get_credentials(credentials_path=_Config.CREDENTIALS_FILE):  # pylint: disable=unused-variable
     """
-    Get credentials for current user, from its credentials file.
+    Get credentials for current user, from the file at credentials_path.
+
+    If credentials_path if not provided as argument, a default path is used.
 
     No matter the actual syntax of the file, which may change in the future, the
     credentials are returned as a simple two-levels dictionary. The first level
