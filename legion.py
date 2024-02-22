@@ -7,7 +7,7 @@ Legion.
 
 Since the module is many, it's legion.
 
-cspell: ignore osascript oserror munge
+cspell: ignore munge osascript oserror
 """
 import atexit
 from enum import StrEnum
