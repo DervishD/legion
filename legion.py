@@ -6,9 +6,8 @@ Legion.
 “My name is Legion,” he replied, “for we are many.”
 
 Since the module is many, it's legion.
-
-cspell: ignore munge osascript oserror
 """
+# cspell: ignore munge osascript oserror
 import atexit
 from enum import StrEnum
 from errno import errorcode
