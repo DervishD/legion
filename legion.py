@@ -7,7 +7,7 @@ Legion.
 
 Since the module is many, it's legion.
 """
-# cspell: ignore munge osascript oserror
+# cspell: ignore osascript oserror
 import atexit
 from enum import StrEnum
 from errno import errorcode
@@ -245,8 +245,6 @@ sys.excepthook = excepthook
 
 def munge_oserror(exception):  # pylint: disable=unused-variable
     """
-    Munge information for OSError exceptions.
-
     Process the exception object for OSError exceptions (and its subclasses),
     and return a tuple containing the processed information.
 
@@ -307,7 +305,7 @@ def run(*command, **subprocess_args):  # pylint: disable=unused-variable
 
     For that reason, the keyword arguments accepted in subprocess_args and the
     return value for this function are the exact same ones accepted and returned
-    by subprocess.run() function itself.
+    by the subprocess.run() function itself.
     """
     subprocess_args = {
         'capture_output': True,
@@ -470,10 +468,15 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
             logging.getLogger().indentlevel -= 1
             return
         logging.getLogger().indentlevel = level
+
     # Both logging.indent() and logging.dedent() support a parameter specifying an
     # exact FINAL indentation level, not an indentation increment/decrement!
-    # These two helpers are provided in order to improve readability, since the
-    # set_logging_indent_level() function can be used directly.
+    #
+    # For both functions, the indentation level represents the number of copies of
+    # the character _Config.LOGGING_INDENTCHAR to be prepended to logging messages.
+    #
+    # If that level is not provided or is None, the current logging indentation
+    # level increased/decreased in 1 copy of _Config.LOGGING_INDENTCHAR.
     logging.indent = lambda level=None: set_indent_level(increase_indent_symbol if level is None else level)
     logging.dedent = lambda level=None: set_indent_level(decrease_indent_symbol if level is None else level)
 
