@@ -139,7 +139,7 @@ class Messages(StrEnum):
     TRACEBACK_FRAME_LINE = '  {}, {}: {}\n'
     TRACEBACK_TOPLEVEL_FRAME = '<module>'
     UNKNOWN_ERRNO = 'unknown'
-    ERRDIALOG_TITLE = 'Unexpected error in {Constants.PROGRAM_NAME}'
+    ERRDIALOG_TITLE = f'Unexpected error in {Constants.PROGRAM_NAME}'
 
     OSERROR_WINERROR = 'WinError{}'
     OSERROR_ERRORCODES = '{}/{}'
