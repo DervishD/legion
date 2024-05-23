@@ -63,7 +63,7 @@ def _get_desktop_path() -> Path:
     return home_path
 
 
-def _get_program_path() -> Path | None:
+def _get_program_path() -> Path:
     """Get the full, resolved path of the currently executing program."""
     try:
         if getattr(sys, 'frozen', False):
@@ -74,16 +74,17 @@ def _get_program_path() -> Path | None:
             # there's some filename involved.
             #
             # If one of those situations arise, the code will be modified accordingly.
-            program_path = sys.modules['__main__'].__file__ or ''
-        return Path(program_path).resolve()
+            program_path = sys.modules['__main__'].__file__
     except AttributeError:
-        return None
+        program_path = None
+    program_path = None
+    return Path(program_path or _Config.FALLBACK_PROGRAM_PATH).resolve()
 
 
 class _Config():  # pylint: disable=too-few-public-methods
     """Module configuration values."""
     DESKTOP_BASENAME = 'Desktop'
-    FALLBACK_PROGRAM_NAME = '<stdin>'
+    FALLBACK_PROGRAM_PATH = '__unavailable__.py'
 
     CREDENTIALS_FILE = Path.home() / '.credentials'
 
@@ -109,7 +110,7 @@ class Constants():  # pylint: disable=too-few-public-methods
     """Exportable constants."""
     DESKTOP_PATH = _get_desktop_path()
     PROGRAM_PATH = _get_program_path()
-    PROGRAM_NAME = PROGRAM_PATH.stem if PROGRAM_PATH else _Config.FALLBACK_PROGRAM_NAME
+    PROGRAM_NAME = PROGRAM_PATH.stem
 
     ARROW_R = '⟶'
     ARROW_L = '⟵'
