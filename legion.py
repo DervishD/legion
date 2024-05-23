@@ -71,7 +71,7 @@ def _get_program_path():
             # there's some filename involved.
             #
             # If one of those situations arise, the code will be modified accordingly.
-            program_path = sys.modules['__main__'].__file__
+            program_path = sys.modules['__main__'].__file__ or ''
         return Path(program_path).resolve()
     except AttributeError:
         return program_path
