@@ -22,6 +22,9 @@ from textwrap import dedent
 from time import strftime
 import tomllib
 import traceback as tb
+from types import TracebackType
+from typing import Any, LiteralString
+
 
 if sys.platform == 'win32':
     from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
@@ -30,10 +33,10 @@ if sys.platform == 'win32':
     from msvcrt import get_osfhandle, getch
 
 
-__all__ = []  # pylint: disable=unused-variable
+__all__: list[str] = []  # pylint: disable=unused-variable
 
 
-def _get_desktop_path():
+def _get_desktop_path() -> Path:
     """Get the path of the desktop directory depending on the platform."""
     home_path = Path.home()
     desktop_basename = 'Desktop'
@@ -60,9 +63,8 @@ def _get_desktop_path():
     return home_path
 
 
-def _get_program_path():
+def _get_program_path() -> Path | None:
     """Get the full, resolved path of the currently executing program."""
-    program_path = None
     try:
         if getattr(sys, 'frozen', False):
             program_path = sys.executable
@@ -75,7 +77,7 @@ def _get_program_path():
             program_path = sys.modules['__main__'].__file__ or ''
         return Path(program_path).resolve()
     except AttributeError:
-        return program_path
+        return None
 
 
 class _Config():  # pylint: disable=too-few-public-methods
@@ -160,7 +162,7 @@ if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
     sys.stderr.reconfigure(encoding=Constants.UTF8)
 
 
-def error(message, details=''):
+def error(message: str, details: str = '') -> None:
     """
     Preprocess and log error message, optionally including details.
 
@@ -182,7 +184,8 @@ def error(message, details=''):
     logging.indent(0)
 
 
-def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_traceback: TracebackType | None) -> None:
     """
     Log information about unhandled exceptions using the provided exception
     information, that is, the exception type, its value and the associated
@@ -244,7 +247,7 @@ def excepthook(exc_type, exc_value, exc_traceback):  # pylint: disable=unused-va
 sys.excepthook = excepthook
 
 
-def munge_oserror(exception):  # pylint: disable=unused-variable
+def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
     """
     Process the exception object for OSError exceptions (and its subclasses),
     and return a tuple containing the processed information.
@@ -285,7 +288,7 @@ def munge_oserror(exception):  # pylint: disable=unused-variable
     return exc_type, exc_errorcodes, exc_message, exception.filename, exception.filename2
 
 
-def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
+def prettyprint_oserror(reason: str, exc: OSError) -> None:  # pylint: disable=unused-variable
     """Print a very simple OSError message using reason and exc information."""
     errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
@@ -293,12 +296,12 @@ def prettyprint_oserror(reason, exc):  # pylint: disable=unused-variable
     logging.error(Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
 
 
-def timestamp():  # pylint: disable=unused-variable
+def timestamp() -> str:  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
     return strftime(_Config.TIMESTAMP_FORMAT)
 
 
-def run(*command, **subprocess_args):  # pylint: disable=unused-variable
+def run(*command: str, **subprocess_args: Any) -> subprocess.CompletedProcess[str]:  # pylint: disable=unused-variable
     """
     Run command, using subprocess_args as arguments. This is just a helper for
     subprocess.run() to make such calls more convenient by providing a set of
@@ -334,7 +337,8 @@ logging.indent = lambda level=None: None
 logging.dedent = lambda level=None: None
 
 
-def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+def setup_logging(debugfile: str|Path|None=None, logfile: str|Path|None=None, console: bool = True) -> None:
     """
     Set up logging system, disabling all existing loggers.
 
@@ -350,7 +354,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
     """
     class CustomFormatter(logging.Formatter):
         """Simple custom formatter for logging messages."""
-        def format(self, record):
+        def format(self, record: logging.LogRecord):
             """
             Format multiline records so they look like multiple records.
             Indent message according to current indentation level.
@@ -444,7 +448,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
     setattr(logging.getLogger(), 'indentlevel', 0)
     current_factory = logging.getLogRecordFactory()
     levelname_template = f'{{:{len(max(logging.getLevelNamesMapping(), key=len))}}}'
-    def record_factory(*args, **kwargs):
+    def record_factory(*args: Any, **kwargs: Any):
         """LogRecord factory which supports indentation."""
         record = current_factory(*args, **kwargs)
         record.indent = _Config.LOGGING_INDENTCHAR * logging.getLogger().indentlevel
@@ -454,7 +458,7 @@ def setup_logging(debugfile=None, logfile=None, console=True):  # pylint: disabl
 
     increase_indent_symbol = '+'
     decrease_indent_symbol = '-'
-    def set_indent_level(level):
+    def set_indent_level(level: int | LiteralString):
         """
         Set current indentation level.
 
@@ -493,7 +497,7 @@ if sys.platform == 'win32':
         WAIT_FOR_KEYPRESS = auto()
 
     @atexit.register
-    def wait_for_keypress():  # pylint: disable=unused-variable,too-many-return-statements
+    def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
         """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
@@ -541,7 +545,8 @@ if sys.platform == 'win32':
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
 
-def get_credentials(credentials_path=_Config.CREDENTIALS_FILE):  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+def get_credentials(credentials_path: Path = _Config.CREDENTIALS_FILE) -> dict[str, Any] | None:
     """
     Get credentials for current user, from the file at credentials_path.
 
