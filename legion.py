@@ -11,6 +11,7 @@ Since the module is many, it's legion.
 import atexit
 from enum import StrEnum
 from errno import errorcode
+from io import TextIOWrapper
 import logging
 from logging.config import dictConfig
 from os import environ, system
@@ -153,9 +154,9 @@ class Messages(StrEnum):
 
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the application from a shell.
-if sys.stdout:
+if sys.stdout and isinstance(sys.stdout, TextIOWrapper):
     sys.stdout.reconfigure(encoding=Constants.UTF8)
-if sys.stderr:
+if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
     sys.stderr.reconfigure(encoding=Constants.UTF8)
 
 
