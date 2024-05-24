@@ -78,7 +78,6 @@ def _get_program_path() -> Path:
             program_path = sys.modules['__main__'].__file__
     except AttributeError:
         program_path = None
-    program_path = None
     return Path(program_path or _Config.FALLBACK_PROGRAM_PATH).resolve()
 
 
