@@ -9,6 +9,7 @@ Since the module is many, it's legion.
 """
 # cspell: ignore osascript oserror
 import atexit
+from collections.abc import Sequence
 from enum import StrEnum
 from errno import errorcode
 from io import TextIOWrapper
@@ -302,11 +303,12 @@ def timestamp() -> str:  # pylint: disable=unused-variable
     return strftime(_Config.TIMESTAMP_FORMAT)
 
 
-def run(*command: str, **subprocess_args: Any) -> subprocess.CompletedProcess[str]:  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedProcess[str]:
     """
-    Run command, using subprocess_args as arguments. This is just a helper for
-    subprocess.run() to make such calls more convenient by providing a set of
-    defaults for the arguments.
+    Run command (a tuple), using subprocess_args as arguments. This is just a
+    helper for subprocess.run() to make such calls more convenient by providing
+    a set of defaults for the arguments.
 
     For that reason, the keyword arguments accepted in subprocess_args and the
     return value for this function are the exact same ones accepted and returned
@@ -324,7 +326,7 @@ def run(*command: str, **subprocess_args: Any) -> subprocess.CompletedProcess[st
         subprocess_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
 
     # pylint: disable-next=subprocess-run-check
-    return subprocess.run(*command, **subprocess_args)
+    return subprocess.run(command, **subprocess_args)
 
 
 # Needed for having VERY basic logging when setup_logging() is not used.
