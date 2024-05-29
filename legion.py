@@ -359,7 +359,7 @@ class _CustomLogger(logging.Logger):
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         super().__init__(name, level)
-        self.indentlevel:int = 0
+        self.indentlevel: int = 0
 
     def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:
         """Create a new logging record with indentation support."""
@@ -386,7 +386,7 @@ class _CustomLogger(logging.Logger):
         if level == self.DECREASE_INDENT_SYMBOL:
             self.indentlevel = max(0, self.indentlevel - 1)
             return
-        if isinstance(level, int) and level > 0:
+        if isinstance(level, int) and level >= 0:
             self.indentlevel = level
             return
         raise ValueError(Messages.BAD_INDENTLEVEL)
