@@ -331,7 +331,7 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
         subprocess_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
 
     # pylint: disable-next=subprocess-run-check
-    return subprocess.run(command, **subprocess_args)
+    return cast(subprocess.CompletedProcess[str], subprocess.run(command, **subprocess_args))
 
 
 class _CustomLogger(logging.Logger):
@@ -468,7 +468,7 @@ class _CustomLogger(logging.Logger):
             handlers['stdout_handler'] = {
                 'level': logging.NOTSET,
                 'formatter': 'console_formatter',
-                'filters': [lambda record: (record.levelno == logging.INFO)],
+                'filters': [lambda record: (record.levelno == logging.INFO)],  # type: ignore
                 'class': logging.StreamHandler,
                 'stream': sys.stdout,
             }
