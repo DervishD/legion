@@ -24,7 +24,8 @@ from time import strftime
 import tomllib
 import traceback as tb
 from types import TracebackType
-from typing import Any, LiteralString
+from typing import Any, cast, LiteralString, NoReturn
+from warnings import simplefilter, warn
 
 
 if sys.platform == 'win32':
@@ -97,7 +98,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     LOGGING_FALLBACK_FORMAT = '{message}'
     LOGGING_FORMAT_STYLE = '{'
     LOGGING_INDENTCHAR = ' '
-    LOGGING_DEBUGFILE_FORMAT = '{asctime}.{msecs:04.0f} {levelname}| {funcName}() {message}'
+    LOGGING_LEVELNAME_MAX_LEN = len(max(logging.getLevelNamesMapping(), key=len))
+    LOGGING_DEBUGFILE_FORMAT = ' '.join((
+        '{asctime}.{msecs:04.0f}',
+        f'{{levelname:{LOGGING_LEVELNAME_MAX_LEN}}}',
+        '|',
+        '{funcName}()',
+        '{message}'
+    ))
     LOGGING_LOGFILE_FORMAT = '{asctime} {message}'
 
     if sys.platform == 'win32':
@@ -110,6 +118,7 @@ class Constants():  # pylint: disable=too-few-public-methods
     """Exportable constants."""
     DESKTOP_PATH = _get_desktop_path()
     PROGRAM_PATH = _get_program_path()
+
     PROGRAM_NAME = PROGRAM_PATH.stem
 
     ARROW_R = '⟶'
@@ -135,6 +144,7 @@ class Messages(StrEnum):
     filename2 = {}
     ''').strip('\n')
     OSERROR_DETAIL_NA = 'N/A'
+
     UNHANDLED_EXCEPTION = 'Unhandled exception.'
     EXCEPTION_DETAILS = 'type = {}\nvalue = {}\nargs: {}'
     EXCEPTION_DETAILS_ARG = '\n  [{}] {}'
@@ -142,12 +152,13 @@ class Messages(StrEnum):
     TRACEBACK_FRAME_HEADER = '▸ {}\n'
     TRACEBACK_FRAME_LINE = '  {}, {}: {}\n'
     TRACEBACK_TOPLEVEL_FRAME = '<module>'
-    UNKNOWN_ERRNO = 'unknown'
     ERRDIALOG_TITLE = f'Unexpected error in {Constants.PROGRAM_NAME}'
 
     OSERROR_WINERROR = 'WinError{}'
     OSERROR_ERRORCODES = '{}/{}'
     OSERROR_PRETTYPRINT = 'Error [{}] {} {}.\n{}'
+
+    BAD_INDENTLEVEL = 'Indentation level must be a non-negative integer.'
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
@@ -174,15 +185,19 @@ def error(message: str, details: str = '') -> None:
     """
     message = str(message)
     details = str(details)
-    logging.indent(0)
-    logging.error(Messages.ERROR_HEADER)
-    logging.indent(_Config.ERROR_PAYLOAD_INDENT)
-    logging.error(message)
+
+    logger.set_indent(0)
+    logger.error(Messages.ERROR_HEADER)
+
+    logger.set_indent(_Config.ERROR_PAYLOAD_INDENT)
+    logger.error(message)
+
     if details := details.strip():
-        logging.error(Messages.ERROR_DETAILS_HEADING)
-        logging.error('\n'.join(f'{Messages.ERROR_DETAILS_PREAMBLE}{line}' for line in details.split('\n')))
-        logging.error(Messages.ERROR_DETAILS_TAIL)
-    logging.indent(0)
+        logger.error(Messages.ERROR_DETAILS_HEADING)
+        logger.error('\n'.join(f'{Messages.ERROR_DETAILS_PREAMBLE}{line}' for line in details.split('\n')))
+        logger.error(Messages.ERROR_DETAILS_TAIL)
+
+    logger.set_indent(0)
 
 
 # pylint: disable-next=unused-variable
@@ -294,7 +309,7 @@ def prettyprint_oserror(reason: str, exc: OSError) -> None:  # pylint: disable=u
     errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
     filenames = f"'{filename}'{f" {Constants.ARROW_R} '{filename2}'" if filename2 else ''}"
-    logging.error(Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
+    logger.error(Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
 
 
 def timestamp() -> str:  # pylint: disable=unused-variable
@@ -335,13 +350,166 @@ logging.basicConfig(
     format=_Config.LOGGING_FALLBACK_FORMAT,
     force=True
 )
-logging.indent = lambda level=None: None
-logging.dedent = lambda level=None: None
+
+
+class _CustomLogger(logging.Logger):
+    """Custom logger with indentation support."""
+    INCREASE_INDENT_SYMBOL = '+'
+    DECREASE_INDENT_SYMBOL = '-'
+
+    def __init__(self, name: str, level: int = logging.NOTSET) -> None:
+        super().__init__(name, level)
+        self.indentlevel:int = 0
+
+    def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:
+        """Create a new logging record with indentation support."""
+        record = super().makeRecord(*args, **kwargs)
+        record.msg = f'{_Config.LOGGING_INDENTCHAR * self.indentlevel}{record.msg}'
+        return record
+
+    def _set_indentlevel(self, level: int | LiteralString) -> None | NoReturn:
+        """
+        Set current logging indentation level.
+
+        If level is:
+            - INCREASE_INDENT_SYMBOL string, indentation is increased.
+            - DECREASE_INDENT_SYMBOL string, indentation is decreased.
+            - any non-negative integer, indentation is set to that value.
+
+        For any other value, ValueError is raised.
+
+        Not for public usage, use self.set_indent(level) instead.
+        """
+        if level == self.INCREASE_INDENT_SYMBOL:
+            self.indentlevel += 1
+            return
+        if level == self.DECREASE_INDENT_SYMBOL:
+            self.indentlevel = max(0, self.indentlevel - 1)
+            return
+        if isinstance(level, int) and level > 0:
+            self.indentlevel = level
+            return
+        raise ValueError(Messages.BAD_INDENTLEVEL)
+
+    def set_indent(self, level: int) -> None:
+        """Set current logging indentation level."""
+        self._set_indentlevel(max(0, level))
+
+    def indent(self) -> None:
+        """Increment current logging indentation level."""
+        self._set_indentlevel(self.INCREASE_INDENT_SYMBOL)
+
+    def dedent(self) -> None:
+        """Decrement current logging indentation level."""
+        self._set_indentlevel(self.DECREASE_INDENT_SYMBOL)
+
+    def config(self, debugfile: str|Path|None = None, logfile: str|Path|None = None, console: bool = True) -> None:
+        """
+        Configure logger.
+
+        With the default configuration ALL logging messages are sent to
+        debugfile with a timestamp and some debugging information; those
+        messages with severity of logging.INFO or higher are sent to logfile,
+        also timestamped.
+
+        In addition to that, and if console is True (the default), messages with
+        a severity of logging.INFO (and only those) are sent to the standard
+        output stream, and messages with a severity of logging.WARNING or higher
+        are sent to the standard error stream, without a timestamp in both
+        cases.
+
+        If debugfile or logfile are None (the default), then the corresponding
+        files are not created and no logging message will go there. In this
+        case, if console is False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
+        """
+        class _CustomFormatter(logging.Formatter):
+            """Simple custom formatter for logging messages."""
+            def format(self, record: logging.LogRecord):
+                """Format multiline records so they look like multiple records."""
+                formatted_record = super().format(record)
+                preamble = formatted_record[0:formatted_record.rfind(record.message)]
+                return '\n'.join(f'{preamble}{line}'.rstrip() for line in record.message.split('\n'))
+
+        logging_configuration: dict[str, Any] = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'loggers': {
+                self.name: {
+                    'level': logging.NOTSET,
+                    'propagate': False,
+                    'handlers': [],
+                },
+            },
+        }
+
+        formatters = {}
+        handlers = {}
+
+        if debugfile:
+            formatters['debugfile_formatter'] = {
+                '()': _CustomFormatter,
+                'style': _Config.LOGGING_FORMAT_STYLE,
+                'format': _Config.LOGGING_DEBUGFILE_FORMAT,
+                'datefmt': _Config.TIMESTAMP_FORMAT,
+            }
+            handlers['debugfile_handler'] = {
+                'level': logging.NOTSET,
+                'formatter': 'debugfile_formatter',
+                'class': logging.FileHandler,
+                'filename': debugfile,
+                'mode': 'w',
+                'encoding': Constants.UTF8,
+            }
+
+        if logfile:
+            formatters['logfile_formatter'] = {
+                '()': _CustomFormatter,
+                'style': _Config.LOGGING_FORMAT_STYLE,
+                'format': _Config.LOGGING_LOGFILE_FORMAT,
+                'datefmt': _Config.TIMESTAMP_FORMAT,
+            }
+            handlers['logfile_handler'] = {
+                'level': logging.INFO,
+                'formatter': 'logfile_formatter',
+                'class': logging.FileHandler,
+                'filename': logfile,
+                'mode': 'w',
+                'encoding': Constants.UTF8,
+            }
+
+        if console:
+            formatters['console_formatter'] = {
+                '()': _CustomFormatter,
+                'style': _Config.LOGGING_FORMAT_STYLE,
+                'format': _Config.LOGGING_CONSOLE_FORMAT,
+            }
+            handlers['stdout_handler'] = {
+                'level': logging.NOTSET,
+                'formatter': 'console_formatter',
+                'filters': [lambda record: (record.levelno == logging.INFO)],
+                'class': logging.StreamHandler,
+                'stream': sys.stdout,
+            }
+            handlers['stderr_handler'] = {
+                'level': logging.WARNING,
+                'formatter': 'console_formatter',
+                'class': logging.StreamHandler,
+                'stream': sys.stderr,
+            }
+
+        logging_configuration['formatters'] = formatters
+        logging_configuration['handlers'] = handlers
+        logging_configuration['loggers'][self.name]['handlers'] = handlers.keys()
+        dictConfig(logging_configuration)
+logging.setLoggerClass(_CustomLogger)
+logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(Constants.PROGRAM_NAME))
 
 
 # pylint: disable-next=unused-variable
 def setup_logging(debugfile: str|Path|None=None, logfile: str|Path|None=None, console: bool = True) -> None:
     """
+    DEPRECATED
+
     Set up logging system, disabling all existing loggers.
 
     With the current configuration ALL logging messages are sent to debugfile
@@ -354,6 +522,9 @@ def setup_logging(debugfile: str|Path|None=None, logfile: str|Path|None=None, co
     and no logging message will go there. In this case, if console is False,
     NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
     """
+    simplefilter('always')
+    warn('The setup_logging() function has been deprecated. Use logger.setup() instead', DeprecationWarning)
+
     class CustomFormatter(logging.Formatter):
         """Simple custom formatter for logging messages."""
         def format(self, record: logging.LogRecord):
