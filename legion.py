@@ -127,7 +127,7 @@ class Constants():  # pylint: disable=too-few-public-methods
     UTF8 = 'utf-8'
 
 
-class Messages(StrEnum):
+class _Messages(StrEnum):
     """Module messages."""
     ERROR_HEADER = f'\n{_Config.ERROR_MARKER}Error in {Constants.PROGRAM_NAME}.'
     ERROR_DETAILS_HEADING = '\nAdditional error information:'
@@ -187,15 +187,15 @@ def error(message: str, details: str = '') -> None:
     details = str(details)
 
     logger.set_indent(0)
-    logger.error(Messages.ERROR_HEADER)
+    logger.error(_Messages.ERROR_HEADER)
 
     logger.set_indent(_Config.ERROR_PAYLOAD_INDENT)
     logger.error(message)
 
     if details := details.strip():
-        logger.error(Messages.ERROR_DETAILS_HEADING)
-        logger.error('\n'.join(f'{Messages.ERROR_DETAILS_PREAMBLE}{line}' for line in details.split('\n')))
-        logger.error(Messages.ERROR_DETAILS_TAIL)
+        logger.error(_Messages.ERROR_DETAILS_HEADING)
+        logger.error('\n'.join(f'{_Messages.ERROR_DETAILS_PREAMBLE}{line}' for line in details.split('\n')))
+        logger.error(_Messages.ERROR_DETAILS_TAIL)
 
     logger.set_indent(0)
 
@@ -226,39 +226,39 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         return
 
     if isinstance(exc_value, OSError):
-        message = Messages.UNEXPECTED_OSERROR
-        details = Messages.OSERROR_DETAILS.format(
+        message = _Messages.UNEXPECTED_OSERROR
+        details = _Messages.OSERROR_DETAILS.format(
             exc_type.__name__,
-            Messages.OSERROR_DETAIL_NA if exc_value.errno is None else errorcode[exc_value.errno],
-            Messages.OSERROR_DETAIL_NA if exc_value.winerror is None else exc_value.winerror,
+            _Messages.OSERROR_DETAIL_NA if exc_value.errno is None else errorcode[exc_value.errno],
+            _Messages.OSERROR_DETAIL_NA if exc_value.winerror is None else exc_value.winerror,
             exc_value.strerror,
-            Messages.OSERROR_DETAIL_NA if exc_value.filename is None else exc_value.filename,
-            Messages.OSERROR_DETAIL_NA if exc_value.filename2 is None else exc_value.filename2,
+            _Messages.OSERROR_DETAIL_NA if exc_value.filename is None else exc_value.filename,
+            _Messages.OSERROR_DETAIL_NA if exc_value.filename2 is None else exc_value.filename2,
         )
     else:
-        message = Messages.UNHANDLED_EXCEPTION
+        message = _Messages.UNHANDLED_EXCEPTION
         args = ''
         for arg in exc_value.args:
-            args += Messages.EXCEPTION_DETAILS_ARG.format(type(arg).__name__, arg)
-        details = Messages.EXCEPTION_DETAILS.format(exc_type.__name__, str(exc_value), args)
+            args += _Messages.EXCEPTION_DETAILS_ARG.format(type(arg).__name__, arg)
+        details = _Messages.EXCEPTION_DETAILS.format(exc_type.__name__, str(exc_value), args)
     current_filename = None
     traceback = ''
     for frame in tb.extract_tb(exc_traceback):
         if current_filename != frame.filename:
-            traceback += Messages.TRACEBACK_FRAME_HEADER.format(frame.filename)
+            traceback += _Messages.TRACEBACK_FRAME_HEADER.format(frame.filename)
             current_filename = frame.filename
-        frame.name = Constants.PROGRAM_NAME if frame.name == Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
-        traceback += Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
-    details += Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
+        frame.name = Constants.PROGRAM_NAME if frame.name == _Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
+        traceback += _Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
+    details += _Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
     error(message, details)
 
     # Just in case there is NOT a working console or logging system,
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        windll.user32.MessageBoxW(None, message, Messages.ERRDIALOG_TITLE, _Config.MB_ICONWARNING | _Config.MB_OK)
+        windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, _Config.MB_ICONWARNING | _Config.MB_OK)
     if sys.platform == 'darwin':
-        script = f'display dialog "{message}" with title "{Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
+        script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
 sys.excepthook = excepthook
 
@@ -288,7 +288,7 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
     exc_errorcodes = None
 
     try:
-        exc_winerror = Messages.OSERROR_WINERROR.format(exception.winerror) if exception.winerror else None
+        exc_winerror = _Messages.OSERROR_WINERROR.format(exception.winerror) if exception.winerror else None
     except AttributeError:
         pass
     try:
@@ -297,8 +297,8 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
         pass
 
     if exc_errno and exc_winerror:
-        exc_errorcodes = Messages.OSERROR_ERRORCODES.format(exc_errno, exc_winerror)
-    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or Messages.OSERROR_DETAIL_NA
+        exc_errorcodes = _Messages.OSERROR_ERRORCODES.format(exc_errno, exc_winerror)
+    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or _Messages.OSERROR_DETAIL_NA
     exc_message = f'{exception.strerror[0].upper()}{exception.strerror[1:].rstrip(".")}.'
 
     return exc_type, exc_errorcodes, exc_message, exception.filename, exception.filename2
@@ -309,7 +309,7 @@ def prettyprint_oserror(reason: str, exc: OSError) -> None:  # pylint: disable=u
     errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
     filenames = f"'{filename}'{f" {Constants.ARROW_R} '{filename2}'" if filename2 else ''}"
-    logger.error(Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
+    logger.error(_Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
 
 
 def timestamp() -> str:  # pylint: disable=unused-variable
@@ -389,7 +389,7 @@ class _CustomLogger(logging.Logger):
         if isinstance(level, int) and level >= 0:
             self.indentlevel = level
             return
-        raise ValueError(Messages.BAD_INDENTLEVEL)
+        raise ValueError(_Messages.BAD_INDENTLEVEL)
 
     def set_indent(self, level: int) -> None:
         """Set current logging indentation level."""
@@ -713,7 +713,7 @@ if sys.platform == 'win32':
         elif Path(console_title).name.lower() != _Config.PYTHON_LAUNCHER.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
-        print(Messages.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
+        print(_Messages.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
@@ -741,9 +741,9 @@ def get_credentials(credentials_path: Path = _Config.CREDENTIALS_FILE) -> dict[s
 
 
 if __name__ == '__main__':
-    print(Messages.DEMO_TIMESTAMP.format(timestamp()))
+    print(_Messages.DEMO_TIMESTAMP.format(timestamp()))
 
     constants = {k:v for k,v in vars(Constants).items() if not k.startswith('__')}
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
-        print(Messages.DEMO_CONSTANT.format(constant, width, value))
+        print(_Messages.DEMO_CONSTANT.format(constant, width, value))
