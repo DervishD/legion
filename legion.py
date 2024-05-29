@@ -82,6 +82,19 @@ def _get_program_path() -> Path:
     return Path(program_path or _Config.FALLBACK_PROGRAM_PATH).resolve()
 
 
+class Constants():  # pylint: disable=too-few-public-methods
+    """Exportable constants."""
+    DESKTOP_PATH = _get_desktop_path()
+    PROGRAM_PATH = _get_program_path()
+
+    PROGRAM_NAME = PROGRAM_PATH.stem
+
+    ARROW_R = '⟶'
+    ARROW_L = '⟵'
+
+    UTF8 = 'utf-8'
+
+
 class _Config():  # pylint: disable=too-few-public-methods
     """Module configuration values."""
     DESKTOP_BASENAME = 'Desktop'
@@ -112,19 +125,6 @@ class _Config():  # pylint: disable=too-few-public-methods
         PYTHON_LAUNCHER = 'py.exe'
         MB_ICONWARNING = 0x30
         MB_OK = 0
-
-
-class Constants():  # pylint: disable=too-few-public-methods
-    """Exportable constants."""
-    DESKTOP_PATH = _get_desktop_path()
-    PROGRAM_PATH = _get_program_path()
-
-    PROGRAM_NAME = PROGRAM_PATH.stem
-
-    ARROW_R = '⟶'
-    ARROW_L = '⟵'
-
-    UTF8 = 'utf-8'
 
 
 class _Messages(StrEnum):
@@ -164,14 +164,6 @@ class _Messages(StrEnum):
 
     DEMO_TIMESTAMP = 'Timestamp is {}\n'
     DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧'
-
-
-# Reconfigure standard output streams so they use UTF-8 encoding even if
-# they are redirected to a file when running the application from a shell.
-if sys.stdout and isinstance(sys.stdout, TextIOWrapper):
-    sys.stdout.reconfigure(encoding=Constants.UTF8)
-if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
-    sys.stderr.reconfigure(encoding=Constants.UTF8)
 
 
 def error(message: str, details: str = '') -> None:
@@ -260,7 +252,6 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
-sys.excepthook = excepthook
 
 
 def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
@@ -341,15 +332,6 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
 
     # pylint: disable-next=subprocess-run-check
     return subprocess.run(command, **subprocess_args)
-
-
-# Needed for having VERY basic logging when setup_logging() is not used.
-logging.basicConfig(
-    level=logging.NOTSET,
-    style=_Config.LOGGING_FORMAT_STYLE,
-    format=_Config.LOGGING_FALLBACK_FORMAT,
-    force=True
-)
 
 
 class _CustomLogger(logging.Logger):
@@ -501,8 +483,6 @@ class _CustomLogger(logging.Logger):
         logging_configuration['handlers'] = handlers
         logging_configuration['loggers'][self.name]['handlers'] = handlers.keys()
         dictConfig(logging_configuration)
-logging.setLoggerClass(_CustomLogger)
-logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(Constants.PROGRAM_NAME))
 
 
 # pylint: disable-next=unused-variable
@@ -738,6 +718,24 @@ def get_credentials(credentials_path: Path = _Config.CREDENTIALS_FILE) -> dict[s
             return tomllib.load(credentials_file)
     except (OSError, tomllib.TOMLDecodeError):
         return None
+
+
+# Module desired side-effects.
+sys.excepthook = excepthook
+logging.basicConfig(  # Needed for having VERY basic, fallback logging config.
+    level=logging.NOTSET,
+    style=_Config.LOGGING_FORMAT_STYLE,
+    format=_Config.LOGGING_FALLBACK_FORMAT,
+    force=True
+)
+logging.setLoggerClass(_CustomLogger)
+logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(Constants.PROGRAM_NAME))
+# Reconfigure standard output streams so they use UTF-8 encoding even if
+# they are redirected to a file when running the application from a shell.
+if sys.stdout and isinstance(sys.stdout, TextIOWrapper):
+    sys.stdout.reconfigure(encoding=Constants.UTF8)
+if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
+    sys.stderr.reconfigure(encoding=Constants.UTF8)
 
 
 if __name__ == '__main__':
