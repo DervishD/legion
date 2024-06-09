@@ -341,11 +341,12 @@ class _CustomLogger(logging.Logger):
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         super().__init__(name, level)
         self.indentlevel: int = 0
+        self.indentation = ''
 
     def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:
         """Create a new logging record with indentation support."""
         record = super().makeRecord(*args, **kwargs)
-        record.msg = f'{_Config.LOGGING_INDENTCHAR * self.indentlevel}{record.msg}'
+        record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
 
     def _set_indentlevel(self, level: int | LiteralString) -> None | NoReturn:
@@ -363,18 +364,17 @@ class _CustomLogger(logging.Logger):
         """
         if level == self.INCREASE_INDENT_SYMBOL:
             self.indentlevel += 1
-            return
-        if level == self.DECREASE_INDENT_SYMBOL:
+        elif level == self.DECREASE_INDENT_SYMBOL:
             self.indentlevel = max(0, self.indentlevel - 1)
-            return
-        if isinstance(level, int) and level >= 0:
+        elif isinstance(level, int) and level >= 0:
             self.indentlevel = level
-            return
-        raise ValueError(_Messages.BAD_INDENTLEVEL)
+        else:
+            raise ValueError(_Messages.BAD_INDENTLEVEL)
+        self.indentation = _Config.LOGGING_INDENTCHAR * self.indentlevel
 
     def set_indent(self, level: int) -> None:
         """Set current logging indentation level."""
-        self._set_indentlevel(max(0, level))
+        self._set_indentlevel(level)
 
     def indent(self) -> None:
         """Increment current logging indentation level."""
@@ -404,7 +404,7 @@ class _CustomLogger(logging.Logger):
         case, if console is False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
         """
         class _CustomFormatter(logging.Formatter):
-            """Simple custom formatter for logging messages."""
+            """Simple custom formatter with multiline support."""
             def format(self, record: logging.LogRecord):
                 """Format multiline records so they look like multiple records."""
                 formatted_record = super().format(record)
