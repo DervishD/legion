@@ -101,12 +101,6 @@ UTF8 = 'utf-8'
 # pylint: enable=unused-variable
 
 
-class _Config():  # pylint: disable=too-few-public-methods
-    """Module configuration values."""
-    DESKTOP_BASENAME = 'Desktop'
-
-
-
 class _Messages(StrEnum):
     """Module messages."""
     ERROR_HEADER = f'\n{ERROR_MARKER}Error in {PROGRAM_NAME}.'
