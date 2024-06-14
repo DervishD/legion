@@ -88,6 +88,8 @@ PROGRAM_PATH = _get_program_path()
 
 PROGRAM_NAME = PROGRAM_PATH.stem
 
+TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+
 ARROW_R = '⟶'
 ARROW_L = '⟵'
 
@@ -104,8 +106,6 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     ERROR_MARKER = '*** '
     ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
-
-    TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
     LOGGING_CONSOLE_FORMAT = '{message}'
     LOGGING_FALLBACK_FORMAT = '{message}'
@@ -305,7 +305,7 @@ def prettyprint_oserror(reason: str, exc: OSError) -> None:  # pylint: disable=u
 
 def timestamp() -> str:  # pylint: disable=unused-variable
     """Produce a timestamp string from current local date and time."""
-    return strftime(_Config.TIMESTAMP_FORMAT)
+    return strftime(TIMESTAMP_FORMAT)
 
 
 # pylint: disable-next=unused-variable
@@ -432,7 +432,7 @@ class _CustomLogger(logging.Logger):
                 '()': _CustomFormatter,
                 'style': _Config.LOGGING_FORMAT_STYLE,
                 'format': _Config.LOGGING_DEBUGFILE_FORMAT,
-                'datefmt': _Config.TIMESTAMP_FORMAT,
+                'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['debugfile_handler'] = {
                 'level': logging.NOTSET,
@@ -448,7 +448,7 @@ class _CustomLogger(logging.Logger):
                 '()': _CustomFormatter,
                 'style': _Config.LOGGING_FORMAT_STYLE,
                 'format': _Config.LOGGING_LOGFILE_FORMAT,
-                'datefmt': _Config.TIMESTAMP_FORMAT,
+                'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['logfile_handler'] = {
                 'level': logging.INFO,

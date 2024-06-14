@@ -15,6 +15,8 @@ The current API (symbols and functions) follows.
         Path of the currently executing script.
     - `PROGRAM_NAME`<br>
         User friendly name of the currently executing script.
+    - `TIMESTAMP_FORMAT`<br>
+        `time.strftime()` compatible format specification for timestamps.
     - `ARROW_L`<br>
         Left pointing arrow character for pretty-printing program output.
     - `ARROW_R`<br>
