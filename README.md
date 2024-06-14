@@ -8,19 +8,18 @@ just in case its code may be of help for other programmers.
 The current API (symbols and functions) follows.
 
 ## Symbols
-- `Constants`<br>
-    Module constants, implemented for now using a class:
-    - `Constants.DESKTOP_PATH`<br>
+- Module constants:
+    - `DESKTOP_PATH`<br>
         Path of user's `Desktop` directory.
-    - `Constants.PROGRAM_PATH`<br>
+    - `PROGRAM_PATH`<br>
         Path of the currently executing script.
-    - `Constants.PROGRAM_NAME`<br>
+    - `PROGRAM_NAME`<br>
         User friendly name of the currently executing script.
-    - `Constants.ARROW_L`<br>
+    - `ARROW_L`<br>
         Left pointing arrow character for pretty-printing program output.
-    - `Constants.ARROW_R`<br>
+    - `ARROW_R`<br>
         Right pointing arrow character for pretty-printing program output.
-    - `Constants.UTF8`<br>
+    - `UTF8`<br>
         Normalized name for `UTF-8` encoding.
 - `WFKStatuses`<br>
     Available for `win32`platform, only, they are the possible return values for `wait_for_keypress()`, implemented for now as an `IntEnum`:

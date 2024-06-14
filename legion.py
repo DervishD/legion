@@ -30,7 +30,7 @@ from typing import Any, cast, LiteralString, NoReturn
 if sys.platform == 'win32':
     from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
     from ctypes import byref, c_uint, create_unicode_buffer, windll
-    from ctypes.wintypes import MAX_PATH as MAX_PATH_LEN
+    from ctypes.wintypes import MAX_PATH as _MAX_PATH_LEN
     from msvcrt import get_osfhandle, getch
 
 
@@ -48,7 +48,7 @@ def _get_desktop_path() -> Path:
         access_token = 0
         shgfp_type_current = 0
         flags = shgfp_type_current
-        buffer = create_unicode_buffer(MAX_PATH_LEN)
+        buffer = create_unicode_buffer(_MAX_PATH_LEN)
         windll.shell32.SHGetFolderPathW(hwnd, desktop_csidl, access_token, flags, buffer)
         return Path(buffer.value)
 
@@ -81,17 +81,18 @@ def _get_program_path() -> Path:
     return Path(program_path or _Config.FALLBACK_PROGRAM_PATH).resolve()
 
 
-class Constants():  # pylint: disable=too-few-public-methods
-    """Exportable constants."""
-    DESKTOP_PATH = _get_desktop_path()
-    PROGRAM_PATH = _get_program_path()
+# Exportable constants.
+# pylint: disable=unused-variable
+DESKTOP_PATH = _get_desktop_path()
+PROGRAM_PATH = _get_program_path()
 
-    PROGRAM_NAME = PROGRAM_PATH.stem
+PROGRAM_NAME = PROGRAM_PATH.stem
 
-    ARROW_R = '⟶'
-    ARROW_L = '⟵'
+ARROW_R = '⟶'
+ARROW_L = '⟵'
 
-    UTF8 = 'utf-8'
+UTF8 = 'utf-8'
+# pylint: enable=unused-variable
 
 
 class _Config():  # pylint: disable=too-few-public-methods
@@ -128,7 +129,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
 class _Messages(StrEnum):
     """Module messages."""
-    ERROR_HEADER = f'\n{_Config.ERROR_MARKER}Error in {Constants.PROGRAM_NAME}.'
+    ERROR_HEADER = f'\n{_Config.ERROR_MARKER}Error in {PROGRAM_NAME}.'
     ERROR_DETAILS_HEADING = '\nAdditional error information:'
     ERROR_DETAILS_PREAMBLE = '│ '
     ERROR_DETAILS_TAIL = '╰'
@@ -151,7 +152,7 @@ class _Messages(StrEnum):
     TRACEBACK_FRAME_HEADER = '▸ {}\n'
     TRACEBACK_FRAME_LINE = '  {}, {}: {}\n'
     TRACEBACK_TOPLEVEL_FRAME = '<module>'
-    ERRDIALOG_TITLE = f'Unexpected error in {Constants.PROGRAM_NAME}'
+    ERRDIALOG_TITLE = f'Unexpected error in {PROGRAM_NAME}'
 
     OSERROR_WINERROR = 'WinError{}'
     OSERROR_ERRORCODES = '{}/{}'
@@ -238,7 +239,7 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         if current_filename != frame.filename:
             traceback += _Messages.TRACEBACK_FRAME_HEADER.format(frame.filename)
             current_filename = frame.filename
-        frame.name = Constants.PROGRAM_NAME if frame.name == _Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
+        frame.name = PROGRAM_NAME if frame.name == _Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
         traceback += _Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
     details += _Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
     error(message, details)
@@ -298,7 +299,7 @@ def prettyprint_oserror(reason: str, exc: OSError) -> None:  # pylint: disable=u
     """Print a very simple OSError message using reason and exc information."""
     errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
-    filenames = f"'{filename}'{f" {Constants.ARROW_R} '{filename2}'" if filename2 else ''}"
+    filenames = f"'{filename}'{f" {ARROW_R} '{filename2}'" if filename2 else ''}"
     logger.error(_Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
 
 
@@ -439,7 +440,7 @@ class _CustomLogger(logging.Logger):
                 'class': logging.FileHandler,
                 'filename': debugfile,
                 'mode': 'w',
-                'encoding': Constants.UTF8,
+                'encoding': UTF8,
             }
 
         if logfile:
@@ -455,7 +456,7 @@ class _CustomLogger(logging.Logger):
                 'class': logging.FileHandler,
                 'filename': logfile,
                 'mode': 'w',
-                'encoding': Constants.UTF8,
+                'encoding': UTF8,
             }
 
         if console:
@@ -518,7 +519,7 @@ if sys.platform == 'win32':
         #
         # There are TWO main scenarios: a frozen executable and a .py file.
         # In both cases, the console title has to be obtained.
-        buffer_size = MAX_PATH_LEN + 1
+        buffer_size = _MAX_PATH_LEN + 1
         console_title = create_unicode_buffer(buffer_size)
         if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
             return WFKStatuses.NO_CONSOLE_TITLE
@@ -574,19 +575,19 @@ logging.basicConfig(  # Needed for having VERY basic, fallback logging config.
     force=True
 )
 logging.setLoggerClass(_CustomLogger)
-logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(Constants.PROGRAM_NAME))
+logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the application from a shell.
 if sys.stdout and isinstance(sys.stdout, TextIOWrapper):
-    sys.stdout.reconfigure(encoding=Constants.UTF8)
+    sys.stdout.reconfigure(encoding=UTF8)
 if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
-    sys.stderr.reconfigure(encoding=Constants.UTF8)
+    sys.stderr.reconfigure(encoding=UTF8)
 
 
 if __name__ == '__main__':
     print(_Messages.DEMO_TIMESTAMP.format(timestamp()))
 
-    constants = {k:v for k,v in vars(Constants).items() if not k.startswith('__')}
+    constants = {k: v for k, v in locals().items() if k.isupper() and not k.startswith('_')}
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
         print(_Messages.DEMO_CONSTANT.format(constant, width, value))
