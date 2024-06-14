@@ -21,6 +21,8 @@ The current API (symbols and functions) follows.
         Left pointing arrow character for pretty-printing program output.
     - `ARROW_R`<br>
         Right pointing arrow character for pretty-printing program output.
+    - `ERROR_MARKER`<br>
+        Marker string prepended to error messages.
     - `UTF8`<br>
         Normalized name for `UTF-8` encoding.
 - `WFKStatuses`<br>

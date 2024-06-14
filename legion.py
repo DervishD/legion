@@ -90,6 +90,7 @@ PROGRAM_NAME = PROGRAM_PATH.stem
 
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
+ERROR_MARKER = '*** '
 ARROW_R = '⟶'
 ARROW_L = '⟵'
 
@@ -110,7 +111,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
 class _Messages(StrEnum):
     """Module messages."""
-    ERROR_HEADER = f'\n{_Config.ERROR_MARKER}Error in {PROGRAM_NAME}.'
+    ERROR_HEADER = f'\n{ERROR_MARKER}Error in {PROGRAM_NAME}.'
     ERROR_DETAILS_HEADING = '\nAdditional error information:'
     ERROR_DETAILS_PREAMBLE = '│ '
     ERROR_DETAILS_TAIL = '╰'
