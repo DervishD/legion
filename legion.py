@@ -108,7 +108,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 
     LOGGING_CONSOLE_FORMAT = '{message}'
-    LOGGING_FALLBACK_FORMAT = '{message}'
     LOGGING_FORMAT_STYLE = '{'
     LOGGING_INDENTCHAR = ' '
     LOGGING_LEVELNAME_MAX_LEN = len(max(logging.getLevelNamesMapping(), key=len))
@@ -568,12 +567,7 @@ def get_credentials(credentials_path: Path = _Config.CREDENTIALS_FILE) -> dict[s
 
 # Module desired side-effects.
 sys.excepthook = excepthook
-logging.basicConfig(  # Needed for having VERY basic, fallback logging config.
-    level=logging.NOTSET,
-    style=_Config.LOGGING_FORMAT_STYLE,
-    format=_Config.LOGGING_FALLBACK_FORMAT,
-    force=True
-)
+logging.basicConfig(level=logging.NOTSET, datefmt=TIMESTAMP_FORMAT, force=True)  # Fallback logging configuration.
 logging.setLoggerClass(_CustomLogger)
 logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
