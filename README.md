@@ -15,6 +15,8 @@ The current API (symbols and functions) follows.
         Path of the currently executing script.
     - `PROGRAM_NAME`<br>
         User friendly name of the currently executing script.
+    - `DEFAULT_CREDENTIALS_FILE`<br>
+        Filename used by default by `get_credentials()` for user credentials.
     - `TIMESTAMP_FORMAT`<br>
         `time.strftime()` compatible format specification for timestamps.
     - `ARROW_L`<br>

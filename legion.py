@@ -89,6 +89,8 @@ PROGRAM_PATH = _get_program_path()
 
 PROGRAM_NAME = PROGRAM_PATH.stem
 
+DEFAULT_CREDENTIALS_FILE = Path.home() / '.credentials'
+
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
 ERROR_MARKER = '*** '
@@ -103,7 +105,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     """Module configuration values."""
     DESKTOP_BASENAME = 'Desktop'
 
-    CREDENTIALS_FILE = Path.home() / '.credentials'
 
 
 class _Messages(StrEnum):
@@ -535,7 +536,7 @@ if sys.platform == 'win32':
 
 
 # pylint: disable-next=unused-variable
-def get_credentials(credentials_path: Path = _Config.CREDENTIALS_FILE) -> dict[str, Any] | None:
+def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_FILE) -> dict[str, Any] | None:
     """
     Get credentials for current user, from the file at credentials_path.
 
