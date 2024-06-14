@@ -107,11 +107,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     ERROR_MARKER = '*** '
     ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 
-    if sys.platform == 'win32':
-        PYTHON_LAUNCHER = 'py.exe'
-        MB_ICONWARNING = 0x30
-        MB_OK = 0
-
 
 class _Messages(StrEnum):
     """Module messages."""
@@ -234,7 +229,9 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, _Config.MB_ICONWARNING | _Config.MB_OK)
+        MB_ICONWARNING = 0x30  # pylint: disable=invalid-name
+        MB_OK = 0  # pylint: disable=invalid-name
+        windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
         system(f'''osascript -e '{script}' >/dev/null''')
@@ -493,6 +490,8 @@ if sys.platform == 'win32':
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
 
+        PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name
+
         # If no console is attached, then the application must NOT pause.
         #
         # Since sys.stdout.isatty() returns True under Windows when sys.stdout
@@ -528,7 +527,7 @@ if sys.platform == 'win32':
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
                 return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif Path(console_title).name.lower() != _Config.PYTHON_LAUNCHER.lower():
+        elif Path(console_title).name.lower() != PYTHON_LAUNCHER.name.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
         print(_Messages.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
