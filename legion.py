@@ -64,6 +64,7 @@ def _get_desktop_path() -> Path:
     return home_path
 
 
+_FALLBACK_PROGRAM_PATH = '__unavailable__.py'
 def _get_program_path() -> Path:
     """Get the full, resolved path of the currently executing program."""
     try:
@@ -78,7 +79,7 @@ def _get_program_path() -> Path:
             program_path = sys.modules['__main__'].__file__
     except AttributeError:
         program_path = None
-    return Path(program_path or _Config.FALLBACK_PROGRAM_PATH).resolve()
+    return Path(program_path or _FALLBACK_PROGRAM_PATH).resolve()
 
 
 # Exportable constants.
@@ -101,7 +102,6 @@ UTF8 = 'utf-8'
 class _Config():  # pylint: disable=too-few-public-methods
     """Module configuration values."""
     DESKTOP_BASENAME = 'Desktop'
-    FALLBACK_PROGRAM_PATH = '__unavailable__.py'
 
     CREDENTIALS_FILE = Path.home() / '.credentials'
 
