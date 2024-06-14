@@ -578,3 +578,4 @@ if __name__ == '__main__':
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
         print(_Messages.DEMO_CONSTANT.format(constant, width, value))
+    sys.stdout.flush()
