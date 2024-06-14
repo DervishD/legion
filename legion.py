@@ -107,19 +107,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     ERROR_MARKER = '*** '
     ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 
-    LOGGING_CONSOLE_FORMAT = '{message}'
-    LOGGING_FORMAT_STYLE = '{'
-    LOGGING_INDENTCHAR = ' '
-    LOGGING_LEVELNAME_MAX_LEN = len(max(logging.getLevelNamesMapping(), key=len))
-    LOGGING_DEBUGFILE_FORMAT = ' '.join((
-        '{asctime}.{msecs:04.0f}',
-        f'{{levelname:{LOGGING_LEVELNAME_MAX_LEN}}}',
-        '|',
-        '{funcName}()',
-        '{message}'
-    ))
-    LOGGING_LOGFILE_FORMAT = '{asctime} {message}'
-
     if sys.platform == 'win32':
         PYTHON_LAUNCHER = 'py.exe'
         MB_ICONWARNING = 0x30
@@ -337,6 +324,11 @@ class _CustomLogger(logging.Logger):
     """Custom logger with indentation support."""
     INCREASE_INDENT_SYMBOL = '+'
     DECREASE_INDENT_SYMBOL = '-'
+    INDENTCHAR = ' '
+    FORMAT_STYLE = '{'
+    DEBUGFILE_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
+    LOGFILE_FORMAT = '{asctime} {message}'
+    CONSOLE_FORMAT = '{message}'
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         super().__init__(name, level)
@@ -370,7 +362,7 @@ class _CustomLogger(logging.Logger):
             self.indentlevel = level
         else:
             raise ValueError(_Messages.BAD_INDENTLEVEL)
-        self.indentation = _Config.LOGGING_INDENTCHAR * self.indentlevel
+        self.indentation = self.INDENTCHAR * self.indentlevel
 
     def set_indent(self, level: int) -> None:
         """Set current logging indentation level."""
@@ -427,10 +419,11 @@ class _CustomLogger(logging.Logger):
         handlers = {}
 
         if debugfile:
+            levelname_max_len = len(max(logging.getLevelNamesMapping(), key=len))
             formatters['debugfile_formatter'] = {
                 '()': _CustomFormatter,
-                'style': _Config.LOGGING_FORMAT_STYLE,
-                'format': _Config.LOGGING_DEBUGFILE_FORMAT,
+                'style': self.FORMAT_STYLE,
+                'format': self.DEBUGFILE_FORMAT.format(levelname_max_width=levelname_max_len),
                 'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['debugfile_handler'] = {
@@ -445,8 +438,8 @@ class _CustomLogger(logging.Logger):
         if logfile:
             formatters['logfile_formatter'] = {
                 '()': _CustomFormatter,
-                'style': _Config.LOGGING_FORMAT_STYLE,
-                'format': _Config.LOGGING_LOGFILE_FORMAT,
+                'style': self.FORMAT_STYLE,
+                'format': self.LOGFILE_FORMAT,
                 'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['logfile_handler'] = {
@@ -461,8 +454,8 @@ class _CustomLogger(logging.Logger):
         if console:
             formatters['console_formatter'] = {
                 '()': _CustomFormatter,
-                'style': _Config.LOGGING_FORMAT_STYLE,
-                'format': _Config.LOGGING_CONSOLE_FORMAT,
+                'style': self.FORMAT_STYLE,
+                'format': self.CONSOLE_FORMAT,
             }
             handlers['stdout_handler'] = {
                 'level': logging.NOTSET,
