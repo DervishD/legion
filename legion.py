@@ -541,7 +541,7 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_FILE) -> dict[s
     If credentials file cannot be read or has syntax problems, None is returned.
     """
     try:
-        with open(credentials_path, 'rb') as credentials_file:
+        with credentials_path.open('rb') as credentials_file:
             return tomllib.load(credentials_file)
     except (OSError, tomllib.TOMLDecodeError):
         return None
