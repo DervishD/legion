@@ -331,6 +331,7 @@ class _CustomLogger(logging.Logger):
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
 
+    def _set_indentlevel(self, level: int | LiteralString) -> None:
         """Set current logging indentation level.
 
         If level is:
@@ -383,7 +384,7 @@ class _CustomLogger(logging.Logger):
         """
         class _CustomFormatter(logging.Formatter):
             """Simple custom formatter with multiline support."""
-            def format(self, record: logging.LogRecord):
+            def format(self, record: logging.LogRecord) -> str:
                 """Format multiline records so they look like multiple records."""
                 formatted_record = super().format(record)
                 preamble = formatted_record[0:formatted_record.rfind(record.message)]
