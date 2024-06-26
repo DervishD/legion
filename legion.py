@@ -224,12 +224,12 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     # the error message is also shown in a popup window so the end
     # user is aware of the problem even with uninformative details.
     if sys.platform == 'win32':
-        MB_ICONWARNING = 0x30  # pylint: disable=invalid-name
-        MB_OK = 0  # pylint: disable=invalid-name
+        MB_ICONWARNING = 0x30  # pylint: disable=invalid-name  # noqa: N806
+        MB_OK = 0  # pylint: disable=invalid-name  # noqa: N806
         windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
-        system(f"osascript -e '{script}' >/dev/null")
+        system(f"osascript -e '{script}' >/dev/null")  # noqa: S605
 
 
 def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
@@ -285,6 +285,7 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 
 
 # pylint: disable-next=unused-variable
+def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
     """Run a command.
 
     Run command (a tuple), using subprocess_args as arguments. This is just a
@@ -306,8 +307,7 @@ def timestamp() -> str:  # pylint: disable=unused-variable
     if sys.platform == 'win32':
         subprocess_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
 
-    # pylint: disable-next=subprocess-run-check
-    return cast(subprocess.CompletedProcess[str], subprocess.run(command, **subprocess_args))
+    return cast(subprocess.CompletedProcess[str], subprocess.run(command, **subprocess_args, check=False))  # noqa: S603
 
 
 class _CustomLogger(logging.Logger):
@@ -326,7 +326,7 @@ class _CustomLogger(logging.Logger):
         self.indentlevel: int = 0
         self.indentation = ''
 
-    def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:
+    def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:  # noqa: ANN401, N802
         """Create a new logging record with indentation support."""
         record = super().makeRecord(*args, **kwargs)
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
@@ -366,6 +366,11 @@ class _CustomLogger(logging.Logger):
         """Decrement current logging indentation level."""
         self._set_indentlevel(self.DECREASE_INDENT_SYMBOL)
 
+    def config(self,
+        debugfile: str|Path|None = None,
+        logfile: str|Path|None = None,
+        console: bool = True,  # noqa: FBT001, FBT002
+    ) -> None:
         """Configure logger.
 
         With the default configuration ALL logging messages are sent to
@@ -384,7 +389,7 @@ class _CustomLogger(logging.Logger):
         case, if console is False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
         """
         class _CustomFormatter(logging.Formatter):
-            """Simple custom formatter with multiline support."""
+            """Simple custom formatter with multiline support."""  # noqa: D204
             def format(self, record: logging.LogRecord) -> str:
                 """Format multiline records so they look like multiple records."""
                 formatted_record = super().format(record)
@@ -471,7 +476,7 @@ class _CustomLogger(logging.Logger):
 
 if sys.platform == 'win32':
     class WFKStatuses(IntEnum):
-        """Return statuses for wait_for_keypress()."""
+        """Return statuses for wait_for_keypress()."""  # noqa: D204
         NO_WIN32 = auto()
         NO_CONSOLE_ATTACHED = auto()
         NO_CONSOLE_TITLE = auto()
@@ -485,7 +490,7 @@ if sys.platform == 'win32':
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
 
-        PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name
+        PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name  # noqa: N806
 
         # If no console is attached, then the application must NOT pause.
         #
