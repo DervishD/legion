@@ -257,14 +257,11 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
     exc_winerror = None
     exc_errorcodes = None
 
-    try:
+    with contextlib.suppress(AttributeError):
         exc_winerror = _Messages.OSERROR_WINERROR.format(exception.winerror) if exception.winerror else None
-    except AttributeError:
-        pass
-    try:
+
+    with contextlib.suppress(KeyError):
         exc_errno = errorcode[exception.errno]
-    except KeyError:
-        pass
 
     if exc_errno and exc_winerror:
         exc_errorcodes = _Messages.OSERROR_ERRORCODES.format(exc_errno, exc_winerror)
