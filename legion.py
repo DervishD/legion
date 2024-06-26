@@ -519,7 +519,9 @@ if sys.platform == 'win32':
         elif Path(console_title).name.lower() != PYTHON_LAUNCHER.name.lower():
             return WFKStatuses.NO_TRANSIENT_PYTHON
 
-        print(_Messages.PRESS_ANY_KEY_MESSAGE, end='', flush=True)
+        sys.stdout.flush()
+        sys.stdout.write(_Messages.PRESS_ANY_KEY)
+        sys.stdout.flush()
         getch()
         return WFKStatuses.WAIT_FOR_KEYPRESS
 
@@ -559,10 +561,10 @@ if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
 
 
 if __name__ == '__main__':
-    print(_Messages.DEMO_TIMESTAMP.format(timestamp()))
+    sys.stdout.write(_Messages.DEMO_TIMESTAMP.format(timestamp()))
 
     constants = {k: v for k, v in locals().items() if k.isupper() and not k.startswith('_')}
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
-        print(_Messages.DEMO_CONSTANT.format(constant, width, value))
+        sys.stdout.write(_Messages.DEMO_CONSTANT.format(constant, width, value))
     sys.stdout.flush()
