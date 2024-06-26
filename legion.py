@@ -131,10 +131,10 @@ class _Messages(StrEnum):
 
     BAD_INDENTLEVEL = 'Indentation level must be a non-negative integer.'
 
-    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
+    PRESS_ANY_KEY = '\nPress any key to continue...'
 
-    DEMO_TIMESTAMP = 'Timestamp is {}\n'
-    DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧'
+    DEMO_TIMESTAMP = 'Timestamp is {}\n\n'
+    DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧\n'
 
 
 _ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
