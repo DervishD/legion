@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
-"""
-Legion.
+"""Legion.
 
 “What is your name?”
 “My name is Legion,” he replied, “for we are many.”
@@ -103,6 +102,7 @@ UTF8 = 'utf-8'
 
 class _Messages(StrEnum):
     """Module messages."""
+
     ERROR_HEADER = f'\n{ERROR_MARKER}Error in {PROGRAM_NAME}.'
     ERROR_DETAILS_HEADING = '\nAdditional error information:'
     ERROR_DETAILS_PREAMBLE = '│ '
@@ -142,8 +142,7 @@ class _Messages(StrEnum):
 
 _ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 def error(message: str, details: str = '') -> None:
-    """
-    Preprocess and log error message, optionally including details.
+    """Preprocess and log error message, optionally including details.
 
     A header/marker is prepended to the message, and a visual separator is
     prepended to the details. Both the message and the details are indented.
@@ -169,7 +168,8 @@ def error(message: str, details: str = '') -> None:
 
 # pylint: disable-next=unused-variable
 def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_traceback: TracebackType | None) -> None:
-    """
+    """Handle otherwise unhandled exceptions.
+
     Log information about unhandled exceptions using the provided exception
     information, that is, the exception type, its value and the associated
     traceback.
@@ -232,7 +232,8 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
 
 
 def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
-    """
+    """Process OSError exception objects.
+
     Process the exception object for OSError exceptions (and its subclasses),
     and return a tuple containing the processed information.
 
@@ -286,8 +287,8 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 
 
 # pylint: disable-next=unused-variable
-def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedProcess[str]:
-    """
+    """Run a command.
+
     Run command (a tuple), using subprocess_args as arguments. This is just a
     helper for subprocess.run() to make such calls more convenient by providing
     a set of defaults for the arguments.
@@ -313,6 +314,7 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
 
 class _CustomLogger(logging.Logger):
     """Custom logger with indentation support."""
+
     INCREASE_INDENT_SYMBOL = '+'
     DECREASE_INDENT_SYMBOL = '-'
     INDENTCHAR = ' '
@@ -332,9 +334,7 @@ class _CustomLogger(logging.Logger):
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
 
-    def _set_indentlevel(self, level: int | LiteralString) -> None | NoReturn:
-        """
-        Set current logging indentation level.
+        """Set current logging indentation level.
 
         If level is:
             - INCREASE_INDENT_SYMBOL string, indentation is increased.
@@ -367,9 +367,7 @@ class _CustomLogger(logging.Logger):
         """Decrement current logging indentation level."""
         self._set_indentlevel(self.DECREASE_INDENT_SYMBOL)
 
-    def config(self, debugfile: str|Path|None = None, logfile: str|Path|None = None, console: bool = True) -> None:
-        """
-        Configure logger.
+        """Configure logger.
 
         With the default configuration ALL logging messages are sent to
         debugfile with a timestamp and some debugging information; those
@@ -531,8 +529,7 @@ if sys.platform == 'win32':
 
 # pylint: disable-next=unused-variable
 def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_FILE) -> dict[str, Any] | None:
-    """
-    Get credentials for current user, from the file at credentials_path.
+    """Get credentials for current user, from the file at credentials_path.
 
     If credentials_path if not provided as argument, a default path is used.
 
