@@ -9,6 +9,7 @@ Since the module is many, it's legion.
 # cspell: ignore osascript oserror
 import atexit
 from collections.abc import Sequence
+import contextlib
 from enum import StrEnum
 from errno import errorcode
 from io import TextIOWrapper
@@ -23,13 +24,12 @@ from time import strftime
 import tomllib
 import traceback as tb
 from types import TracebackType
-from typing import Any, cast, LiteralString, NoReturn
-
+from typing import Any, cast, LiteralString
 
 if sys.platform == 'win32':
-    from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
     from ctypes import byref, c_uint, create_unicode_buffer, windll
     from ctypes.wintypes import MAX_PATH as _MAX_PATH_LEN
+    from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
     from msvcrt import get_osfhandle, getch
 
 
