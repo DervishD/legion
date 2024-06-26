@@ -67,15 +67,12 @@ _FALLBACK_PROGRAM_PATH = '__unavailable__.py'
 def _get_program_path() -> Path:
     """Get the full, resolved path of the currently executing program."""
     try:
-        if getattr(sys, 'frozen', False):
-            program_path = sys.executable
-        else:
-            # This method is not failproof, because there are probably situations
-            # where the '__file__' attribute of module '__main__' won't exist but
-            # there's some filename involved.
-            #
-            # If one of those situations arise, the code will be modified accordingly.
-            program_path = sys.modules['__main__'].__file__
+        # This method is not failproof, because there are probably situations
+        # where the '__file__' attribute of module '__main__' won't exist but
+        # there's some filename involved.
+        #
+        # If one of those situations arise, the code will be modified accordingly.
+        program_path = sys.executable if getattr(sys, 'frozen', False) else sys.modules['__main__'].__file__
     except AttributeError:
         program_path = None
     return Path(program_path or _FALLBACK_PROGRAM_PATH).resolve()
