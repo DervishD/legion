@@ -191,10 +191,14 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
 
     if isinstance(exc_value, OSError):
         message = _Messages.UNEXPECTED_OSERROR
+        try:
+            errno_message = errorcode[exc_value.errno]
+        except (IndexError, KeyError):
+            errno_message = _Messages.OSERROR_DETAIL_NA
         details = _Messages.OSERROR_DETAILS.format(
             exc_type.__name__,
-            _Messages.OSERROR_DETAIL_NA if exc_value.errno is None else errorcode[exc_value.errno],
-            _Messages.OSERROR_DETAIL_NA if exc_value.winerror is None else exc_value.winerror,
+            errno_message,
+            exc_value.winerror or _Messages.OSERROR_DETAIL_NA,
             exc_value.strerror,
             _Messages.OSERROR_DETAIL_NA if exc_value.filename is None else exc_value.filename,
             _Messages.OSERROR_DETAIL_NA if exc_value.filename2 is None else exc_value.filename2,
