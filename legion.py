@@ -440,6 +440,10 @@ class _CustomLogger(logging.Logger):
             }
 
         if console:
+            def console_filter(record: logging.LogRecord) -> bool:
+                """Filter records for StreamHandler objects."""
+                return record.levelno == logging.INFO
+
             formatters['console_formatter'] = {
                 '()': _CustomFormatter,
                 'style': self.FORMAT_STYLE,
@@ -448,7 +452,7 @@ class _CustomLogger(logging.Logger):
             handlers['stdout_handler'] = {
                 'level': logging.NOTSET,
                 'formatter': 'console_formatter',
-                'filters': [lambda record: (record.levelno == logging.INFO)],  # type: ignore
+                'filters': [console_filter],
                 'class': logging.StreamHandler,
                 'stream': sys.stdout,
             }
