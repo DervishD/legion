@@ -106,14 +106,14 @@ class _Messages(StrEnum):
     ERROR_DETAILS_TAIL = '╰'
 
     UNEXPECTED_OSERROR = 'Unexpected OSError.'
-    OSERROR_DETAILS = dedent('''
+    OSERROR_DETAILS = dedent("""
          type = {}
         errno = {}
      winerror = {}
      strerror = {}
      filename = {}
     filename2 = {}
-    ''').strip('\n')
+    """).strip('\n')
     OSERROR_DETAIL_NA = 'N/A'
 
     UNHANDLED_EXCEPTION = 'Unhandled exception.'
@@ -225,7 +225,7 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
-        system(f'''osascript -e '{script}' >/dev/null''')
+        system(f"osascript -e '{script}' >/dev/null")
 
 
 def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
