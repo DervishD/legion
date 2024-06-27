@@ -307,7 +307,8 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
     if sys.platform == 'win32':
         subprocess_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
 
-    return cast(subprocess.CompletedProcess[str], subprocess.run(command, **subprocess_args, check=False))  # noqa: S603
+    # pylint: disable=subprocess-run-check
+    return cast(subprocess.CompletedProcess[str], subprocess.run(command, **subprocess_args))  # noqa: S603, PLW1510
 
 
 class _CustomLogger(logging.Logger):
