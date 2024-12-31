@@ -191,10 +191,10 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
 
     if isinstance(exc_value, OSError):
         message = _Messages.UNEXPECTED_OSERROR
-        try:
-            errno_message = errorcode[exc_value.errno]
-        except (IndexError, KeyError):
-            errno_message = _Messages.OSERROR_DETAIL_NA
+        errno_message = _Messages.OSERROR_DETAIL_NA
+        if exc_value.errno:
+            with contextlib.suppress(IndexError):
+                errno_message = errorcode[exc_value.errno]
         details = _Messages.OSERROR_DETAILS.format(
             exc_type.__name__,
             errno_message,
