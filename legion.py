@@ -566,10 +566,10 @@ logging.setLoggerClass(_CustomLogger)
 logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the application from a shell.
-if sys.stdout and isinstance(sys.stdout, TextIOWrapper):
-    sys.stdout.reconfigure(encoding=UTF8)
-if sys.stderr and isinstance(sys.stderr, TextIOWrapper):
-    sys.stderr.reconfigure(encoding=UTF8)
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    cast(TextIOWrapper, sys.stdout).reconfigure(encoding=UTF8)
+if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
+    cast(TextIOWrapper, sys.stderr).reconfigure(encoding=UTF8)
 
 
 if __name__ == '__main__':
