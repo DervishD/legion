@@ -564,7 +564,7 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_FILE) -> dict[s
 
 # Module desired side-effects.
 sys.excepthook = excepthook
-logging.basicConfig(level=logging.NOTSET, datefmt=TIMESTAMP_FORMAT, force=True)  # Fallback logging configuration.
+logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
 logging.setLoggerClass(_CustomLogger)
 logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
