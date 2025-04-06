@@ -12,7 +12,6 @@ from collections.abc import Sequence
 import contextlib
 from enum import StrEnum
 from errno import errorcode
-from io import TextIOWrapper
 import logging
 from logging.config import dictConfig
 from os import environ, system
@@ -24,7 +23,10 @@ from time import strftime
 import tomllib
 import traceback as tb
 from types import TracebackType
-from typing import Any, cast, LiteralString
+from typing import Any, cast, LiteralString, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from io import TextIOWrapper
 
 if sys.platform == 'win32':
     from ctypes import byref, c_uint, create_unicode_buffer, windll
@@ -311,7 +313,7 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
         subprocess_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
 
     # pylint: disable=subprocess-run-check
-    return cast(subprocess.CompletedProcess[str], subprocess.run(command, **subprocess_args))  # noqa: S603, PLW1510
+    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **subprocess_args))  # noqa: S603, PLW1510
 
 
 class _CustomLogger(logging.Logger):
@@ -566,13 +568,13 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_FILE) -> dict[s
 sys.excepthook = excepthook
 logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
 logging.setLoggerClass(_CustomLogger)
-logger: _CustomLogger = cast(_CustomLogger, logging.getLogger(PROGRAM_NAME))
+logger: _CustomLogger = cast('_CustomLogger', logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the application from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
-    cast(TextIOWrapper, sys.stdout).reconfigure(encoding=UTF8)
+    cast('TextIOWrapper', sys.stdout).reconfigure(encoding=UTF8)
 if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
-    cast(TextIOWrapper, sys.stderr).reconfigure(encoding=UTF8)
+    cast('TextIOWrapper', sys.stderr).reconfigure(encoding=UTF8)
 
 
 if __name__ == '__main__':
