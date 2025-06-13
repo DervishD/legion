@@ -276,12 +276,12 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
     return exc_type, exc_errorcodes, exc_message, exception.filename, exception.filename2
 
 
-def prettyprint_oserror(reason: str, exc: OSError) -> None:  # pylint: disable=unused-variable
-    """Print a very simple OSError message using reason and exc information."""
+def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
+    """Generate a string from OSError information and the provided context."""
     errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
     filenames = f"'{filename}'{f" {ARROW_R} '{filename2}'" if filename2 else ''}"
-    logger.error(_Messages.OSERROR_PRETTYPRINT.format(errorcodes, reason, filenames, message))
+    return _Messages.OSERROR_PRETTYPRINT.format(errorcodes, context, filenames, message)
 
 
 def timestamp() -> str:  # pylint: disable=unused-variable
