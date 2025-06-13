@@ -301,19 +301,20 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
     return value for this function are the exact same ones accepted and returned
     by the subprocess.run() function itself.
     """
-    subprocess_args = {
+    subprocess_default_args: dict[str, Any] = {
         'capture_output': True,
         'check': False,
         'creationflags': 0,
         'errors': 'replace',
         'text': True,
-    } | subprocess_args
-
+    }
     if sys.platform == 'win32':
-        subprocess_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
+        subprocess_default_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
+
+    final_args = subprocess_default_args | subprocess_args
 
     # pylint: disable=subprocess-run-check
-    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **subprocess_args))  # noqa: S603, PLW1510
+    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **final_args))  # noqa: S603, PLW1510
 
 
 class _CustomLogger(logging.Logger):
