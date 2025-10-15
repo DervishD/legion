@@ -290,7 +290,7 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 
 
 # pylint: disable-next=unused-variable
-def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
+def run(command: Sequence[str], **args: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
     """Run a command.
 
     Run command (a tuple), using subprocess_args as arguments. This is just a
@@ -301,7 +301,7 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
     return value for this function are the exact same ones accepted and returned
     by the subprocess.run() function itself.
     """
-    subprocess_default_args: dict[str, Any] = {
+    default_args: dict[str, Any] = {
         'capture_output': True,
         'check': False,
         'creationflags': 0,
@@ -309,12 +309,12 @@ def run(command: Sequence[str], **subprocess_args: Any) -> subprocess.CompletedP
         'text': True,
     }
     if sys.platform == 'win32':
-        subprocess_default_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
+        default_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
 
-    final_args = subprocess_default_args | subprocess_args
+    effective_args = default_args | args
 
     # pylint: disable=subprocess-run-check
-    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **final_args))  # noqa: S603, PLW1510
+    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **effective_args))  # noqa: S603, PLW1510
 
 
 class _CustomLogger(logging.Logger):
