@@ -29,6 +29,8 @@ if TYPE_CHECKING:
     from io import TextIOWrapper
     from types import TracebackType
 
+
+__all__: list[str] = []  # pylint: disable=unused-variable
 __version__ = version(getattr(__spec__, 'name', Path(__file__).stem))
 
 
@@ -37,9 +39,6 @@ if sys.platform == 'win32':
     from ctypes.wintypes import MAX_PATH as _MAX_PATH_LEN
     from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
     from msvcrt import get_osfhandle, getch
-
-
-__all__: list[str] = []  # pylint: disable=unused-variable
 
 
 def _get_desktop_path() -> Path:
