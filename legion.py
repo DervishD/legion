@@ -8,7 +8,6 @@ Since the module is many, it's legion.
 """
 # cspell: ignore osascript oserror
 import atexit
-from collections.abc import Sequence
 import contextlib
 from enum import StrEnum
 from errno import errorcode
@@ -22,11 +21,12 @@ from textwrap import dedent
 from time import strftime
 import tomllib
 import traceback as tb
-from types import TracebackType
 from typing import Any, cast, LiteralString, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from io import TextIOWrapper
+    from types import TracebackType
 
 if sys.platform == 'win32':
     from ctypes import byref, c_uint, create_unicode_buffer, windll
