@@ -30,7 +30,12 @@ classifiers = [
 urls = {"source"="https://github.com/DervishD/legion", "issues" = "https://github.com/DervishD/legion/issues"}
 scripts = {"legion" = "legion.__main__:main"}
 
+[tool.setuptools]
+package-dir = {"legion" = "."}
+packages = ["legion"]
 
+[tool.setuptools.package-data]
+legion = ["py.typed"]
 
 [tool.versioningit.next-version]
 method = "smallest"
