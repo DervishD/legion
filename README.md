@@ -147,33 +147,6 @@ The current API (symbols and functions) follows.
     For that reason, the keyword arguments accepted in `subprocess_args` and the
     return value for this function are the exact same ones accepted and returned
     by the `subprocess.run()` function itself.
-- **Deprecated** `setup_logging(debugfile=None, logfile=None, console=True)`<br>
-    Set up logging system, disabling all existing loggers.
-
-    With the current configuration ALL logging messages are sent to `debugfile`
-    and `logging.INFO` messages are sent to `logfile`, timestamped.
-
-    In addition to that, and if `console` is `True` (the default), all
-    `logging.INFO` messages are sent to the console too, but without a
-    timestamp.
-
-    If `debugfile` or `logfile` are `None`, the corresponding files are not
-    created and no logging message will go there. In this case, if console is
-    `False`, **NO LOGGING OUTPUT WILL BE PRODUCED AT ALL**.
-- **Deprecated** `logging.indent(level=None)`<br>
-    If `level` is provided, set the current logging indentation level to that
-    number, meaning that logging messages will be prepended with that many
-    copies of the current logging indentation character.
-
-    If `level` is not provided or is `None`, the current logging indentation
-    level is *increased* in 1 copy of the current logging indentation character.
-- **Deprecated** `logging.dedent(level=None)`<br>
-    If `level` is provided, set the current logging indentation level to that
-    number, meaning that logging messages will be prepended with that many
-    copies of the current logging indentation character.
-
-    If `level` is not provided or is `None`, the current logging indentation
-    level is *decreased* in 1 copy of the current logging indentation character.
 - `wait_for_keypress() -> WFKStatuses`<br>
     Wait for a keypress to continue if `sys.stdout` is a real console **AND**
     the console is transient.
