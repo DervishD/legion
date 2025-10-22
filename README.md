@@ -10,7 +10,7 @@ The current API (symbols and functions) follows.
 ## Symbols
 - Module constants:
     - `DESKTOP_PATH`<br>
-        Path of user's `Desktop` directory.
+        Path of user's desktop directory.
     - `PROGRAM_PATH`<br>
         Path of the currently executing script.
     - `PROGRAM_NAME`<br>
