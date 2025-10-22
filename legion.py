@@ -11,6 +11,7 @@ import atexit
 import contextlib
 from enum import StrEnum
 from errno import errorcode
+from importlib.metadata import version
 import logging
 from logging.config import dictConfig
 from os import environ, system
@@ -27,6 +28,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from io import TextIOWrapper
     from types import TracebackType
+
+__version__ = version(getattr(__spec__, 'name', Path(__file__).stem))
+
 
 if sys.platform == 'win32':
     from ctypes import byref, c_uint, create_unicode_buffer, windll
@@ -86,6 +90,8 @@ DESKTOP_PATH = _get_desktop_path()
 PROGRAM_PATH = _get_program_path()
 
 PROGRAM_NAME = PROGRAM_PATH.stem
+
+LEGION_VERSION = __version__
 
 DEFAULT_CREDENTIALS_FILE = Path.home() / '.credentials'
 

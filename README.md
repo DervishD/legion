@@ -15,6 +15,8 @@ The current API (symbols and functions) follows.
         Path of the currently executing script.
     - `PROGRAM_NAME`<br>
         User friendly name of the currently executing script.
+    - `LEGION_VERSION`<br>
+        Currently installed version of this module.
     - `DEFAULT_CREDENTIALS_FILE`<br>
         Filename used by default by `get_credentials()` for user credentials.
     - `TIMESTAMP_FORMAT`<br>
