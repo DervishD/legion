@@ -1,4 +1,4 @@
 """."""
-import legion
+from legion import demo
 
-legion.demo()
+demo()
