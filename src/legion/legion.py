@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 
+__version__ = version(__package__ or Path(__file__).stem)
 __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'DESKTOP_PATH',
     'PROGRAM_PATH',
@@ -53,8 +54,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'get_credentials',
     'demo',
 ]
-
-__version__ = version(getattr(__spec__, 'name', Path(__file__).stem))
 
 
 if sys.platform == 'win32':
