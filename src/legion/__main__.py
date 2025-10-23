@@ -1,0 +1,4 @@
+"""."""
+import legion
+
+legion.demo()
