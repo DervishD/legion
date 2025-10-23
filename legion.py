@@ -583,11 +583,15 @@ if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
     cast('TextIOWrapper', sys.stderr).reconfigure(encoding=UTF8)
 
 
-if __name__ == '__main__':
+def demo() -> None:
+    """Show module constants."""
+    sys.stdout.write(f'Legion module version {LEGION_VERSION}\n\n')
     sys.stdout.write(_Messages.DEMO_TIMESTAMP.format(timestamp()))
-
-    constants = {k: v for k, v in locals().items() if k.isupper() and not k.startswith('_')}
+    constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
         sys.stdout.write(_Messages.DEMO_CONSTANT.format(constant, width, value))
     sys.stdout.flush()
+
+if __name__ == '__main__':
+    demo()
