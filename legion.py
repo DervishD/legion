@@ -30,7 +30,30 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 
-__all__: list[str] = []  # pylint: disable=unused-variable
+__all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
+    'DESKTOP_PATH',
+    'PROGRAM_PATH',
+    'PROGRAM_NAME',
+    'LEGION_VERSION',
+    'DEFAULT_CREDENTIALS_FILE',
+    'TIMESTAMP_FORMAT',
+    'ERROR_MARKER',
+    'ARROW_R',
+    'ARROW_L',
+    'UTF8',
+    'error',
+    'excepthook',
+    'munge_oserror',
+    'format_oserror',
+    'timestamp',
+    'run',
+    'WFKStatuses',
+    'wait_for_keypress',
+    'logger',
+    'get_credentials',
+    'demo',
+]
+
 __version__ = version(getattr(__spec__, 'name', Path(__file__).stem))
 
 
