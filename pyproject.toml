@@ -28,7 +28,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 urls = {"source"="https://github.com/DervishD/legion", "issues" = "https://github.com/DervishD/legion/issues"}
-scripts = {"legion" = "legion:_main_"}
+scripts = {"legion" = "legion:demo"}
 
 [tool.setuptools]
 include-package-data = true
