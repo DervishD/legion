@@ -1,6 +1,9 @@
 [build-system]
-requires = ["setuptools==80.9.0", "versioningit==3.3.0"]  # cspell: ignore versioningit
 build-backend = "setuptools.build_meta"
+requires = [  # cspell: ignore versioningit
+    "setuptools==80.9.0",
+    "versioningit==3.3.0"
+]
 
 [project]
 name = "legion"
@@ -12,23 +15,11 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name="Raúl Núñez de Arenas Coronado", email="raulnac@gmail.com"}]
 maintainers = [{name="Raúl Núñez de Arenas Coronado", email="raulnac@gmail.com"}]
-keywords = ["utilities", "development", "python"]
-classifiers = [
-    "Development Status :: 6 - Mature",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Operating System :: MacOS",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.14",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Utilities",
-    "Typing :: Typed",
-]
-urls = {"source"="https://github.com/DervishD/legion", "issues" = "https://github.com/DervishD/legion/issues"}
 scripts = {"legion" = "legion:demo"}
+
+[project.urls]
+source = "https://github.com/DervishD/legion"
+issues = "https://github.com/DervishD/legion/issues"
 
 [tool.setuptools]
 include-package-data = true
