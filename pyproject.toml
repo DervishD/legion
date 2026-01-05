@@ -20,6 +20,7 @@ scripts = {"legion" = "legion:demo"}
 [project.urls]
 source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
+changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
 
 [tool.setuptools]
 include-package-data = true
