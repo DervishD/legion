@@ -6,7 +6,6 @@
 
 Since the module is many, it's legion.
 """
-# cspell: ignore osascript oserror
 import atexit
 import contextlib
 from enum import StrEnum

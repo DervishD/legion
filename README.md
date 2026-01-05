@@ -1,4 +1,3 @@
-<!-- cspell: ignore atexit errno munge oserror -->
 # legion
 
 `legion` Python module contains miscellaneous functions and constants for the
