@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 
-__version__ = version(__package__ or Path(__file__).stem)
+__version__ = version(__package__ or Path(__file__).parent.stem)
 __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'DESKTOP_PATH',
     'PROGRAM_PATH',
