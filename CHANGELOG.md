@@ -6,9 +6,17 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 ## [Development]
+**Changed**
+- Improved exception hook for win32 platform
+
 **Added**
 - Changelog file
 - Changelog specification
+
+**Fixed**
+- Version handling
+- Package structure
+- Support for 'help()'
 
 ## [1.1.0] 2025-10-23
 **Changed**
