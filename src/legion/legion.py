@@ -319,13 +319,12 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 def run(command: Sequence[str], **args: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
     """Run a command.
 
-    Run command (a tuple), using subprocess_args as arguments. This is just a
-    helper for subprocess.run() to make such calls more convenient by providing
-    a set of defaults for the arguments.
+    Run command, using args as arguments. This is just a helper for the function
+    subprocess.run() to make such calls more convenient by providing a set of
+    defaults for the arguments.
 
-    For that reason, the keyword arguments accepted in subprocess_args and the
-    return value for this function are the exact same ones accepted and returned
-    by the subprocess.run() function itself.
+    For that reason, the keyword arguments accepted in args and the return value
+    are the same ones accepted and returned by subprocess.run() itself.
     """
     default_args: dict[str, Any] = {
         'capture_output': True,
