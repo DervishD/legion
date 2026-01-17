@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 """Legion.
 
-“What is your name?”
-“My name is Legion,” he replied, “for we are many.”
+"What is your name?"
+"My name is Legion," he replied, "for we are many."
 
 Since the module is many, it's legion.
 """
