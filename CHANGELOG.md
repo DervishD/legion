@@ -6,6 +6,8 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 ## [Development]
+
+## [1.2.0] 2026-01-17
 **Changed**
 - Improved exception hook for win32 platform
 
@@ -43,7 +45,8 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 - Useful run-time constants
 - Timestamp string generator
 
-[Development]: https://github.com/DervishD/legion/compare/v1.1.0...development
+[Development]: https://github.com/DervishD/legion/compare/v1.2.0...development
+[1.2.0]: https://github.com/DervishD/legion/compare/v1.1.1...v1.2.0
 [1.1.0]: https://github.com/DervishD/legion/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/DervishD/legion/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/DervishD/legion/releases/tag/v1.0.0
