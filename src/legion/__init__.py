@@ -612,6 +612,3 @@ def demo() -> None:
     for constant, value in constants.items():
         sys.stdout.write(_Messages.DEMO_CONSTANT.format(constant, width, value))
     sys.stdout.flush()
-
-if __name__ == '__main__':
-    demo()
