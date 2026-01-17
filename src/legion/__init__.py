@@ -254,7 +254,8 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     if sys.platform == 'win32':
         MB_ICONWARNING = 0x30  # pylint: disable=invalid-name  # noqa: N806
         MB_OK = 0  # pylint: disable=invalid-name  # noqa: N806
-        windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK)
+        MB_TOPMOST = 0x40000  # pylint: disable=invalid-name  # noqa: N806
+        windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK | MB_TOPMOST)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
         system(f"osascript -e '{script}' >/dev/null")  # noqa: S605
