@@ -22,10 +22,6 @@ source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
 
-[tool.setuptools]
-include-package-data = true
-package-data = {"legion" = ["py.typed"]}
-
 [tool.versioningit.next-version]
 method = "smallest"
 
