@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 """Legion.
 
-"What is your name?"
-"My name is Legion," he replied, "for we are many."
+'What is your name?'
+'My name is Legion,' he replied, 'for we are many.'
 
 Since the module is many, it's legion.
 """
@@ -35,7 +35,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'PROGRAM_PATH',
     'PROGRAM_NAME',
     'LEGION_VERSION',
-    'DEFAULT_CREDENTIALS_FILE',
+    'DEFAULT_CREDENTIALS_PATH',
     'TIMESTAMP_FORMAT',
     'ERROR_MARKER',
     'ARROW_R',
@@ -63,7 +63,7 @@ if sys.platform == 'win32':
 
 
 def _get_desktop_path() -> Path:
-    """Get the path of the desktop directory depending on the platform."""
+    """Get platform specificy path for the desktop directory."""
     home_path = Path.home()
     desktop_basename = 'Desktop'
 
@@ -91,13 +91,14 @@ def _get_desktop_path() -> Path:
 
 _FALLBACK_PROGRAM_PATH = '__unavailable__.py'
 def _get_program_path() -> Path:
-    """Get the full, resolved path of the currently executing program."""
+    """Get the resolved path of the currently executing program."""
     try:
-        # This method is not failproof, because there are probably situations
-        # where the '__file__' attribute of module '__main__' won't exist but
-        # there's some filename involved.
+        # This method is not totally failproof, because there probably
+        # are situations where the '__file__' attribute of '__main__'
+        # won't exist BUT there's some filename involved.
         #
-        # If one of those situations arise, the code will be modified accordingly.
+        # If one of those situations arise in the future, the code will
+        # be modified accordingly.
         program_path = sys.executable if getattr(sys, 'frozen', False) else sys.modules['__main__'].__file__
     except AttributeError:
         program_path = None
@@ -113,7 +114,7 @@ PROGRAM_NAME = PROGRAM_PATH.stem
 
 LEGION_VERSION = __version__
 
-DEFAULT_CREDENTIALS_FILE = Path.home() / '.credentials'
+DEFAULT_CREDENTIALS_PATH = Path.home() / '.credentials'
 
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
@@ -167,12 +168,13 @@ class _Messages(StrEnum):
 
 _ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 def error(message: str, details: str = '') -> None:
-    """Preprocess and log error message, optionally including details.
+    """Preprocess and log *message*, optionally including *details*.
 
-    A header/marker is prepended to the message, and a visual separator is
-    prepended to the details. Both the message and the details are indented.
+    Both an error marker and a header are prepended to *message*, and a
+    visual separator is prepended to *details*. In addition to this both
+    *message* and *details* are indented.
 
-    Finally, everything is logged using logging.error().
+    Finally, everything is logged using `logging.error()`.
     """
     message = str(message)
     details = str(details)
@@ -193,25 +195,25 @@ def error(message: str, details: str = '') -> None:
 
 # pylint: disable-next=unused-variable
 def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_traceback: TracebackType | None) -> None:
-    """Handle otherwise unhandled exceptions.
+    """Log unhandled exceptions.
 
-    Log information about unhandled exceptions using the provided exception
-    information, that is, the exception type, its value and the associated
-    traceback.
+    Unhandled exceptions are logged, using the provided arguments, that
+    is, the exception type (*exc_type*), its value (*exc_value*) and the
+    associated traceback (*exc_traceback*).
 
-    For KeyboardInterrupt exceptions, no logging is performed, the default
-    exception hook is used instead.
+    For `OSError` exceptions a different format is used, which includes
+    any additional `OSError` information, and no traceback is logged.
 
-    For OSError exceptions, a different message is logged, including particular
-    OSError information, and no traceback is logged.
-
-    For any other unhandled exception, a generic message is logged together with
+    For any other exception, a generic message is logged together with
     the traceback, if available.
 
-    Finally, depending on the platform, some kind of modal dialog is shown so
-    the end user does not miss the error.
+    `KeyboardInterrupt` exceptions are not logged, the default exception
+    hook is called instead to have normal keyboard interrupt behavior.
 
-    Intended to be used as default exception hook (sys.excepthook).
+    Finally, depending on the platform, some kind of modal dialog shows
+    so the end user does not miss the error.
+
+    Intended to be used as default exception hook (`sys.excepthook`).
     """
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -248,9 +250,9 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     details += _Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
     error(message, details)
 
-    # Just in case there is NOT a working console or logging system,
-    # the error message is also shown in a popup window so the end
-    # user is aware of the problem even with uninformative details.
+    # Just in case there is NOT an attached console or a working logging
+    # system, the error message is also shown in a modal dialog window,
+    # so the end user is aware of the problem.
     if sys.platform == 'win32':
         MB_ICONWARNING = 0x30  # pylint: disable=invalid-name  # noqa: N806
         MB_OK = 0  # pylint: disable=invalid-name  # noqa: N806
@@ -262,24 +264,27 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
 
 
 def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
-    """Process OSError exception objects.
+    """Process `OSError` exception objects.
 
-    Process the exception object for OSError exceptions (and its subclasses),
-    and return a tuple containing the processed information.
+    Process the *exception* object for an `OSError` exceptions (or any
+    subclass), and return a tuple containing the processed information.
 
-    First item is the actual OSError subclass which was raised, as a string.
+    First item is the actual `OSError` subclass which was raised, as a
+    string.
 
-    Second item is the errno and winerror codes, separated by a slash if both
-    are present. If no error codes exist in the exception object, this item is
-    replaced by an informative placeholder.
+    Second item are the `errno` and `winerror` numeric codes. They are
+    combined with a slash character if both are present. If no numeric
+    codes exist in the exception object, a marker is used instead.
 
-    The third item is the error message, starting with an uppercase letter and
-    ending in a period. If it does not exist, it will be an empty string.
+    The third item is the error message. The first letter is uppercased
+    and a final period is added. If it does not exist, an empty string
+    is used instead.
 
-    Final two items are the filenames involved in the exception. Depending on
-    the actual exception, there may be zero, one or two filenames involved. If
-    some of the filenames is not present in the exception object, it will still
-    be in the tuple but it's value will be None.
+    The final two items are the filenames involved in the exception, if
+    any. Depending on the actual exception there may be zero, one or two
+    filenames involved. If some of the filenames are not present in the
+    exception object, it will exist in the returned tuple but its value
+    will be `None`.
     """
     exc_type = type(exception).__name__
     exc_errno = None
@@ -304,7 +309,7 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
 
 
 def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
-    """Generate a string from OSError information and the provided context."""
+    """Generate a string from `OSError` *exc* and *context*."""
     errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
 
     filenames = f"'{filename}'{f" {ARROW_R} '{filename2}'" if filename2 else ''}"
@@ -320,12 +325,12 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 def run(command: Sequence[str], **args: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
     """Run a command.
 
-    Run command, using args as arguments. This is just a helper for the function
-    subprocess.run() to make such calls more convenient by providing a set of
-    defaults for the arguments.
+    Run *command*, using *args* as arguments. This is just a very simple
+    helper for the `subprocess.run()` function to make such calls easier
+    and more convenient by providing some defaults for the arguments.
 
-    For that reason, the keyword arguments accepted in args and the return value
-    are the same ones accepted and returned by subprocess.run() itself.
+    For that reason, the keyword arguments accepted in *args* and the
+    return value are the same ones used by `subprocess.run()` itself.
     """
     default_args: dict[str, Any] = {
         'capture_output': True,
@@ -366,16 +371,16 @@ class _CustomLogger(logging.Logger):
         return record
 
     def _set_indentlevel(self, level: int | LiteralString) -> None:
-        """Set current logging indentation level.
+        """Set current logging indentation to *level*.
 
-        If level is:
-            - INCREASE_INDENT_SYMBOL string, indentation is increased.
-            - DECREASE_INDENT_SYMBOL string, indentation is decreased.
-            - any non-negative integer, indentation is set to that value.
+        If *level* is:
+            - `INCREASE_INDENT_SYMBOL` string, indentation is increased
+            - `DECREASE_INDENT_SYMBOL` string, indentation is decreased
+            - Any integer `>=0`, indentation is set to that value
 
-        For any other value, ValueError is raised.
+        For any other value, `ValueError` is raised.
 
-        Not for public usage, use self.set_indent(level) instead.
+        Not for public usage, use `self.set_indent(level)` instead.
         """
         if level == self.INCREASE_INDENT_SYMBOL:
             self.indentlevel += 1
@@ -388,7 +393,12 @@ class _CustomLogger(logging.Logger):
         self.indentation = self.INDENTCHAR * self.indentlevel
 
     def set_indent(self, level: int) -> None:
-        """Set current logging indentation level."""
+        """Set current logging indentation to *level*.
+
+        *level* can be any positive integer or zero.
+
+        For any other value, `ValueError` is raised.
+        """
         self._set_indentlevel(level)
 
     def indent(self) -> None:
@@ -406,20 +416,21 @@ class _CustomLogger(logging.Logger):
     ) -> None:
         """Configure logger.
 
-        With the default configuration ALL logging messages are sent to
-        debugfile with a timestamp and some debugging information; those
-        messages with severity of logging.INFO or higher are sent to logfile,
-        also timestamped.
+        With the default configuration **ALL** logging messages are sent
+        to *debugfile* with a timestamp and some debugging information;
+        messages with severity of `logging.INFO` or higher are sent to
+        *logfile*, also timestamped.
 
-        In addition to that, and if console is True (the default), messages with
-        a severity of logging.INFO (and only those) are sent to the standard
-        output stream, and messages with a severity of logging.WARNING or higher
-        are sent to the standard error stream, without a timestamp in both
-        cases.
+        In addition to that, and if console is `True` (the default), the
+        messages with a severity of `logging.INFO` (and only those) are
+        sent to the standard output stream, and messages with a severity
+        of `logging.WARNING` or higher are sent to the standard error
+        stream, without a timestamp in both cases.
 
-        If debugfile or logfile are None (the default), then the corresponding
-        files are not created and no logging message will go there. In this
-        case, if console is False, NO LOGGING OUTPUT WILL BE PRODUCED AT ALL.
+        If *debugfile* or *logfile* are `None` (the default), then the
+        corresponding files are not created and no logging message will
+        go there. In this case, if *console* is `False`, **NO LOGGING
+        OUTPUT WILL BE PRODUCED AT ALL**.
         """
         class _CustomFormatter(logging.Formatter):
             """Simple custom formatter with multiline support."""  # noqa: D204
@@ -509,7 +520,7 @@ class _CustomLogger(logging.Logger):
 
 if sys.platform == 'win32':
     class WFKStatuses(IntEnum):
-        """Return statuses for wait_for_keypress()."""  # noqa: D204
+        """Return statuses for `wait_for_keypress()`."""  # noqa: D204
         NO_WIN32 = auto()
         NO_CONSOLE_ATTACHED = auto()
         NO_CONSOLE_TITLE = auto()
@@ -519,7 +530,14 @@ if sys.platform == 'win32':
 
     @atexit.register
     def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
-        """Wait for a keypress to continue if sys.stdout is a real console AND the console is transient."""
+        """Wait for a keypress to continue in particular circumstances.
+
+        If `sys.stdout` is attached to an actual console **AND** that
+        console is transient, this function will print a simple message
+        indicating the end user that the program is waiting for any key
+        to be pressed to continue and will pause execution until a key
+        is pressed.
+        """
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
 
@@ -571,18 +589,22 @@ if sys.platform == 'win32':
 
 
 # pylint: disable-next=unused-variable
-def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_FILE) -> dict[str, Any] | None:
-    """Get credentials for current user, from the file at credentials_path.
+def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
+    """Read credentials from the file at *credentials_path*.
 
-    If credentials_path if not provided as argument, a default path is used.
+    If *credentials_path* if not provided as argument, a default path is
+    used instead (the value of `DEFAULT_CREDENTIALS_PATH`).
 
-    No matter the actual syntax of the file, which may change in the future, the
-    credentials are returned as a simple two-levels dictionary. The first level
-    are the different sections, intended to group credentials. The second level
-    are the credentials themselves. They are accessed by credential identifier
-    and returned as strings.
+    The credentials are returned as a simple two-level dictionary, with
+    the first level consisting in different sections, intended to group
+    credentials, and the second level being the credentials themselves.
 
-    If credentials file cannot be read or has syntax problems, None is returned.
+    Each credential is a `key-value` string pair, where the `key` is an
+    identifier for the credential, and the `value` is the corresponding
+    credential.
+
+    If *credentials_path* cannot be read or has syntax problems, `None`
+    is returned instead.
     """
     try:
         with credentials_path.open('rb') as credentials_file:
@@ -597,7 +619,7 @@ logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAM
 logging.setLoggerClass(_CustomLogger)
 logger: _CustomLogger = cast('_CustomLogger', logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
-# they are redirected to a file when running the application from a shell.
+# they are redirected to a file when running the program from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
     cast('TextIOWrapper', sys.stdout).reconfigure(encoding=UTF8)
 if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
