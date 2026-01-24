@@ -410,8 +410,8 @@ class _CustomLogger(logging.Logger):
         self._set_indentlevel(self.DECREASE_INDENT_SYMBOL)
 
     def config(self,
-        debugfile: str|Path|None = None,
-        logfile: str|Path|None = None,
+        debugfile: str | Path | None = None,
+        logfile: str | Path | None = None,
         console: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Configure logger.
