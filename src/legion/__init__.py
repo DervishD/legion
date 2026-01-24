@@ -176,9 +176,6 @@ def error(message: str, details: str = '') -> None:
 
     Finally, everything is logged using `logging.error()`.
     """
-    message = str(message)
-    details = str(details)
-
     logger.set_indent(0)
     logger.error(_Messages.ERROR_HEADER)
 
