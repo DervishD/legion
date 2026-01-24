@@ -63,7 +63,7 @@ if sys.platform == 'win32':
 
 
 def _get_desktop_path() -> Path:
-    """Get platform specificy path for the desktop directory."""
+    """Get platform specific path for the desktop."""
     home_path = Path.home()
     desktop_basename = 'Desktop'
 
@@ -95,7 +95,7 @@ def _get_program_path() -> Path:
     try:
         # This method is not totally failproof, because there probably
         # are situations where the '__file__' attribute of '__main__'
-        # won't exist BUT there's some filename involved.
+        # won't exist BUT there's some path involved.
         #
         # If one of those situations arise in the future, the code will
         # be modified accordingly.
@@ -236,12 +236,12 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         for arg in exc_value.args:
             args += _Messages.EXCEPTION_DETAILS_ARG.format(type(arg).__name__, arg)
         details = _Messages.EXCEPTION_DETAILS.format(exc_type.__name__, str(exc_value), args)
-    current_filename = None
+    current_frame_source_path = None
     traceback = ''
     for frame in tb.extract_tb(exc_traceback):
-        if current_filename != frame.filename:
+        if current_frame_source_path != frame.filename:
             traceback += _Messages.TRACEBACK_FRAME_HEADER.format(frame.filename)
-            current_filename = frame.filename
+            current_frame_source_path = frame.filename
         frame.name = PROGRAM_NAME if frame.name == _Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
         traceback += _Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
     details += _Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
@@ -277,11 +277,11 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
     and a final period is added. If it does not exist, an empty string
     is used instead.
 
-    The final two items are the filenames involved in the exception, if
-    any. Depending on the actual exception there may be zero, one or two
-    filenames involved. If some of the filenames are not present in the
-    exception object, it will exist in the returned tuple but its value
-    will be `None`.
+    The final two items are the paths involved in the exception, if any,
+    as strings. Depending on the actual exception there may be zero, one
+    or two paths involved. If some of the paths are not present in the
+    exception object, it will anyway exist in the returned tuple but its
+    value will be `None`.
     """
     exc_type = type(exception).__name__
     exc_errno = None
@@ -307,10 +307,10 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
 
 def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
     """Generate a string from `OSError` *exc* and *context*."""
-    errorcodes, message, filename, filename2 = munge_oserror(exc)[1:]
+    errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
 
-    filenames = f"'{filename}'{f" {ARROW_R} '{filename2}'" if filename2 else ''}"
-    return _Messages.OSERROR_PRETTYPRINT.format(errorcodes, context, filenames, message)
+    paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
+    return _Messages.OSERROR_PRETTYPRINT.format(errorcodes, context, paths, message)
 
 
 def timestamp() -> str:  # pylint: disable=unused-variable
@@ -352,8 +352,8 @@ class _CustomLogger(logging.Logger):
     DECREASE_INDENT_SYMBOL = '-'
     INDENTCHAR = ' '
     FORMAT_STYLE = '{'
-    DEBUGFILE_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
-    LOGFILE_FORMAT = '{asctime} {message}'
+    LONG_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
+    SHORT_FORMAT = '{asctime} {message}'
     CONSOLE_FORMAT = '{message}'
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
@@ -408,16 +408,17 @@ class _CustomLogger(logging.Logger):
         self._set_indentlevel(self.DECREASE_INDENT_SYMBOL)
 
     def config(self,
-        debugfile: str | Path | None = None,
-        logfile: str | Path | None = None,
+        full_log_output: str | Path | None = None,
+        main_log_output: str | Path | None = None,
         console: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Configure logger.
 
         With the default configuration **ALL** logging messages are sent
-        to *debugfile* with a timestamp and some debugging information;
-        messages with severity of `logging.INFO` or higher are sent to
-        *logfile*, also timestamped.
+        to *full_log_output* using a detailed format which includes the
+        current timestamp and some debugging information; messages with
+        severity of `logging.INFO` or higher, intended to be the typical
+        program output, are sent to *main_log_output*, also timestamped.
 
         In addition to that, and if console is `True` (the default), the
         messages with a severity of `logging.INFO` (and only those) are
@@ -425,10 +426,10 @@ class _CustomLogger(logging.Logger):
         of `logging.WARNING` or higher are sent to the standard error
         stream, without a timestamp in both cases.
 
-        If *debugfile* or *logfile* are `None` (the default), then the
-        corresponding files are not created and no logging message will
-        go there. In this case, if *console* is `False`, **NO LOGGING
-        OUTPUT WILL BE PRODUCED AT ALL**.
+        If *full_log_output* or *main_log_output* are `None` (they are,
+        by default), then the corresponding files are not created and no
+        logging message will go there. In this case, if *console* is set
+        to `False`, **NO LOGGING OUTPUT WILL BE PRODUCED AT ALL**.
         """
         class _CustomFormatter(logging.Formatter):
             """Simple custom formatter with multiline support."""  # noqa: D204
@@ -453,35 +454,35 @@ class _CustomLogger(logging.Logger):
         formatters = {}
         handlers = {}
 
-        if debugfile:
+        if full_log_output:
             levelname_max_len = len(max(logging.getLevelNamesMapping(), key=len))
-            formatters['debugfile_formatter'] = {
+            formatters['full_log_formatter'] = {
                 '()': _CustomFormatter,
                 'style': self.FORMAT_STYLE,
-                'format': self.DEBUGFILE_FORMAT.format(levelname_max_width=levelname_max_len),
+                'format': self.LONG_FORMAT.format(levelname_max_width=levelname_max_len),
                 'datefmt': TIMESTAMP_FORMAT,
             }
-            handlers['debugfile_handler'] = {
+            handlers['full_log_handler'] = {
                 'level': logging.NOTSET,
-                'formatter': 'debugfile_formatter',
+                'formatter': 'full_log_formatter',
                 'class': logging.FileHandler,
-                'filename': debugfile,
+                'filename': full_log_output,
                 'mode': 'w',
                 'encoding': UTF8,
             }
 
-        if logfile:
-            formatters['logfile_formatter'] = {
+        if main_log_output:
+            formatters['main_log_formatter'] = {
                 '()': _CustomFormatter,
                 'style': self.FORMAT_STYLE,
-                'format': self.LOGFILE_FORMAT,
+                'format': self.SHORT_FORMAT,
                 'datefmt': TIMESTAMP_FORMAT,
             }
-            handlers['logfile_handler'] = {
+            handlers['main_log_handler'] = {
                 'level': logging.INFO,
-                'formatter': 'logfile_formatter',
+                'formatter': 'main_log_formatter',
                 'class': logging.FileHandler,
-                'filename': logfile,
+                'filename': main_log_output,
                 'mode': 'w',
                 'encoding': UTF8,
             }
