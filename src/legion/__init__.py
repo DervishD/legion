@@ -531,35 +531,36 @@ if sys.platform == 'win32':
     def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
         """Wait for a keypress to continue in particular circumstances.
 
-        If `sys.stdout` is attached to an actual console **AND** that
-        console is transient, this function will print a simple message
-        indicating the end user that the program is waiting for any key
-        to be pressed to continue and will pause execution until a key
-        is pressed.
+        If `sys.stdout` has an actual console attached **AND** it is a
+        transient console, this function will print a simple message for
+        the end user telling that the program is paused until any key is
+        pressed.
         """
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
 
         PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name  # noqa: N806
 
-        # If no console is attached, then the application must NOT pause.
+        # If no console is attached, the program must NOT pause.
         #
-        # Since sys.stdout.isatty() returns True under Windows when sys.stdout
-        # is redirected to NUL, another (more complex) method, is needed here.
-        # The test below has been adapted from https://stackoverflow.com/a/33168697
+        # Since 'sys.stdout.isatty()' returns 'True' under Windows when
+        # 'sys.stdout' is redirected to 'NUL', another check, a bit more
+        # complex, is needed here. The test below has been adapted from
+        # https://stackoverflow.com/a/33168697
         if not windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint())):
             return WFKStatuses.NO_CONSOLE_ATTACHED
 
-        # If there is a console attached, the application must pause ONLY if that
-        # console will automatically close when the application finishes, hiding
-        # any messages printed by the application. In other words, pause only if
+        # If there is an attached console, then the program must pause
+        # ONLY if that console will automatically close when the program
+        # finishes, which would cause the loss of any previous messages
+        # present in the closed console. In other words, pause only if
         # the console is transient.
         #
-        # Determining if a console is transient is not easy as there is no
-        # bulletproof method available for every possible circumstance.
+        # Determining if a console is transient is not easy as there is
+        # no bulletproof method available for every possible situation.
         #
-        # There are TWO main scenarios: a frozen executable and a .py file.
-        # In both cases, the console title has to be obtained.
+        # There are TWO main scenarios: a frozen executable and a '.py'
+        # file. In both cases, the console title has to be obtained.
         buffer_size = _MAX_PATH_LEN + 1
         console_title = create_unicode_buffer(buffer_size)
         if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
@@ -568,12 +569,13 @@ if sys.platform == 'win32':
 
         # If the console is not transient, return, do not pause.
         #
-        # For a frozen executable, it is more or less easy: if the console title
-        # is not equal to sys.executable, then the console is NOT transient.
+        # For a frozen executable, it is relatively easy: if the console
+        # title is not equal to 'sys.executable' then the console is NOT
+        # transient.
         #
-        # For a .py file, it is a bit more complicated, but in most cases if the
-        # console title contains the name of the .py file, the console is NOT a
-        # transient console.
+        # For a '.py' file, it is more complicated, but in most cases if
+        # the console title contains the name of the '.py' file then the
+        # console is NOT a transient console.
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
                 return WFKStatuses.NO_TRANSIENT_FROZEN
@@ -589,7 +591,7 @@ if sys.platform == 'win32':
 
 # pylint: disable-next=unused-variable
 def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
-    """Read credentials from the file at *credentials_path*.
+    """Read credentials from *credentials_path*.
 
     If *credentials_path* if not provided as argument, a default path is
     used instead (the value of `DEFAULT_CREDENTIALS_PATH`).
