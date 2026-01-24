@@ -174,7 +174,7 @@ def error(message: str, details: str = '') -> None:
     visual separator is prepended to *details*. In addition to this both
     *message* and *details* are indented.
 
-    Finally, everything is logged using `logging.error()`.
+    Finally, everything is logged using `logger.error()`.
     """
     logger.set_indent(0)
     logger.error(_Messages.ERROR_HEADER)
