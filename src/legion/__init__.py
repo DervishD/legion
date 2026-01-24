@@ -360,6 +360,7 @@ class _CustomLogger(logging.Logger):
     CONSOLE_FORMAT = '{message}'
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
+        """Initialize logger with a *name* and an optional *level*."""
         super().__init__(name, level)
         self.indentlevel: int = 0
         self.indentation = ''
