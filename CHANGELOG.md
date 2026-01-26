@@ -6,6 +6,15 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 ## [Development]
+**Changed**
+- API change for `_CustomLogger.config()`. The keyword arguments for the logging
+  files have been renamed. The `debugfile` argument is now `full_log_output`,
+  since it does not have anything to do with debugging, but with the amount of
+  logging levels dumped, it is a full, detailed log, not necessarily a debugging
+  one. The `logfile` argument is now `main_log_output`, because it contains the
+  logging levels an end user will typically be interested about. The `console`
+  argument has not changed. Since they are keyword arguments this is of course a
+  **breaking change**
 
 ## [1.2.0] 2026-01-17
 **Changed**
