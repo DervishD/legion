@@ -7,6 +7,10 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 ## [Development]
 
+## [2.0.1] 2026-01-26
+**Fixed**
+- `README.md` was accidentally not in sync with current code
+
 ## [2.0.0] 2026-01-26
 **Changed**
 - API change for `_CustomLogger.config()`. The keyword arguments for the logging
@@ -56,7 +60,8 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 - Useful run-time constants
 - Timestamp string generator
 
-[Development]: https://github.com/DervishD/legion/compare/v2.0.0...development
+[Development]: https://github.com/DervishD/legion/compare/v2.0.1...development
+[2.0.1]: https://github.com/DervishD/legion/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/DervishD/legion/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/DervishD/legion/compare/v1.1.1...v1.2.0
 [1.1.0]: https://github.com/DervishD/legion/compare/v1.0.1...v1.1.0
