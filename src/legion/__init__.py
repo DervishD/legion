@@ -166,7 +166,6 @@ class _Messages(StrEnum):
     DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧\n'
 
 
-_ERROR_PAYLOAD_INDENT = len(ERROR_MARKER)
 def error(message: str, details: str = '') -> None:
     """Preprocess and log *message*, optionally including *details*.
 
@@ -179,7 +178,7 @@ def error(message: str, details: str = '') -> None:
     logger.set_indent(0)
     logger.error(_Messages.ERROR_HEADER)
 
-    logger.set_indent(_ERROR_PAYLOAD_INDENT)
+    logger.set_indent(len(ERROR_MARKER))
     logger.error(message)
 
     if details := details.strip():
