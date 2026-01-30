@@ -518,7 +518,26 @@ class _CustomLogger(logging.Logger):
 
 if sys.platform == 'win32':
     class WFKStatuses(IntEnum):
-        """Return statuses for `wait_for_keypress()`."""  # noqa: D204
+        """Encapsulates the return statuses for `wait_for_keypress()`.
+
+        Available for `win32` platform only, they are the possible
+        return values for `wait_for_keypress()`, implemented for now as
+        an `IntEnum`:
+        - `WFKStatuses.NO_WIN32`<br>
+            Do not wait for keypress, no `win32` platform.
+        - `WFKStatuses.NO_CONSOLE_ATTACHED`<br>
+            Do not wait for keypress, no console attached.
+        - `WFKStatuses.NO_CONSOLE_TITLE`<br>
+            Do not wait for keypress, no console title.
+        - `WFKStatuses.NO_TRANSIENT_FROZEN`<br>
+            Do not wait for keypress, no transient console with frozen
+            executable.
+        - `WFKStatuses.NO_TRANSIENT_PYTHON`<br>
+            Do not wait for keypress, no transient console with `Python`
+            script.
+        - `WFKStatuses.WAIT_FOR_KEYPRESS`<br>
+            Wait for keypress.
+        """  # noqa: D204
         NO_WIN32 = auto()
         NO_CONSOLE_ATTACHED = auto()
         NO_CONSOLE_TITLE = auto()
