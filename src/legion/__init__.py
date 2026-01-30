@@ -318,7 +318,7 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 
 
 # pylint: disable-next=unused-variable
-def run(command: Sequence[str], **args: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
+def run(command: Sequence[str], **args: dict[str, Any]) -> subprocess.CompletedProcess[str]:
     """Run a command.
 
     Run *command*, using *args* as arguments. This is just a very simple
