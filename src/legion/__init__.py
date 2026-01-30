@@ -167,11 +167,11 @@ class _Messages(StrEnum):
 
 
 def error(message: str, details: str = '') -> None:
-    """Preprocess and log *message*, optionally including *details*.
+    """Log error *message* with *details* (empty by default).
 
     Both an error marker and a header are prepended to *message*, and a
-    visual separator is prepended to *details*. In addition to this both
-    *message* and *details* are indented.
+    visual separator is prepended to *details*, if they are provided. In
+    addition to this both *message* and *details* are indented.
 
     Finally, everything is logged using `logger.error()`.
     """
