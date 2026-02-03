@@ -1,11 +1,23 @@
 #! /usr/bin/env python3
-"""Legion.
+"""# legion
 
-'What is your name?'
-'My name is Legion,' he replied, 'for we are many.'
+> 'What is your name?'<br>
+> 'My name is Legion,' he replied, 'for we are many.'
 
-Since the module is many, it's legion.
-"""
+Since this is many, it's legion. This package (currently, a single
+module) contains miscellaneous functions and constants for the
+maintenance scripts of my private system. It is shared in this public
+repository just in case its code may be useful to others.
+
+## Constants
+{}
+
+## Types
+{}
+
+## Functions
+{}
+"""  # noqa: D400, D415
 import atexit
 import contextlib
 from enum import StrEnum
