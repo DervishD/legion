@@ -6,13 +6,18 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 ## [Development]
+### Changed
+- Update changelog format
+
+### Fixed
+- Minor code fixes and improvements
 
 ## [2.0.1] 2026-01-26
-**Fixed**
+### Fixed
 - `README.md` was accidentally not in sync with current code
 
 ## [2.0.0] 2026-01-26
-**Changed**
+### Changed
 - API change for `_CustomLogger.config()`. The keyword arguments for the logging
   files have been renamed. The `debugfile` argument is now `full_log_output`,
   since it does not have anything to do with debugging, but with the amount of
@@ -23,34 +28,34 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
   **breaking change**
 
 ## [1.2.0] 2026-01-17
-**Changed**
+### Changed
 - Improved exception hook for win32 platform
 
-**Added**
+### Added
 - Changelog file
 - Changelog specification
 
-**Fixed**
+### Fixed
 - Version handling
 - Package structure
 - Support for 'help()'
 
 ## [1.1.0] 2025-10-23
-**Changed**
+### Changed
 - Convert package to src-layout
 
-**Added**
+### Added
 - Demo facility
 
-**Fixed**
+### Fixed
 - Linting warnings
 
 ## [1.0.1] 2025-10-22
-**Fixed**
+### Fixed
 - Mark the package as type-annotated
 
 ## [1.0.0] 2025-10-22
-**Added**
+### Added
 - Custom, full-featured logging facility
 - Simple but powerful command runner
 - Simple credentials reader
