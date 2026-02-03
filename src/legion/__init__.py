@@ -107,22 +107,26 @@ def _get_program_path() -> Path:
 
 # Exportable constants.
 # pylint: disable=unused-variable
-DESKTOP_PATH = _get_desktop_path()
-PROGRAM_PATH = _get_program_path()
+DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
+PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
 
-PROGRAM_NAME = PROGRAM_PATH.stem
+PROGRAM_NAME: Annotated[str, 'User friendly name of the currently executing script.'] = PROGRAM_PATH.stem
 
-LEGION_VERSION = __version__
+LEGION_VERSION: Annotated[str, 'Currently installed version of this module.'] = __version__
 
-DEFAULT_CREDENTIALS_PATH = Path.home() / '.credentials'
+DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
+Filename used by default by `get_credentials()` for user credentials.
+"""] = Path.home() / '.credentials'
 
-TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+TIMESTAMP_FORMAT: Annotated[str, '`time.strftime()` compatible format specification for timestamps.'] = '%Y%m%d_%H%M%S'
 
-ERROR_MARKER = '*** '
+ERROR_MARKER: Annotated[str, 'Marker string prepended to error messages.'] = '*** '
+
 ARROW_R = '⟶'
-ARROW_L = '⟵'
+ARROW_R: Annotated[str, 'Right pointing arrow character for pretty-printing program output.'] = '⟶'
+ARROW_L: Annotated[str, 'Left pointing arrow character for pretty-printing program output.'] = '⟵'
 
-UTF8 = 'utf-8'
+UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 # pylint: enable=unused-variable
 
 
@@ -636,7 +640,12 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
 sys.excepthook = excepthook
 logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
 logging.setLoggerClass(_CustomLogger)
-logger: _CustomLogger = cast('_CustomLogger', logging.getLogger(PROGRAM_NAME))
+logger: Annotated[_CustomLogger, """
+Default per-application logger instance.
+
+Its interface is identical to `logging.Logger` objects but it also
+includes indentation support and a simple configuration function.
+"""] = cast('_CustomLogger', logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
