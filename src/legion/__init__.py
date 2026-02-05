@@ -4,19 +4,14 @@
 > 'What is your name?'<br>
 > 'My name is Legion,' he replied, 'for we are many.'
 
-Since this is many, it's legion. This package (currently, a single
-module) contains miscellaneous functions and constants for the
-maintenance scripts of my private system. It is shared in this public
-repository just in case its code may be useful to others.
+Since this is many, it's *legion*. This package (currently, a single
+module) contains miscellaneous functions and constants used in some of
+the maintenance scripts of my private system. It is shared publicly in
+case the code may be useful to others.
 
-## Constants
-{}
-
-## Types
-{}
-
-## Functions
-{}
+## {Constants}
+## {Classes}
+## {Functions}
 """  # noqa: D400, D415
 import atexit
 import contextlib
@@ -122,21 +117,20 @@ def _get_program_path() -> Path:
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
 PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
 
-PROGRAM_NAME: Annotated[str, 'User friendly name of the currently executing script.'] = PROGRAM_PATH.stem
+PROGRAM_NAME: Annotated[str, 'User-friendly name of the currently executing script.'] = PROGRAM_PATH.stem
 
 LEGION_VERSION: Annotated[str, 'Currently installed version of this module.'] = __version__
 
 DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
-Filename used by default by `get_credentials()` for user credentials.
+Default filename used by `get_credentials()` for user credentials.
 """] = Path.home() / '.credentials'
 
 TIMESTAMP_FORMAT: Annotated[str, '`time.strftime()` compatible format specification for timestamps.'] = '%Y%m%d_%H%M%S'
 
 ERROR_MARKER: Annotated[str, 'Marker string prepended to error messages.'] = '*** '
 
-ARROW_R = '⟶'
-ARROW_R: Annotated[str, 'Right pointing arrow character for pretty-printing program output.'] = '⟶'
-ARROW_L: Annotated[str, 'Left pointing arrow character for pretty-printing program output.'] = '⟵'
+ARROW_R: Annotated[str, 'Right-pointing arrow character for pretty-printing program output.'] = '⟶'
+ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing program output.'] = '⟵'
 
 UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 # pylint: enable=unused-variable
@@ -186,7 +180,7 @@ def error(message: str, details: str = '') -> None:
     """Log error *message* with *details* (empty by default).
 
     Both an error marker and a header are prepended to *message*, and a
-    visual separator is prepended to *details*, if they are provided. In
+    visual separator is prepended to *details*, if that is provided. In
     addition to this both *message* and *details* are indented.
 
     Finally, everything is logged using `logger.error()`.
@@ -219,11 +213,11 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     For any other exception, a generic message is logged together with
     the traceback, if available.
 
-    `KeyboardInterrupt` exceptions are not logged, the default exception
-    hook is called instead to have normal keyboard interrupt behavior.
+    `KeyboardInterrupt` exceptions are not logged. Instead, the default
+    exception hook is called to preserve keyboard interrupt behavior.
 
-    Finally, depending on the platform, some kind of modal dialog shows
-    so the end user does not miss the error.
+    Finally, depending on the platform, a modal dialog may be shown to
+    ensure the end user notices the error.
 
     Intended to be used as default exception hook (`sys.excepthook`).
     """
@@ -278,25 +272,24 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
 def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
     """Process `OSError` exception objects.
 
-    Process the *exception* object for an `OSError` exceptions (or any
-    subclass), and return a tuple containing the processed information.
+    Process the `OSError` (or any of its subclasses) exception *exc* and
+    return a tuple containing the processed information.
 
-    First item is the actual `OSError` subclass which was raised, as a
+    First item is the actual `OSError` subclass that was raised, as a
     string.
 
     Second item are the `errno` and `winerror` numeric codes. They are
     combined with a slash character if both are present. If no numeric
-    codes exist in the exception object, a marker is used instead.
+    codes exist in *exc*, a marker is used instead.
 
     The third item is the error message. The first letter is uppercased
     and a final period is added. If it does not exist, an empty string
     is used instead.
 
-    The final two items are the paths involved in the exception, if any,
-    as strings. Depending on the actual exception there may be zero, one
-    or two paths involved. If some of the paths are not present in the
-    exception object, it will anyway exist in the returned tuple but its
-    value will be `None`.
+    The final two items are the paths involved in the *exc* exception,
+    if any, as strings. Depending on the actual exception, there may be
+    zero, one, or two paths involved. If some of the paths do not exist
+    in *exc*, they will be anyway returned in the tuple as `None`.
     """
     exc_type = type(exception).__name__
     exc_errno = None
@@ -321,7 +314,7 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
 
 
 def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
-    """Generate a string from `OSError` *exc* and *context*."""
+    """Stringify `OSError` exception *exc* using *context*."""
     errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
 
     paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
@@ -337,9 +330,8 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 def run(command: Sequence[str], **args: dict[str, Any]) -> subprocess.CompletedProcess[str]:
     """Run a command.
 
-    Run *command*, using *args* as arguments. This is just a very simple
-    helper for the `subprocess.run()` function to make such calls easier
-    and more convenient by providing some defaults for the arguments.
+    Run *command*, using *args* as arguments. It is just a simple helper
+    for `subprocess.run()` that provides convenient defaults.
 
     For that reason, the keyword arguments accepted in *args* and the
     return value are the same ones used by `subprocess.run()` itself.
@@ -434,22 +426,24 @@ class _ConvenienceLogger(logging.Logger):
     ) -> None:
         """Configure logger.
 
-        With the default configuration **ALL** logging messages are sent
-        to *full_log_output* using a detailed format which includes the
-        current timestamp and some debugging information; messages with
-        severity of `logging.INFO` or higher, intended to be the typical
-        program output, are sent to *main_log_output*, also timestamped.
-
-        In addition to that, and if console is `True` (the default), the
-        messages with a severity of `logging.INFO` (and only those) are
-        sent to the standard output stream, and messages with a severity
-        of `logging.WARNING` or higher are sent to the standard error
-        stream, without a timestamp in both cases.
-
-        If *full_log_output* or *main_log_output* are `None` (they are,
-        by default), then the corresponding files are not created and no
-        logging message will go there. In this case, if *console* is set
-        to `False`, **NO LOGGING OUTPUT WILL BE PRODUCED AT ALL**.
+        With the default configuration, the behavior of the logger is as
+        follows:
+        - **File logging**
+            - *full_log_output*: receives *all* messages in detailed
+            format (including a timestamp and some debugging info).
+            - *main_log_output*: receives messages with severity
+            `logging.INFO` or higher, with a simpler format but also
+            timestamped.
+            - If a file path is `None`, it is not created.
+        - **Console logging** (if *console* is `True`):
+            - Messages with severity of exactly `logging.INFO` go to the
+            standard output stream.
+            - Messages with severity of `logging.WARNING` or higher go
+            to the standard error stream.
+            - No timestamps are included in console output.
+        - **No logging**
+            - If all file paths are `None` and *console* is `False`,
+            **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
         """
         class _MultilineRecordFormatter(logging.Formatter):
             """Simple custom formatter with multiline support."""  # noqa: D204
@@ -539,11 +533,10 @@ class _ConvenienceLogger(logging.Logger):
 
 if sys.platform == 'win32':
     class WFKStatuses(IntEnum):
-        """Encapsulates the return statuses for `wait_for_keypress()`.
+        """Return statuses for `wait_for_keypress()`.
 
-        Available for `win32` platform only, they are the possible
-        return values for `wait_for_keypress()`, implemented for now as
-        an `IntEnum`:
+        Available only for Windows (`win32`), this `IntEnum` contains
+        the possible return values for `wait_for_keypress()`:
         - `WFKStatuses.NO_WIN32`<br>
             Do not wait for keypress, no `win32` platform.
         - `WFKStatuses.NO_CONSOLE_ATTACHED`<br>
@@ -570,10 +563,9 @@ if sys.platform == 'win32':
     def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
         """Wait for a keypress to continue in particular circumstances.
 
-        If `sys.stdout` has an actual console attached **AND** it is a
-        transient console, this function will print a simple message for
-        the end user telling that the program is paused until any key is
-        pressed.
+        If `sys.stdout` is attached to a transient console, the function
+        prints a message indicating that the program is paused until a
+        key is pressed.
         """
         if sys.platform != 'win32':
             return WFKStatuses.NO_WIN32
@@ -632,19 +624,19 @@ if sys.platform == 'win32':
 def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
     """Read credentials from *credentials_path*.
 
-    If *credentials_path* if not provided as argument, a default path is
-    used instead (the value of `DEFAULT_CREDENTIALS_PATH`).
+    If *credentials_path* is not provided a default path is used. To be
+    precise, the value of `DEFAULT_CREDENTIALS_PATH`.
 
-    The credentials are returned as a simple two-level dictionary, with
-    the first level consisting in different sections, intended to group
-    credentials, and the second level being the credentials themselves.
+    The credentials are returned as a simple two-level dictionary. The
+    dictionary has two levels: the first one groups credentials into
+    sections, and the second contains the actual key-value pairs.
 
     Each credential is a `key-value` string pair, where the `key` is an
     identifier for the credential, and the `value` is the corresponding
     credential.
 
     If *credentials_path* cannot be read or has syntax problems, `None`
-    is returned instead.
+    is returned.
     """
     try:
         with credentials_path.open('rb') as credentials_file:
