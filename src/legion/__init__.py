@@ -174,7 +174,7 @@ class _Messages(StrEnum):
     OSERROR_ERRORCODES = '{}/{}'
     OSERROR_PRETTYPRINT = 'Error [{}] {} {}.\n{}'
 
-    BAD_INDENTLEVEL = 'Indentation level must be a non-negative integer.'
+    INVALID_INDENT_LEVEL = 'Indentation level must be a non-negative integer.'
 
     PRESS_ANY_KEY = '\nPress any key to continue...'
 
@@ -370,7 +370,7 @@ class _ConvenienceLogger(logging.Logger):
 
     __INCREASE_INDENT_SYMBOL = '+'
     __DECREASE_INDENT_SYMBOL = '-'
-    __DEFAULT_INDENTCHAR = ' '
+    __INDENT_CHAR = ' '
     __FORMAT_STYLE = '{'
     __LONG_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
     __SHORT_FORMAT = '{asctime} {message}'
@@ -379,7 +379,7 @@ class _ConvenienceLogger(logging.Logger):
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize logger with a *name* and an optional *level*."""
         super().__init__(name, level)
-        self.indentlevel: int = 0
+        self.indent_level: int = 0
         self.indentation = ''
 
     def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:  # noqa: ANN401, N802
@@ -388,7 +388,7 @@ class _ConvenienceLogger(logging.Logger):
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
 
-    def __set_indentlevel(self, level: int | LiteralString) -> None:
+    def __set_indent_level(self, level: int | LiteralString) -> None:
         """Set current logging indentation to *level*.
 
         If *level* is:
@@ -401,14 +401,14 @@ class _ConvenienceLogger(logging.Logger):
         Not for public usage, use `self.set_indent(level)` instead.
         """
         if level == self.__INCREASE_INDENT_SYMBOL:
-            self.indentlevel += 1
+            self.indent_level += 1
         elif level == self.__DECREASE_INDENT_SYMBOL:
-            self.indentlevel = max(0, self.indentlevel - 1)
+            self.indent_level = max(0, self.indent_level - 1)
         elif isinstance(level, int) and level >= 0:
-            self.indentlevel = level
+            self.indent_level = level
         else:
-            raise ValueError(_Messages.BAD_INDENTLEVEL)
-        self.indentation = self.__INDENTCHAR * self.indentlevel
+            raise ValueError(_Messages.INVALID_INDENT_LEVEL)
+        self.indentation = self.__INDENT_CHAR * self.indent_level
 
     def set_indent(self, level: int) -> None:
         """Set current logging indentation to *level*.
@@ -417,15 +417,15 @@ class _ConvenienceLogger(logging.Logger):
 
         For any other value, `ValueError` is raised.
         """
-        self.__set_indentlevel(level)
+        self.__set_indent_level(level)
 
     def indent(self) -> None:
         """Increment current logging indentation level."""
-        self.__set_indentlevel(self.__INCREASE_INDENT_SYMBOL)
+        self.__set_indent_level(self.__INCREASE_INDENT_SYMBOL)
 
     def dedent(self) -> None:
         """Decrement current logging indentation level."""
-        self.__set_indentlevel(self.__DECREASE_INDENT_SYMBOL)
+        self.__set_indent_level(self.__DECREASE_INDENT_SYMBOL)
 
     def config(self,
         full_log_output: str | Path | None = None,
