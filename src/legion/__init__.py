@@ -38,10 +38,10 @@ if TYPE_CHECKING:
 
 __version__ = version(__package__ or Path(__file__).parent.stem)
 __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
+    'LEGION_VERSION',
     'DESKTOP_PATH',
     'PROGRAM_PATH',
     'PROGRAM_NAME',
-    'LEGION_VERSION',
     'DEFAULT_CREDENTIALS_PATH',
     'TIMESTAMP_FORMAT',
     'ERROR_MARKER',
@@ -54,6 +54,8 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'format_oserror',
     'timestamp',
     'run',
+    'get_credentials',
+    'demo',
     'WFKStatuses',
     'wait_for_keypress',
     'logger',
@@ -96,7 +98,6 @@ def _get_desktop_path() -> Path:
     return home_path
 
 
-_FALLBACK_PROGRAM_PATH = '__unavailable__.py'
 def _get_program_path() -> Path:
     """Get the resolved path of the currently executing program."""
     try:
@@ -109,29 +110,26 @@ def _get_program_path() -> Path:
         program_path = sys.executable if getattr(sys, 'frozen', False) else sys.modules['__main__'].__file__
     except AttributeError:
         program_path = None
-    return Path(program_path or _FALLBACK_PROGRAM_PATH).resolve()
+    return Path(program_path or '__unavailable__.py').resolve()
 
 
 # Exportable constants.
 # pylint: disable=unused-variable
+LEGION_VERSION: Annotated[str, 'Currently installed version of this module.'] = __version__
+
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
 PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
 
 PROGRAM_NAME: Annotated[str, 'User-friendly name of the currently executing script.'] = PROGRAM_PATH.stem
-
-LEGION_VERSION: Annotated[str, 'Currently installed version of this module.'] = __version__
 
 DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
 Default filename used by `get_credentials()` for user credentials.
 """] = Path.home() / '.credentials'
 
 TIMESTAMP_FORMAT: Annotated[str, '`time.strftime()` compatible format specification for timestamps.'] = '%Y%m%d_%H%M%S'
-
 ERROR_MARKER: Annotated[str, 'Marker string prepended to error messages.'] = '*** '
-
 ARROW_R: Annotated[str, 'Right-pointing arrow character for pretty-printing program output.'] = '⟶'
 ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing program output.'] = '⟵'
-
 UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 # pylint: enable=unused-variable
 
@@ -352,6 +350,131 @@ def run(command: Sequence[str], **args: dict[str, Any]) -> subprocess.CompletedP
     return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **effective_args))  # noqa: S603, PLW1510
 
 
+# pylint: disable-next=unused-variable
+def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
+    """Read credentials from *credentials_path*.
+
+    If *credentials_path* is not provided a default path is used. To be
+    precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+
+    The credentials are returned as a simple two-level dictionary. The
+    dictionary has two levels: the first one groups credentials into
+    sections, and the second contains the actual key-value pairs.
+
+    Each credential is a `key-value` string pair, where the `key` is an
+    identifier for the credential, and the `value` is the corresponding
+    credential.
+
+    If *credentials_path* cannot be read or has syntax problems, `None`
+    is returned.
+    """
+    try:
+        with credentials_path.open('rb') as credentials_file:
+            return tomllib.load(credentials_file)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+
+
+def demo() -> None:
+    """Show module constants."""
+    sys.stdout.write(f'Legion module version {LEGION_VERSION}\n\n')
+    sys.stdout.write(_Messages.DEMO_TIMESTAMP.format(timestamp()))
+    constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
+    width = max(len(name) for name in constants) + 1
+    for constant, value in constants.items():
+        sys.stdout.write(_Messages.DEMO_CONSTANT.format(constant, width, value))
+    sys.stdout.flush()
+
+
+if sys.platform == 'win32':
+    class WFKStatuses(IntEnum):
+        """Return statuses for `wait_for_keypress()`.
+
+        Available only for Windows (`win32`), this `IntEnum` contains
+        the possible return values for `wait_for_keypress()`:
+        - `WFKStatuses.NO_WIN32`<br>
+            Do not wait for keypress, no `win32` platform.
+        - `WFKStatuses.NO_CONSOLE_ATTACHED`<br>
+            Do not wait for keypress, no console attached.
+        - `WFKStatuses.NO_CONSOLE_TITLE`<br>
+            Do not wait for keypress, no console title.
+        - `WFKStatuses.NO_TRANSIENT_FROZEN`<br>
+            Do not wait for keypress, no transient console with frozen
+            executable.
+        - `WFKStatuses.NO_TRANSIENT_PYTHON`<br>
+            Do not wait for keypress, no transient console with `Python`
+            script.
+        - `WFKStatuses.WAIT_FOR_KEYPRESS`<br>
+            Wait for keypress.
+        """  # noqa: D204
+        NO_WIN32 = auto()
+        NO_CONSOLE_ATTACHED = auto()
+        NO_CONSOLE_TITLE = auto()
+        NO_TRANSIENT_FROZEN = auto()
+        NO_TRANSIENT_PYTHON = auto()
+        WAIT_FOR_KEYPRESS = auto()
+
+    @atexit.register
+    def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
+        """Wait for a keypress to continue in particular circumstances.
+
+        If `sys.stdout` is attached to a transient console, the function
+        prints a message indicating that the program is paused until a
+        key is pressed.
+        """
+        if sys.platform != 'win32':
+            return WFKStatuses.NO_WIN32
+
+        PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name  # noqa: N806
+
+        # If no console is attached, the program must NOT pause.
+        #
+        # Since 'sys.stdout.isatty()' returns 'True' under Windows when
+        # 'sys.stdout' is redirected to 'NUL', another check, a bit more
+        # complex, is needed here. The test below has been adapted from
+        # https://stackoverflow.com/a/33168697
+        if not windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint())):
+            return WFKStatuses.NO_CONSOLE_ATTACHED
+
+        # If there is an attached console, then the program must pause
+        # ONLY if that console will automatically close when the program
+        # finishes, which would cause the loss of any previous messages
+        # present in the closed console. In other words, pause only if
+        # the console is transient.
+        #
+        # Determining if a console is transient is not easy as there is
+        # no bulletproof method available for every possible situation.
+        #
+        # There are TWO main scenarios: a frozen executable and a '.py'
+        # file. In both cases, the console title has to be obtained.
+        buffer_size = _MAX_PATH_LEN + 1
+        console_title = create_unicode_buffer(buffer_size)
+        if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
+            return WFKStatuses.NO_CONSOLE_TITLE
+        console_title = console_title.value
+
+        # If the console is not transient, return, do not pause.
+        #
+        # For a frozen executable, it is relatively easy: if the console
+        # title is not equal to 'sys.executable' then the console is NOT
+        # transient.
+        #
+        # For a '.py' file, it is more complicated, but in most cases if
+        # the console title contains the name of the '.py' file then the
+        # console is NOT a transient console.
+        if getattr(sys, 'frozen', False):
+            if console_title != sys.executable:
+                return WFKStatuses.NO_TRANSIENT_FROZEN
+        elif Path(console_title).name.lower() != PYTHON_LAUNCHER.name.lower():
+            return WFKStatuses.NO_TRANSIENT_PYTHON
+
+        sys.stdout.flush()
+        sys.stdout.write(_Messages.PRESS_ANY_KEY)
+        sys.stdout.flush()
+        getch()
+        return WFKStatuses.WAIT_FOR_KEYPRESS
+
+
 class _ConvenienceLogger(logging.Logger):
     """Augmented functionality logger.
 
@@ -529,120 +652,6 @@ class _ConvenienceLogger(logging.Logger):
         logging_configuration['handlers'] = handlers
         logging_configuration['loggers'][self.name]['handlers'] = handlers.keys()
         dictConfig(logging_configuration)
-
-
-if sys.platform == 'win32':
-    class WFKStatuses(IntEnum):
-        """Return statuses for `wait_for_keypress()`.
-
-        Available only for Windows (`win32`), this `IntEnum` contains
-        the possible return values for `wait_for_keypress()`:
-        - `WFKStatuses.NO_WIN32`<br>
-            Do not wait for keypress, no `win32` platform.
-        - `WFKStatuses.NO_CONSOLE_ATTACHED`<br>
-            Do not wait for keypress, no console attached.
-        - `WFKStatuses.NO_CONSOLE_TITLE`<br>
-            Do not wait for keypress, no console title.
-        - `WFKStatuses.NO_TRANSIENT_FROZEN`<br>
-            Do not wait for keypress, no transient console with frozen
-            executable.
-        - `WFKStatuses.NO_TRANSIENT_PYTHON`<br>
-            Do not wait for keypress, no transient console with `Python`
-            script.
-        - `WFKStatuses.WAIT_FOR_KEYPRESS`<br>
-            Wait for keypress.
-        """  # noqa: D204
-        NO_WIN32 = auto()
-        NO_CONSOLE_ATTACHED = auto()
-        NO_CONSOLE_TITLE = auto()
-        NO_TRANSIENT_FROZEN = auto()
-        NO_TRANSIENT_PYTHON = auto()
-        WAIT_FOR_KEYPRESS = auto()
-
-    @atexit.register
-    def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
-        """Wait for a keypress to continue in particular circumstances.
-
-        If `sys.stdout` is attached to a transient console, the function
-        prints a message indicating that the program is paused until a
-        key is pressed.
-        """
-        if sys.platform != 'win32':
-            return WFKStatuses.NO_WIN32
-
-        PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name  # noqa: N806
-
-        # If no console is attached, the program must NOT pause.
-        #
-        # Since 'sys.stdout.isatty()' returns 'True' under Windows when
-        # 'sys.stdout' is redirected to 'NUL', another check, a bit more
-        # complex, is needed here. The test below has been adapted from
-        # https://stackoverflow.com/a/33168697
-        if not windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint())):
-            return WFKStatuses.NO_CONSOLE_ATTACHED
-
-        # If there is an attached console, then the program must pause
-        # ONLY if that console will automatically close when the program
-        # finishes, which would cause the loss of any previous messages
-        # present in the closed console. In other words, pause only if
-        # the console is transient.
-        #
-        # Determining if a console is transient is not easy as there is
-        # no bulletproof method available for every possible situation.
-        #
-        # There are TWO main scenarios: a frozen executable and a '.py'
-        # file. In both cases, the console title has to be obtained.
-        buffer_size = _MAX_PATH_LEN + 1
-        console_title = create_unicode_buffer(buffer_size)
-        if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
-            return WFKStatuses.NO_CONSOLE_TITLE
-        console_title = console_title.value
-
-        # If the console is not transient, return, do not pause.
-        #
-        # For a frozen executable, it is relatively easy: if the console
-        # title is not equal to 'sys.executable' then the console is NOT
-        # transient.
-        #
-        # For a '.py' file, it is more complicated, but in most cases if
-        # the console title contains the name of the '.py' file then the
-        # console is NOT a transient console.
-        if getattr(sys, 'frozen', False):
-            if console_title != sys.executable:
-                return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif Path(console_title).name.lower() != PYTHON_LAUNCHER.name.lower():
-            return WFKStatuses.NO_TRANSIENT_PYTHON
-
-        sys.stdout.flush()
-        sys.stdout.write(_Messages.PRESS_ANY_KEY)
-        sys.stdout.flush()
-        getch()
-        return WFKStatuses.WAIT_FOR_KEYPRESS
-
-
-# pylint: disable-next=unused-variable
-def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
-    """Read credentials from *credentials_path*.
-
-    If *credentials_path* is not provided a default path is used. To be
-    precise, the value of `DEFAULT_CREDENTIALS_PATH`.
-
-    The credentials are returned as a simple two-level dictionary. The
-    dictionary has two levels: the first one groups credentials into
-    sections, and the second contains the actual key-value pairs.
-
-    Each credential is a `key-value` string pair, where the `key` is an
-    identifier for the credential, and the `value` is the corresponding
-    credential.
-
-    If *credentials_path* cannot be read or has syntax problems, `None`
-    is returned.
-    """
-    try:
-        with credentials_path.open('rb') as credentials_file:
-            return tomllib.load(credentials_file)
-    except (OSError, tomllib.TOMLDecodeError):
-        return None
 
 
 # Module desired side-effects.
