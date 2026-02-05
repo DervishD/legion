@@ -360,8 +360,13 @@ def run(command: Sequence[str], **args: dict[str, Any]) -> subprocess.CompletedP
     return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **effective_args))  # noqa: S603, PLW1510
 
 
-class _CustomLogger(logging.Logger):
-    """Custom logger with indentation support."""
+class _ConvenienceLogger(logging.Logger):
+    """Augmented functionality logger.
+
+    Drop-in replacement for the default Python `logging` logger but with
+    augmented functionality like indentation support, multiline records
+    and a very easy but powerful configuration helper.
+    """
 
     __INCREASE_INDENT_SYMBOL = '+'
     __DECREASE_INDENT_SYMBOL = '-'
@@ -378,7 +383,7 @@ class _CustomLogger(logging.Logger):
         self.indentation = ''
 
     def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:  # noqa: ANN401, N802
-        """Create a new logging record with indentation support."""
+        """Create a new logging record with indentation."""
         record = super().makeRecord(*args, **kwargs)
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
@@ -446,7 +451,7 @@ class _CustomLogger(logging.Logger):
         logging message will go there. In this case, if *console* is set
         to `False`, **NO LOGGING OUTPUT WILL BE PRODUCED AT ALL**.
         """
-        class _MultilineFormatter(logging.Formatter):
+        class _MultilineRecordFormatter(logging.Formatter):
             """Simple custom formatter with multiline support."""  # noqa: D204
             def format(self, record: logging.LogRecord) -> str:
                 """Format multiline records so they look like multiple records."""
@@ -472,7 +477,7 @@ class _CustomLogger(logging.Logger):
         if full_log_output:
             levelname_max_len = len(max(logging.getLevelNamesMapping(), key=len))
             formatters['full_log_formatter'] = {
-                '()': _MultilineFormatter,
+                '()': _MultilineRecordFormatter,
                 'style': self.__FORMAT_STYLE,
                 'format': self.__LONG_FORMAT.format(levelname_max_width=levelname_max_len),
                 'datefmt': TIMESTAMP_FORMAT,
@@ -488,7 +493,7 @@ class _CustomLogger(logging.Logger):
 
         if main_log_output:
             formatters['main_log_formatter'] = {
-                '()': _MultilineFormatter,
+                '()': _MultilineRecordFormatter,
                 'style': self.__FORMAT_STYLE,
                 'format': self.__SHORT_FORMAT,
                 'datefmt': TIMESTAMP_FORMAT,
@@ -508,7 +513,7 @@ class _CustomLogger(logging.Logger):
                 return record.levelno == logging.INFO
 
             formatters['console_formatter'] = {
-                '()': _MultilineFormatter,
+                '()': _MultilineRecordFormatter,
                 'style': self.__FORMAT_STYLE,
                 'format': self.__CONSOLE_FORMAT,
             }
@@ -651,13 +656,13 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
 # Module desired side-effects.
 sys.excepthook = excepthook
 logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
-logging.setLoggerClass(_CustomLogger)
-logger: Annotated[_CustomLogger, """
+logging.setLoggerClass(_ConvenienceLogger)
+logger: Annotated[_ConvenienceLogger, """
 Default per-application logger instance.
 
 Its interface is identical to `logging.Logger` objects but it also
 includes indentation support and a simple configuration function.
-"""] = cast('_CustomLogger', logging.getLogger(PROGRAM_NAME))
+"""] = cast('_ConvenienceLogger', logging.getLogger(PROGRAM_NAME))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
