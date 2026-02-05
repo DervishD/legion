@@ -363,13 +363,13 @@ def run(command: Sequence[str], **args: dict[str, Any]) -> subprocess.CompletedP
 class _CustomLogger(logging.Logger):
     """Custom logger with indentation support."""
 
-    INCREASE_INDENT_SYMBOL = '+'
-    DECREASE_INDENT_SYMBOL = '-'
-    INDENTCHAR = ' '
-    FORMAT_STYLE = '{'
-    LONG_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
-    SHORT_FORMAT = '{asctime} {message}'
-    CONSOLE_FORMAT = '{message}'
+    __INCREASE_INDENT_SYMBOL = '+'
+    __DECREASE_INDENT_SYMBOL = '-'
+    __DEFAULT_INDENTCHAR = ' '
+    __FORMAT_STYLE = '{'
+    __LONG_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
+    __SHORT_FORMAT = '{asctime} {message}'
+    __CONSOLE_FORMAT = '{message}'
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize logger with a *name* and an optional *level*."""
@@ -383,7 +383,7 @@ class _CustomLogger(logging.Logger):
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
 
-    def _set_indentlevel(self, level: int | LiteralString) -> None:
+    def __set_indentlevel(self, level: int | LiteralString) -> None:
         """Set current logging indentation to *level*.
 
         If *level* is:
@@ -395,15 +395,15 @@ class _CustomLogger(logging.Logger):
 
         Not for public usage, use `self.set_indent(level)` instead.
         """
-        if level == self.INCREASE_INDENT_SYMBOL:
+        if level == self.__INCREASE_INDENT_SYMBOL:
             self.indentlevel += 1
-        elif level == self.DECREASE_INDENT_SYMBOL:
+        elif level == self.__DECREASE_INDENT_SYMBOL:
             self.indentlevel = max(0, self.indentlevel - 1)
         elif isinstance(level, int) and level >= 0:
             self.indentlevel = level
         else:
             raise ValueError(_Messages.BAD_INDENTLEVEL)
-        self.indentation = self.INDENTCHAR * self.indentlevel
+        self.indentation = self.__INDENTCHAR * self.indentlevel
 
     def set_indent(self, level: int) -> None:
         """Set current logging indentation to *level*.
@@ -412,15 +412,15 @@ class _CustomLogger(logging.Logger):
 
         For any other value, `ValueError` is raised.
         """
-        self._set_indentlevel(level)
+        self.__set_indentlevel(level)
 
     def indent(self) -> None:
         """Increment current logging indentation level."""
-        self._set_indentlevel(self.INCREASE_INDENT_SYMBOL)
+        self.__set_indentlevel(self.__INCREASE_INDENT_SYMBOL)
 
     def dedent(self) -> None:
         """Decrement current logging indentation level."""
-        self._set_indentlevel(self.DECREASE_INDENT_SYMBOL)
+        self.__set_indentlevel(self.__DECREASE_INDENT_SYMBOL)
 
     def config(self,
         full_log_output: str | Path | None = None,
@@ -446,7 +446,7 @@ class _CustomLogger(logging.Logger):
         logging message will go there. In this case, if *console* is set
         to `False`, **NO LOGGING OUTPUT WILL BE PRODUCED AT ALL**.
         """
-        class _CustomFormatter(logging.Formatter):
+        class _MultilineFormatter(logging.Formatter):
             """Simple custom formatter with multiline support."""  # noqa: D204
             def format(self, record: logging.LogRecord) -> str:
                 """Format multiline records so they look like multiple records."""
@@ -472,9 +472,9 @@ class _CustomLogger(logging.Logger):
         if full_log_output:
             levelname_max_len = len(max(logging.getLevelNamesMapping(), key=len))
             formatters['full_log_formatter'] = {
-                '()': _CustomFormatter,
-                'style': self.FORMAT_STYLE,
-                'format': self.LONG_FORMAT.format(levelname_max_width=levelname_max_len),
+                '()': _MultilineFormatter,
+                'style': self.__FORMAT_STYLE,
+                'format': self.__LONG_FORMAT.format(levelname_max_width=levelname_max_len),
                 'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['full_log_handler'] = {
@@ -488,9 +488,9 @@ class _CustomLogger(logging.Logger):
 
         if main_log_output:
             formatters['main_log_formatter'] = {
-                '()': _CustomFormatter,
-                'style': self.FORMAT_STYLE,
-                'format': self.SHORT_FORMAT,
+                '()': _MultilineFormatter,
+                'style': self.__FORMAT_STYLE,
+                'format': self.__SHORT_FORMAT,
                 'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['main_log_handler'] = {
@@ -508,9 +508,9 @@ class _CustomLogger(logging.Logger):
                 return record.levelno == logging.INFO
 
             formatters['console_formatter'] = {
-                '()': _CustomFormatter,
-                'style': self.FORMAT_STYLE,
-                'format': self.CONSOLE_FORMAT,
+                '()': _MultilineFormatter,
+                'style': self.__FORMAT_STYLE,
+                'format': self.__CONSOLE_FORMAT,
             }
             handlers['stdout_handler'] = {
                 'level': logging.NOTSET,
