@@ -269,8 +269,8 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         system(f"osascript -e '{script}' >/dev/null")  # noqa: S605
 
 
-def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
-    """Process `OSError` exception objects.
+def munge_oserror(exc: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
+    """Process `OSError` exception *exc*.
 
     Process the `OSError` (or any of its subclasses) exception *exc* and
     return a tuple containing the processed information.
@@ -291,26 +291,26 @@ def munge_oserror(exception: OSError) -> tuple[str, str, str, str, str]:  # pyli
     zero, one, or two paths involved. If some of the paths do not exist
     in *exc*, they will be anyway returned in the tuple as `None`.
     """
-    exc_type = type(exception).__name__
+    exc_type = type(exc).__name__
     exc_errno = None
     exc_winerror = None
     exc_errorcodes = None
 
     with contextlib.suppress(AttributeError):
-        exc_winerror = _Messages.OSERROR_WINERROR.format(exception.winerror) if exception.winerror else None
+        exc_winerror = _Messages.OSERROR_WINERROR.format(exc.winerror) if exc.winerror else None
 
-    if exception.errno:
+    if exc.errno:
         with contextlib.suppress(KeyError):
-            exc_errno = errorcode[exception.errno]
+            exc_errno = errorcode[exc.errno]
 
     if exc_errno and exc_winerror:
         exc_errorcodes = _Messages.OSERROR_ERRORCODES.format(exc_errno, exc_winerror)
     exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or _Messages.OSERROR_DETAIL_NA
     exc_message = ''
-    if exception.strerror:
-        exc_message = f'{exception.strerror[0].upper()}{exception.strerror[1:].rstrip(".")}.'
+    if exc.strerror:
+        exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip(".")}.'
 
-    return exc_type, exc_errorcodes, exc_message, exception.filename, exception.filename2
+    return exc_type, exc_errorcodes, exc_message, exc.filename, exc.filename2
 
 
 def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
