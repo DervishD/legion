@@ -10,7 +10,6 @@ the maintenance scripts of my private system. It is shared publicly in
 case the code may be useful to others.
 
 ## {Constants}
-## {Classes}
 ## {Functions}
 """  # noqa: D400, D415
 import atexit
@@ -56,7 +55,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'run',
     'get_credentials',
     'demo',
-    'WFKStatuses',
     'wait_for_keypress',
     'logger',
     'get_credentials',
@@ -67,7 +65,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
 if sys.platform == 'win32':
     from ctypes import byref, c_uint, create_unicode_buffer, windll
     from ctypes.wintypes import MAX_PATH as _MAX_PATH_LEN
-    from enum import auto, IntEnum  # pylint: disable=ungrouped-imports
     from msvcrt import get_osfhandle, getch
 
 
@@ -387,35 +384,9 @@ def demo() -> None:
 
 
 if sys.platform == 'win32':
-    class WFKStatuses(IntEnum):
-        """Return statuses for `wait_for_keypress()`.
-
-        Available only for Windows (`win32`), this `IntEnum` contains
-        the possible return values for `wait_for_keypress()`:
-        - `WFKStatuses.NO_WIN32`<br>
-            Do not wait for keypress, no `win32` platform.
-        - `WFKStatuses.NO_CONSOLE_ATTACHED`<br>
-            Do not wait for keypress, no console attached.
-        - `WFKStatuses.NO_CONSOLE_TITLE`<br>
-            Do not wait for keypress, no console title.
-        - `WFKStatuses.NO_TRANSIENT_FROZEN`<br>
-            Do not wait for keypress, no transient console with frozen
-            executable.
-        - `WFKStatuses.NO_TRANSIENT_PYTHON`<br>
-            Do not wait for keypress, no transient console with `Python`
-            script.
-        - `WFKStatuses.WAIT_FOR_KEYPRESS`<br>
-            Wait for keypress.
-        """  # noqa: D204
-        NO_WIN32 = auto()
-        NO_CONSOLE_ATTACHED = auto()
-        NO_CONSOLE_TITLE = auto()
-        NO_TRANSIENT_FROZEN = auto()
-        NO_TRANSIENT_PYTHON = auto()
-        WAIT_FOR_KEYPRESS = auto()
-
+    _PYTHON_LAUNCHER = Path('py.exe')
     @atexit.register
-    def wait_for_keypress() -> WFKStatuses:  # pylint: disable=unused-variable,too-many-return-statements
+    def wait_for_keypress() -> None:  # pylint: disable=unused-variable
         """Wait for a keypress to continue in particular circumstances.
 
         If `sys.stdout` is attached to a transient console, the function
@@ -423,9 +394,7 @@ if sys.platform == 'win32':
         key is pressed.
         """
         if sys.platform != 'win32':
-            return WFKStatuses.NO_WIN32
-
-        PYTHON_LAUNCHER = Path('py.exe')  # pylint: disable=invalid-name  # noqa: N806
+            return
 
         # If no console is attached, the program must NOT pause.
         #
@@ -434,7 +403,7 @@ if sys.platform == 'win32':
         # complex, is needed here. The test below has been adapted from
         # https://stackoverflow.com/a/33168697
         if not windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint())):
-            return WFKStatuses.NO_CONSOLE_ATTACHED
+            return
 
         # If there is an attached console, then the program must pause
         # ONLY if that console will automatically close when the program
@@ -450,7 +419,7 @@ if sys.platform == 'win32':
         buffer_size = _MAX_PATH_LEN + 1
         console_title = create_unicode_buffer(buffer_size)
         if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
-            return WFKStatuses.NO_CONSOLE_TITLE
+            return
         console_title = console_title.value
 
         # If the console is not transient, return, do not pause.
@@ -460,19 +429,18 @@ if sys.platform == 'win32':
         # transient.
         #
         # For a '.py' file, it is more complicated, but in most cases if
-        # the console title contains the name of the '.py' file then the
-        # console is NOT a transient console.
+        # the console title contains the name of the Python launcher, it
+        # can be assumed the console is NOT transient.
         if getattr(sys, 'frozen', False):
             if console_title != sys.executable:
-                return WFKStatuses.NO_TRANSIENT_FROZEN
-        elif Path(console_title).name.lower() != PYTHON_LAUNCHER.name.lower():
-            return WFKStatuses.NO_TRANSIENT_PYTHON
+                return
+        elif Path(console_title).name.lower() != _PYTHON_LAUNCHER.name.lower():
+            return
 
         sys.stdout.flush()
         sys.stdout.write(_Messages.PRESS_ANY_KEY)
         sys.stdout.flush()
         getch()
-        return WFKStatuses.WAIT_FOR_KEYPRESS
 
 
 class _ConvenienceLogger(logging.Logger):
