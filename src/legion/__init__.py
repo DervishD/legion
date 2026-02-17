@@ -441,7 +441,6 @@ if sys.platform == 'win32':
         elif Path(sys.argv[0]).name in console_title.value:
             return
 
-        sys.stdout.flush()
         sys.stdout.write(_Messages.PRESS_ANY_KEY)
         sys.stdout.flush()
         getch()
