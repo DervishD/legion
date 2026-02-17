@@ -392,6 +392,10 @@ if sys.platform == 'win32':
         If `sys.stdout` is attached to a transient console, the function
         prints a message indicating that the program is paused until a
         key is pressed.
+
+        Please note that determining whether a console is transient or
+        not is entirely based on heuristics, as there no standard way of
+        knowing if a console windows is transient.
         """
         # If no console is attached, the program must NOT pause.
         #
