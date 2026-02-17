@@ -384,7 +384,6 @@ def demo() -> None:
 
 
 if sys.platform == 'win32':
-    _PYTHON_LAUNCHER = Path('py.exe')
     @atexit.register
     def wait_for_keypress() -> None:  # pylint: disable=unused-variable
         """Wait for a keypress to continue in particular circumstances.
@@ -397,6 +396,11 @@ if sys.platform == 'win32':
         not is entirely based on heuristics, as there no standard way of
         knowing if a console windows is transient.
         """
+        # If the script using this function has been imported instead of
+        # running normally, it must not wait for a keypress!
+        if __name__ != '__main__':
+            return
+
         # If no console is attached, the program must NOT pause.
         #
         # Since 'sys.stdout.isatty()' returns 'True' under Windows when
@@ -421,7 +425,6 @@ if sys.platform == 'win32':
         console_title = create_unicode_buffer(buffer_size)
         if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
             return
-        console_title = console_title.value
 
         # If the console is not transient, return, do not pause.
         #
@@ -429,13 +432,13 @@ if sys.platform == 'win32':
         # title is not equal to 'sys.executable' then the console is NOT
         # transient.
         #
-        # For a '.py' file, it is more complicated, but in most cases if
-        # the console title contains the name of the Python launcher, it
-        # can be assumed the console is NOT transient.
+        # For a `.py` file, this is more complicated, but in most cases
+        # if the console title contains the name of the `.py` file, the
+        # console is NOT transient.
         if getattr(sys, 'frozen', False):
-            if console_title != sys.executable:
+            if console_title.value != sys.executable:
                 return
-        elif Path(console_title).name.lower() != _PYTHON_LAUNCHER.name.lower():
+        elif Path(sys.argv[0]).name in console_title.value:
             return
 
         sys.stdout.flush()
