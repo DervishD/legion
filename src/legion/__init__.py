@@ -172,10 +172,10 @@ class _Messages(StrEnum):
 
 
 def error(message: str, details: str = '') -> None:
-    """Log error *message* with *details* (empty by default).
+    """Log error *message*, with optional *details* (empty by default).
 
     Both an error marker and a header are prepended to *message*, and a
-    visual separator is prepended to *details*, if that is provided. In
+    visual separator is prepended to *details*, if they are provided. In
     addition to this both *message* and *details* are indented.
 
     Finally, everything is logged using `logger.error()`.
@@ -214,7 +214,7 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
     Finally, depending on the platform, a modal dialog may be shown to
     ensure the end user notices the error.
 
-    Intended to be used as default exception hook (`sys.excepthook`).
+    Intended to be used as default exception hook in `sys.excepthook`.
     """
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -309,7 +309,11 @@ def munge_oserror(exc: OSError) -> tuple[str, str, str, str, str]:  # pylint: di
 
 
 def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
-    """Stringify `OSError` exception *exc* using *context*."""
+    """Stringify `OSError` exception *exc* using *context*.
+
+    *context* is typically used to indicate what exactly was the caller
+    doing when the exception was raised.
+    """
     errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
 
     paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
@@ -354,16 +358,16 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
     If *credentials_path* is not provided a default path is used. To be
     precise, the value of `DEFAULT_CREDENTIALS_PATH`.
 
-    The credentials are returned as a simple two-level dictionary. The
-    dictionary has two levels: the first one groups credentials into
-    sections, and the second contains the actual key-value pairs.
+    The credentials are returned as a simple dictionary. The dictionary
+    has two levels: the first one groups credentials into sections, and
+    the second contains the actual `key-value` pairs.
 
     Each credential is a `key-value` string pair, where the `key` is an
     identifier for the credential, and the `value` is the corresponding
     credential.
 
-    If *credentials_path* cannot be read or has syntax problems, `None`
-    is returned.
+    If *credentials_path* cannot be read, or has syntax problems, `None`
+    is returned. If it is empty, an empty dictionary is returned.
     """
     try:
         with credentials_path.open('rb') as credentials_file:
@@ -373,7 +377,7 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
 
 
 def demo() -> None:
-    """Show module constants."""
+    """Demonstration function, shows module constants for now."""
     sys.stdout.write(f'Legion module version {LEGION_VERSION}\n\n')
     sys.stdout.write(_Messages.DEMO_TIMESTAMP.format(timestamp()))
     constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
@@ -469,7 +473,10 @@ class _ConvenienceLogger(logging.Logger):
         self.indentation = ''
 
     def makeRecord(self, *args: Any, **kwargs: Any) -> logging.LogRecord:  # noqa: ANN401, N802
-        """Create a new logging record with indentation."""
+        """Create a new logging record with indentation.
+
+        Used internally by logger objects, can be called manually, too.
+        """
         record = super().makeRecord(*args, **kwargs)
         record.msg = '\n'.join(f'{self.indentation}{line}'.rstrip() for line in record.msg.split('\n'))
         return record
@@ -530,13 +537,12 @@ class _ConvenienceLogger(logging.Logger):
             timestamped.
             - If a file path is `None`, it is not created.
         - **Console logging** (if *console* is `True`):
+            - No timestamps are included in the messages.
             - Messages with severity of exactly `logging.INFO` go to the
             standard output stream.
             - Messages with severity of `logging.WARNING` or higher go
             to the standard error stream.
-            - No timestamps are included in console output.
-        - **No logging**
-            - If all file paths are `None` and *console* is `False`,
+        - If all file paths are `None` and *console* is `False`,
             **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
         """
         class _MultilineRecordFormatter(logging.Formatter):
