@@ -393,9 +393,6 @@ if sys.platform == 'win32':
         prints a message indicating that the program is paused until a
         key is pressed.
         """
-        if sys.platform != 'win32':
-            return
-
         # If no console is attached, the program must NOT pause.
         #
         # Since 'sys.stdout.isatty()' returns 'True' under Windows when
