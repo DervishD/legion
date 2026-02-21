@@ -9,14 +9,18 @@ module) contains miscellaneous functions and constants used in some of
 the maintenance scripts of my private system. It is shared publicly in
 case the code may be useful to others.
 
-## {Constants}
-## {Functions}
+## Constants
+{}
+## Functions
+{}
 """  # noqa: D400, D415
+from annotationlib import Format, get_annotations
 import atexit
 import contextlib
 from enum import StrEnum
 from errno import errorcode
 from importlib.metadata import version
+from inspect import isfunction, signature
 import logging
 from logging.config import dictConfig
 from os import environ
@@ -27,12 +31,13 @@ from textwrap import dedent
 from time import strftime
 import tomllib
 import traceback as tb
-from typing import Any, cast, LiteralString, TYPE_CHECKING
+from typing import Annotated, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from io import TextIOWrapper
     from types import TracebackType
+    from typing import Any, LiteralString
 
 
 __version__ = version(__package__ or Path(__file__).parent.stem)
@@ -57,8 +62,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'demo',
     'wait_for_keypress',
     'logger',
-    'get_credentials',
-    'demo',
+    'docs',
 ]
 
 
@@ -647,12 +651,137 @@ if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
     cast('TextIOWrapper', sys.stderr).reconfigure(encoding=UTF8)
 
 
-def demo() -> None:
-    """Show module constants."""
-    sys.stdout.write(f'Legion module version {LEGION_VERSION}\n\n')
-    sys.stdout.write(_Messages.DEMO_TIMESTAMP.format(timestamp()))
-    constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
-    width = max(len(name) for name in constants) + 1
-    for constant, value in constants.items():
-        sys.stdout.write(_Messages.DEMO_CONSTANT.format(constant, width, value))
-    sys.stdout.flush()
+def _indent_markdown(markdown: str) -> str:
+    """Indent all lines in *text_block* by 4 spaces.
+
+    The indentation is four spaces as per markdown specification.aces.
+
+    Lines which only contain whitespace after indenting are stripped.
+    """
+    return '\n'.join(f'{' ' * 4}{line}'.rstrip() for line in markdown.splitlines())
+
+
+def _unwrap_markdown(markdown: str) -> str:
+    """Unwrap *markdown* formatted text.
+
+    Remove line breaks from *markdown*, preserving Markdown formatting
+    where possible, including lists, hard line breaks, paragraphs, etc.
+    """
+    unwrapped: list[str] = []
+    paragraph = ''
+    last_indent = 0
+
+    for line in markdown.splitlines():
+        stripped_line = line.rstrip()
+        current_indent = len(line) - len(stripped_line)
+
+        if not stripped_line:
+            paragraph = f'{paragraph}{'\n' if paragraph else ''}'
+            unwrapped.append(paragraph)
+            paragraph = ''
+        elif stripped_line.endswith('<br>'):
+            paragraph = f'{f'{paragraph}\n' if paragraph else ''}{stripped_line.replace('<br>', '\\')}'
+            unwrapped.append(paragraph)
+            paragraph = ''
+        elif stripped_line.lstrip().startswith('- '):
+            unwrapped.append(paragraph)
+            paragraph = stripped_line
+        elif stripped_line.startswith(('# ', '## ', '> ')):
+            paragraph = f'{paragraph}{'\n' if paragraph else ''}{stripped_line}'
+            unwrapped.append(paragraph)
+            paragraph = ''
+        elif current_indent != last_indent:
+            unwrapped.append(paragraph)
+            paragraph = stripped_line
+            last_indent = current_indent
+        elif paragraph:
+            paragraph += f'{' ' if paragraph else ''}{stripped_line.lstrip()}'
+        else:
+            paragraph = stripped_line
+
+    if paragraph:
+        unwrapped.append(paragraph)
+
+    return '\n'.join(unwrapped)
+
+
+def _get_docs_for_function(name: str) -> str:
+    """Get documentation for function *name*."""
+    instance_name, _, function_name = name.partition('.')
+    func: Callable[..., Any] = getattr(globals()[instance_name], function_name) if function_name else globals()[name]
+
+    docstring = func.__doc__ or ''
+    doc_fragment = f'`{name}('
+    function_signature = signature(func, annotation_format=Format.STRING)
+
+    paramstrings: list[str] = []
+    for parameter in function_signature.parameters.values():
+        paramstring = parameter.name
+        paramstring += f': {parameter.annotation}' if parameter.annotation != parameter.empty else ''
+        if paramstring != 'self':
+            paramstrings.append(f'`{_indent_markdown(paramstring)}')
+
+    if paramstrings:
+        doc_fragment += f'`\\\n{',`\\\n'.join(paramstrings)}`\\\n`'
+
+    doc_fragment += f') -> {function_signature.return_annotation}`\\\n'
+    doc_fragment += _unwrap_markdown(docstring)
+
+    return doc_fragment
+
+
+def _get_docs_for_constant(name: str) -> str:
+    """Get documentation for constant *name*."""
+    if name not in (annotations := get_annotations(sys.modules[__name__])):
+        return f'`{name}`'
+
+    annotation = annotations[name]
+    module = str(annotation.__origin__.__module__).replace('builtins', '').replace('__main__', '')
+    qualname = str(annotation.__origin__.__qualname__)
+    docstring = '\n'.join(annotation.__metadata__)
+    type_annotation = '' if qualname.startswith('_') else f'{module}{'.' if module else ''}{qualname}'
+
+    doc_fragment = f'`{name}{': ' if type_annotation else ''}{type_annotation}`\\\n'
+    doc_fragment += f'{_unwrap_markdown(docstring.strip())}'
+    obj = globals()[name]
+    if obj and obj.__class__.__module__ == __name__:
+        extra_docstrings: list[str] = []
+
+        for attribute_name, attribute_object in obj.__class__.__dict__.items():
+            if attribute_name.startswith('_') or not callable(attribute_object):
+                continue
+            method_name = f'{name}.{attribute_name}'
+            attribute_docs = _indent_markdown(_get_docs_for_function(method_name)).lstrip()
+            extra_docstrings.append(f'- {attribute_docs}\n')
+
+        if extra_docstrings:
+            doc_fragment = f'{doc_fragment.rstrip('.')}:\n{''.join(sorted(extra_docstrings))}'
+
+    return doc_fragment
+
+
+def docs() -> str:
+    """Generate documentation for the module.
+
+    Return a Markdown-formatted string containing the documentation for
+    the module/package.
+    """
+    if __doc__ is None:
+        return ''
+
+    doc_fragments_for_constants: list[str] = []
+    doc_fragments_for_functions: list[str] = []
+    for name in __all__:
+        obj = globals()[name]
+        if isfunction(obj):
+            destination = doc_fragments_for_functions
+            doc_fragment = _get_docs_for_function(name)
+        else:
+            destination = doc_fragments_for_constants
+            doc_fragment = _get_docs_for_constant(name)
+        destination.append(f'- {_indent_markdown(doc_fragment).lstrip()}\n')
+
+    docs_for_constants = ''.join(sorted(doc_fragments_for_constants))
+    docs_for_functions = ''.join(sorted(doc_fragments_for_functions))
+
+    return _unwrap_markdown(__doc__).format(docs_for_constants, docs_for_functions)
