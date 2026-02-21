@@ -6,15 +6,25 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 ## [Development]
+### Removed
+- WFKStatuses enumeration type
+
 ### Changed
 - Update changelog format
+- Changed wait_for_keypress() return type
+
+### Added
+- Package documentation is now auto-generated
 
 ### Fixed
 - Minor code fixes and improvements
+- Documentation improvements
+
 
 ## [2.0.1] 2026-01-26
 ### Fixed
 - `README.md` was accidentally not in sync with current code
+
 
 ## [2.0.0] 2026-01-26
 ### Changed
@@ -26,6 +36,7 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
   logging levels an end user will typically be interested about. The `console`
   argument has not changed. Since they are keyword arguments this is of course a
   **breaking change**
+
 
 ## [1.2.0] 2026-01-17
 ### Changed
@@ -40,6 +51,7 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 - Package structure
 - Support for 'help()'
 
+
 ## [1.1.0] 2025-10-23
 ### Changed
 - Convert package to src-layout
@@ -50,9 +62,11 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 ### Fixed
 - Linting warnings
 
+
 ## [1.0.1] 2025-10-22
 ### Fixed
 - Mark the package as type-annotated
+
 
 ## [1.0.0] 2025-10-22
 ### Added
