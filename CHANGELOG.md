@@ -5,7 +5,11 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
+
 ## [Development]
+
+
+## [2.1.0] 2026-02-21
 ### Removed
 - WFKStatuses enumeration type
 
@@ -80,7 +84,8 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 - Useful run-time constants
 - Timestamp string generator
 
-[Development]: https://github.com/DervishD/legion/compare/v2.0.1...development
+[Development]: https://github.com/DervishD/legion/compare/v2.1.0...development
+[2.1.0]: https://github.com/DervishD/legion/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/DervishD/legion/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/DervishD/legion/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/DervishD/legion/compare/v1.1.1...v1.2.0
