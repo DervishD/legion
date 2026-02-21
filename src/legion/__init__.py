@@ -19,7 +19,7 @@ from errno import errorcode
 from importlib.metadata import version
 import logging
 from logging.config import dictConfig
-from os import environ, system
+from os import environ
 from pathlib import Path
 import subprocess
 import sys
@@ -261,7 +261,7 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK | MB_TOPMOST)
     if sys.platform == 'darwin':
         script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
-        system(f"osascript -e '{script}' >/dev/null")  # noqa: S605
+        run(('/usr/bin/osascript', '-e', script), capture_output=False, stdout=subprocess.DEVNULL)
 
 
 def munge_oserror(exc: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable
