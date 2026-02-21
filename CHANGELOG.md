@@ -12,6 +12,7 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 ### Changed
 - Update changelog format
 - Make wait_for_keypress() return `None`
+- Improve run() call signature
 
 ### Added
 - Package documentation is now auto-generated

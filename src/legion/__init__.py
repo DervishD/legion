@@ -326,29 +326,27 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 
 
 # pylint: disable-next=unused-variable
-def run(command: Sequence[str], **args: dict[str, Any]) -> subprocess.CompletedProcess[str]:
+def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
     """Run a command.
 
-    Run *command*, using *args* as arguments. It is just a simple helper
-    for `subprocess.run()` that provides convenient defaults.
+    Run *command*, using *kwargs* as arguments. Just a simple helper for
+    `subprocess.run()` that provides convenient defaults.
 
-    For that reason, the keyword arguments accepted in *args* and the
+    For that reason, the keyword arguments accepted in *kwargs* and the
     return value are the same ones used by `subprocess.run()` itself.
     """
-    default_args: dict[str, Any] = {
-        'capture_output': True,
-        'check': False,
-        'creationflags': 0,
-        'errors': 'replace',
-        'text': True,
-    }
-    if sys.platform == 'win32':
-        default_args['creationflags'] |= subprocess.CREATE_NO_WINDOW
+    kwargs.setdefault('capture_output', True)
+    kwargs.setdefault('check', False)
 
-    effective_args = default_args | args
+    if kwargs.get('capture_output'):
+        kwargs.setdefault('text', True)
+        kwargs.setdefault('errors', 'replace')
+
+    if sys.platform == 'win32' and 'creationflags' not in kwargs:
+        kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
 
     # pylint: disable=subprocess-run-check
-    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **effective_args))  # noqa: S603, PLW1510
+    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **kwargs))  # noqa: S603, PLW1510
 
 
 # pylint: disable-next=unused-variable
