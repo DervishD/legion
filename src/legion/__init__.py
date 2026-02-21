@@ -327,7 +327,7 @@ def timestamp() -> str:  # pylint: disable=unused-variable
 
 # pylint: disable-next=unused-variable
 def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
-    """Run a command.
+    """Run *command* with convenient defaults.
 
     Run *command*, using *kwargs* as arguments. Just a simple helper for
     `subprocess.run()` that provides convenient defaults.
