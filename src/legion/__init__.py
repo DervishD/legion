@@ -52,7 +52,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'ARROW_R',
     'ARROW_L',
     'UTF8',
-    'error',
     'excepthook',
     'munge_oserror',
     'format_oserror',
@@ -228,18 +227,6 @@ def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     return '\n'.join([f'{ERROR_MARKER}{banner}', *lines])
 
 
-def error(message: str, details: str = '') -> None:
-    """Log error *message*, with optional *details* (empty by default).
-
-    Both an error marker and a header are prepended to *message*, and a
-    visual separator is prepended to *details*, if they are provided. In
-    addition to this both *message* and *details* are indented.
-
-    Finally, everything is logged using `logger.error()`.
-    """
-    logger.error(format_error(message, details))
-
-
 # pylint: disable-next=unused-variable
 def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_traceback: TracebackType | None) -> None:
     """Log unhandled exceptions.
@@ -295,7 +282,7 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         frame.name = PROGRAM_NAME if frame.name == _Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
         traceback += _Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
     details += _Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
-    error(message, details)
+    logger.error(format_error(message, details))
 
     # Just in case there is NOT an attached console or a working logging
     # system, the error message is also shown in a modal dialog window,

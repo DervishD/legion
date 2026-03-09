@@ -74,15 +74,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Generate documentation for the module.
 
     Return a Markdown-formatted string containing the documentation for the module/package.
-- `error(`\
-    `    message: str,`\
-    `    details: str`\
-    `) -> None`\
-    Log error *message*, with optional *details* (empty by default).
-
-    Both an error marker and a header are prepended to *message*, and a visual separator is prepended to *details*, if they are provided. In addition to this both *message* and *details* are indented.
-
-    Finally, everything is logged using `logger.error()`.
 - `excepthook(`\
     `    exc_type: type[BaseException],`\
     `    exc_value: BaseException,`\
