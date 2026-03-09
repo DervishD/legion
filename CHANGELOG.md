@@ -7,6 +7,15 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 
 ## [Development]
+### Removed
+- `error()` function. It was not used anywhere so it is safe to remove
+
+### Changed
+- Most hardcoded messages are now customizable
+- Improved default exception hook, with customizable banners
+
+### Added
+- `format_error()` function, for pretty-formatting error messages
 
 
 ## [2.1.0] 2026-02-21
