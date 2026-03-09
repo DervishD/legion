@@ -143,14 +143,13 @@ class _Constants(StrEnum):
     ERROR_DETAILS_LINE_PREFIX = '│ '
     ERROR_DETAILS_FOOTER = '╰'
 
-    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
+    UNEXPECTED_OSERROR_BANNER = 'Unexpected OSError.'
+    UNHANDLED_EXCEPTION_BANNER = 'Unhandled exception.'
+    ERRDIALOG_TITLE = f'Unexpected error in {PROGRAM_NAME}'
 
-
-class _Messages(StrEnum):
-    """Module messages."""
-
-    UNEXPECTED_OSERROR = 'Unexpected OSError.'
-    OSERROR_DETAILS = dedent("""
+    OSERROR_PRETTYPRINT_FMT = 'OSError [{}] {} {}.\n{}'
+    OSERROR_DETAIL_NOT_AVAILABLE = '???'
+    OSERROR_DETAILS_FMT = dedent("""
          type = {}
         errno = {}
      winerror = {}
@@ -158,25 +157,19 @@ class _Messages(StrEnum):
      filename = {}
     filename2 = {}
     """).strip('\n')
-    OSERROR_DETAIL_NA = 'N/A'
+    OSERROR_WINERROR_FMT = 'WinError{}'
+    OSERROR_ERRORCODES_FMT = '{}/{}'
 
-    UNHANDLED_EXCEPTION = 'Unhandled exception.'
-    EXCEPTION_DETAILS = 'type = {}\nvalue = {}\nargs: {}'
-    EXCEPTION_DETAILS_ARG = '\n  [{}] {}'
-    TRACEBACK_HEADER = '\n\ntraceback:\n{}'
-    TRACEBACK_FRAME_HEADER = '▸ {}\n'
-    TRACEBACK_FRAME_LINE = '  {}, {}: {}\n'
-    TRACEBACK_TOPLEVEL_FRAME = '<module>'
-    ERRDIALOG_TITLE = f'Unexpected error in {PROGRAM_NAME}'
+    EXCEPTION_DETAILS_FMT = 'exc_type = {}\nexc_value = {}\nexc_args: {}'
+    EXCEPTION_DETAILS_ARG_FMT = '\n  [{}] {}'
+    TRACEBACK_HEADER_FMT = '\n\ntraceback:\n{}'
+    TRACEBACK_FRAME_HEADER_FMT = '▸ {}\n'
+    TRACEBACK_FRAME_LINE_FMT = '  {}, {}: {}\n'
+    TRACEBACK_TOPLEVEL_FRAME_NAME = '<module>'
 
-    OSERROR_WINERROR = 'WinError{}'
-    OSERROR_ERRORCODES = '{}/{}'
-    OSERROR_PRETTYPRINT = 'Error [{}] {} {}.\n{}'
+    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
-    INVALID_INDENT_LEVEL = 'Indentation level must be a non-negative integer.'
-
-    DEMO_TIMESTAMP = 'Timestamp is {}\n\n'
-    DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧\n'
+    DEMO_CONSTANT_FMT = '{:┄<{}}⟶ ⟦{}⟧\n'
 
 
 def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -254,34 +247,34 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         return
 
     if isinstance(exc_value, OSError):
-        message = _Messages.UNEXPECTED_OSERROR
-        errno_message = _Messages.OSERROR_DETAIL_NA
+        message = _Constants.UNEXPECTED_OSERROR_BANNER
+        errno_message = _Constants.OSERROR_DETAIL_NOT_AVAILABLE
         if exc_value.errno:
             with contextlib.suppress(IndexError):
                 errno_message = errorcode[exc_value.errno]
-        details = _Messages.OSERROR_DETAILS.format(
+        details = _Constants.OSERROR_DETAILS_FMT.format(
             exc_type.__name__,
             errno_message,
-            exc_value.winerror or _Messages.OSERROR_DETAIL_NA,
+            exc_value.winerror or _Constants.OSERROR_DETAIL_NOT_AVAILABLE,
             exc_value.strerror,
-            _Messages.OSERROR_DETAIL_NA if exc_value.filename is None else exc_value.filename,
-            _Messages.OSERROR_DETAIL_NA if exc_value.filename2 is None else exc_value.filename2,
+            _Constants.OSERROR_DETAIL_NOT_AVAILABLE if exc_value.filename is None else exc_value.filename,
+            _Constants.OSERROR_DETAIL_NOT_AVAILABLE if exc_value.filename2 is None else exc_value.filename2,
         )
     else:
-        message = _Messages.UNHANDLED_EXCEPTION
+        message = _Constants.UNHANDLED_EXCEPTION_BANNER
         args = ''
         for arg in exc_value.args:
-            args += _Messages.EXCEPTION_DETAILS_ARG.format(type(arg).__name__, arg)
-        details = _Messages.EXCEPTION_DETAILS.format(exc_type.__name__, str(exc_value), args)
+            args += _Constants.EXCEPTION_DETAILS_ARG_FMT.format(type(arg).__name__, arg)
+        details = _Constants.EXCEPTION_DETAILS_FMT.format(exc_type.__name__, str(exc_value), args)
     current_frame_source_path = None
     traceback = ''
     for frame in tb.extract_tb(exc_traceback):
         if current_frame_source_path != frame.filename:
-            traceback += _Messages.TRACEBACK_FRAME_HEADER.format(frame.filename)
+            traceback += _Constants.TRACEBACK_FRAME_HEADER_FMT.format(frame.filename)
             current_frame_source_path = frame.filename
-        frame.name = PROGRAM_NAME if frame.name == _Messages.TRACEBACK_TOPLEVEL_FRAME else frame.name
-        traceback += _Messages.TRACEBACK_FRAME_LINE.format(frame.lineno, frame.name, frame.line)
-    details += _Messages.TRACEBACK_HEADER.format(traceback) if traceback else ''
+        frame.name = PROGRAM_NAME if frame.name == _Constants.TRACEBACK_TOPLEVEL_FRAME_NAME else frame.name
+        traceback += _Constants.TRACEBACK_FRAME_LINE_FMT.format(frame.lineno, frame.name, frame.line)
+    details += _Constants.TRACEBACK_HEADER_FMT.format(traceback) if traceback else ''
     logger.error(format_error(message, details))
 
     # Just in case there is NOT an attached console or a working logging
@@ -291,9 +284,9 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         MB_ICONWARNING = 0x30  # pylint: disable=invalid-name  # noqa: N806
         MB_OK = 0  # pylint: disable=invalid-name  # noqa: N806
         MB_TOPMOST = 0x40000  # pylint: disable=invalid-name  # noqa: N806
-        windll.user32.MessageBoxW(None, message, _Messages.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK | MB_TOPMOST)
+        windll.user32.MessageBoxW(None, message, _Constants.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK | MB_TOPMOST)
     if sys.platform == 'darwin':
-        script = f'display dialog "{message}" with title "{_Messages.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
+        script = f'display dialog "{message}" with title "{_Constants.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
         run(('/usr/bin/osascript', '-e', script), capture_output=False, stdout=subprocess.DEVNULL)
 
 
@@ -325,15 +318,15 @@ def munge_oserror(exc: OSError) -> tuple[str, str, str, str, str]:  # pylint: di
     exc_errorcodes = None
 
     with contextlib.suppress(AttributeError):
-        exc_winerror = _Messages.OSERROR_WINERROR.format(exc.winerror) if exc.winerror else None
+        exc_winerror = _Constants.OSERROR_WINERROR_FMT.format(exc.winerror) if exc.winerror else None
 
     if exc.errno:
         with contextlib.suppress(KeyError):
             exc_errno = errorcode[exc.errno]
 
     if exc_errno and exc_winerror:
-        exc_errorcodes = _Messages.OSERROR_ERRORCODES.format(exc_errno, exc_winerror)
-    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or _Messages.OSERROR_DETAIL_NA
+        exc_errorcodes = _Constants.OSERROR_ERRORCODES_FMT.format(exc_errno, exc_winerror)
+    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or _Constants.OSERROR_DETAIL_NOT_AVAILABLE
     exc_message = ''
     if exc.strerror:
         exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip(".")}.'
@@ -350,7 +343,7 @@ def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused
     errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
 
     paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
-    return _Messages.OSERROR_PRETTYPRINT.format(errorcodes, context, paths, message)
+    return _Constants.OSERROR_PRETTYPRINT_FMT.format(errorcodes, context, paths, message)
 
 
 def timestamp() -> str:  # pylint: disable=unused-variable
@@ -410,11 +403,11 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
 def demo() -> None:
     """Demonstration function, shows module constants for now."""
     sys.stdout.write(f'Legion module version {LEGION_VERSION}\n\n')
-    sys.stdout.write(_Messages.DEMO_TIMESTAMP.format(timestamp()))
+    sys.stdout.write(f'{timestamp.__name__}() {ARROW_R} {timestamp()}\n\n')
     constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
     width = max(len(name) for name in constants) + 1
     for constant, value in constants.items():
-        sys.stdout.write(_Messages.DEMO_CONSTANT.format(constant, width, value))
+        sys.stdout.write(_Constants.DEMO_CONSTANT_FMT.format(constant, width, value))
     sys.stdout.flush()
 
 
@@ -535,7 +528,7 @@ class _ConvenienceLogger(logging.Logger):
         elif isinstance(level, int) and level >= 0:
             self.indent_level = level
         else:
-            raise ValueError(_Messages.INVALID_INDENT_LEVEL)
+            raise ValueError(level)
         self.indentation = self.__INDENT_CHAR * self.indent_level
 
     def set_indent(self, level: int) -> None:
