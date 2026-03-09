@@ -143,6 +143,8 @@ class _Constants(StrEnum):
     ERROR_DETAILS_LINE_PREFIX = '│ '
     ERROR_DETAILS_FOOTER = '╰'
 
+    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
+
 
 class _Messages(StrEnum):
     """Module messages."""
@@ -172,8 +174,6 @@ class _Messages(StrEnum):
     OSERROR_PRETTYPRINT = 'Error [{}] {} {}.\n{}'
 
     INVALID_INDENT_LEVEL = 'Indentation level must be a non-negative integer.'
-
-    PRESS_ANY_KEY = '\nPress any key to continue...'
 
     DEMO_TIMESTAMP = 'Timestamp is {}\n\n'
     DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧\n'
@@ -420,12 +420,16 @@ def demo() -> None:
 
 if sys.platform == 'win32':
     @atexit.register
-    def wait_for_keypress() -> None:  # pylint: disable=unused-variable
+    def wait_for_keypress(prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE) -> None:  # pylint: disable=unused-variable
         """Wait for a keypress to continue in particular circumstances.
 
         If `sys.stdout` is attached to a transient console, the function
-        prints a message indicating that the program is paused until a
-        key is pressed.
+        prints a *prompt* message indicating that the program is paused
+        until a key is pressed.
+
+        It is a good idea to include a leading new line character in the
+        *prompt* message to ensure it is clearly separated from previous
+        output from the program.
 
         Please note that determining whether a console is transient or
         not is entirely based on heuristics, as there no standard way of
@@ -476,7 +480,7 @@ if sys.platform == 'win32':
         elif Path(sys.argv[0]).name in console_title.value:
             return
 
-        sys.stdout.write(_Messages.PRESS_ANY_KEY)
+        sys.stdout.write(prompt)
         sys.stdout.flush()
         getch()
 

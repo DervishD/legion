@@ -160,9 +160,13 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     For that reason, the keyword arguments accepted in *kwargs* and the return value are the same ones used by `subprocess.run()` itself.
 - `timestamp() -> str`\
     Produce a timestamp string from current local date and time.
-- `wait_for_keypress() -> None`\
+- `wait_for_keypress(`\
+    `    prompt: str`\
+    `) -> None`\
     Wait for a keypress to continue in particular circumstances.
 
-    If `sys.stdout` is attached to a transient console, the function prints a message indicating that the program is paused until a key is pressed.
+    If `sys.stdout` is attached to a transient console, the function prints a *prompt* message indicating that the program is paused until a key is pressed.
+
+    It is a good idea to include a leading new line character in the *prompt* message to ensure it is clearly separated from previous output from the program.
 
     Please note that determining whether a console is transient or not is entirely based on heuristics, as there no standard way of knowing if a console windows is transient.
