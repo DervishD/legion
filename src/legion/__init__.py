@@ -143,9 +143,9 @@ class _Constants(StrEnum):
     ERROR_DETAILS_LINE_PREFIX = '│ '
     ERROR_DETAILS_FOOTER = '╰'
 
-    UNEXPECTED_OSERROR_BANNER = 'Unexpected OSError.'
+    UNHANDLED_OSERROR_BANNER = 'Unhandled OSError.'
     UNHANDLED_EXCEPTION_BANNER = 'Unhandled exception.'
-    ERRDIALOG_TITLE = f'Unexpected error in {PROGRAM_NAME}'
+    ERROR_DIALOG_TITLE = f'Unhandled error in {PROGRAM_NAME}'
 
     OSERROR_PRETTYPRINT_FMT = 'OSError [{}] {} {}.\n{}'
     OSERROR_DETAIL_NOT_AVAILABLE = '???'
@@ -220,39 +220,14 @@ def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     return '\n'.join([f'{ERROR_MARKER}{banner}', *lines])
 
 
-# pylint: disable-next=unused-variable
-def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_traceback: TracebackType | None) -> None:
-    """Log unhandled exceptions.
-
-    Unhandled exceptions are logged, using the provided arguments, that
-    is, the exception type (*exc_type*), its value (*exc_value*) and the
-    associated traceback (*exc_traceback*).
-
-    For `OSError` exceptions a different format is used, which includes
-    any additional `OSError` information, and no traceback is logged.
-
-    For any other exception, a generic message is logged together with
-    the traceback, if available.
-
-    `KeyboardInterrupt` exceptions are not logged. Instead, the default
-    exception hook is called to preserve keyboard interrupt behavior.
-
-    Finally, depending on the platform, a modal dialog may be shown to
-    ensure the end user notices the error.
-
-    Intended to be used as default exception hook in `sys.excepthook`.
-    """
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-
+def _stringize_exception_details(exc_type: type[BaseException], exc_value: BaseException) -> str:
+    """Extract exception details as a formatted string."""
     if isinstance(exc_value, OSError):
-        message = _Constants.UNEXPECTED_OSERROR_BANNER
         errno_message = _Constants.OSERROR_DETAIL_NOT_AVAILABLE
         if exc_value.errno:
             with contextlib.suppress(IndexError):
                 errno_message = errorcode[exc_value.errno]
-        details = _Constants.OSERROR_DETAILS_FMT.format(
+        return _Constants.OSERROR_DETAILS_FMT.format(
             exc_type.__name__,
             errno_message,
             exc_value.winerror or _Constants.OSERROR_DETAIL_NOT_AVAILABLE,
@@ -260,12 +235,14 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
             _Constants.OSERROR_DETAIL_NOT_AVAILABLE if exc_value.filename is None else exc_value.filename,
             _Constants.OSERROR_DETAIL_NOT_AVAILABLE if exc_value.filename2 is None else exc_value.filename2,
         )
-    else:
-        message = _Constants.UNHANDLED_EXCEPTION_BANNER
-        args = ''
-        for arg in exc_value.args:
-            args += _Constants.EXCEPTION_DETAILS_ARG_FMT.format(type(arg).__name__, arg)
-        details = _Constants.EXCEPTION_DETAILS_FMT.format(exc_type.__name__, str(exc_value), args)
+    args = ''
+    for arg in exc_value.args:
+        args += _Constants.EXCEPTION_DETAILS_ARG_FMT.format(type(arg).__name__, arg)
+    return _Constants.EXCEPTION_DETAILS_FMT.format(exc_type.__name__, str(exc_value), args)
+
+
+def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
+    """Extract traceback as a formatted string."""
     current_frame_source_path = None
     traceback = ''
     for frame in tb.extract_tb(exc_traceback):
@@ -274,6 +251,62 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
             current_frame_source_path = frame.filename
         frame.name = PROGRAM_NAME if frame.name == _Constants.TRACEBACK_TOPLEVEL_FRAME_NAME else frame.name
         traceback += _Constants.TRACEBACK_FRAME_LINE_FMT.format(frame.lineno, frame.name, frame.line)
+    return traceback
+
+
+# pylint: disable-next=unused-variable
+def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    exc_traceback: TracebackType | None,
+    *,
+    unhandled_exception_banner: str = _Constants.UNHANDLED_EXCEPTION_BANNER,
+    unhandled_oserror_banner: str = _Constants.UNHANDLED_OSERROR_BANNER,
+    error_dialog_title: str = _Constants.ERROR_DIALOG_TITLE,
+) -> None:
+    """Log unhandled exceptions.
+
+    Intended to be used as default exception hook in `sys.excepthook`.
+
+    Unhandled exceptions are logged, using the provided arguments, that
+    is, the exception type (*exc_type*), its value (*exc_value*) and the
+    associated traceback (*exc_traceback*).
+
+    The formatting can be customized by using the following keyword-only
+    arguments, but if not provided, default strings are used:
+    - *unhandled_exception_banner*
+    - *unhandled_oserror_banner*
+    - *error_dialog_title*
+
+    Please note that in order to provide this formatting arguments when
+    using the function as `sys.excepthook`, `functools.partial()` can be
+    used to create a new function with the desired defaults, but other
+    alternative mechanisms can be used as well.
+
+    A banner is prepended to the exception information, depending on the
+    type of the exception: for `OSError` exception, the banner used is
+    *unhandled_oserror_banner* and for the rest of possible exceptions,
+    *unhandled_exception_banner* is used.
+
+    For `OSError` exceptions, any additional information included in the
+    exception object is gathered and shown, and no traceback is logged.
+
+    For any other exception, arguments contained in the exception object
+    are included, if present, together with the traceback if available.
+
+    `KeyboardInterrupt` exceptions are not logged. Instead, the default
+    exception hook is called to preserve keyboard interrupt behavior.
+
+    Finally, depending on the platform, a modal dialog may be shown to
+    ensure the end user notices the error, titled *error_dialog_title*.
+    """
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    message = unhandled_oserror_banner if isinstance(exc_value, OSError) else unhandled_exception_banner
+    details = _stringize_exception_details(exc_type, exc_value)
+    traceback = _stringize_traceback(exc_traceback)
     details += _Constants.TRACEBACK_HEADER_FMT.format(traceback) if traceback else ''
     logger.error(format_error(message, details))
 
@@ -284,9 +317,9 @@ def excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_trac
         MB_ICONWARNING = 0x30  # pylint: disable=invalid-name  # noqa: N806
         MB_OK = 0  # pylint: disable=invalid-name  # noqa: N806
         MB_TOPMOST = 0x40000  # pylint: disable=invalid-name  # noqa: N806
-        windll.user32.MessageBoxW(None, message, _Constants.ERRDIALOG_TITLE, MB_ICONWARNING | MB_OK | MB_TOPMOST)
+        windll.user32.MessageBoxW(None, message, error_dialog_title, MB_ICONWARNING | MB_OK | MB_TOPMOST)
     if sys.platform == 'darwin':
-        script = f'display dialog "{message}" with title "{_Constants.ERRDIALOG_TITLE}" with icon caution buttons "OK"'
+        script = f'display dialog "{message}" with title "{error_dialog_title}" with icon caution buttons "OK"'
         run(('/usr/bin/osascript', '-e', script), capture_output=False, stdout=subprocess.DEVNULL)
 
 

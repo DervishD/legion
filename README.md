@@ -77,21 +77,34 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 - `excepthook(`\
     `    exc_type: type[BaseException],`\
     `    exc_value: BaseException,`\
-    `    exc_traceback: TracebackType | None`\
+    `    exc_traceback: TracebackType | None,`\
+    `    *,`\
+    `    unhandled_exception_banner: str,`\
+    `    unhandled_oserror_banner: str,`\
+    `    error_dialog_title: str`\
     `) -> None`\
     Log unhandled exceptions.
 
+    Intended to be used as default exception hook in `sys.excepthook`.
+
     Unhandled exceptions are logged, using the provided arguments, that is, the exception type (*exc_type*), its value (*exc_value*) and the associated traceback (*exc_traceback*).
 
-    For `OSError` exceptions a different format is used, which includes any additional `OSError` information, and no traceback is logged.
+    The formatting can be customized by using the following keyword-only arguments, but if not provided, default strings are used:
+    - *unhandled_exception_banner*
+    - *unhandled_oserror_banner*
+    - *error_dialog_title*
 
-    For any other exception, a generic message is logged together with the traceback, if available.
+    Please note that in order to provide this formatting arguments when using the function as `sys.excepthook`, `functools.partial()` can be used to create a new function with the desired defaults, but other alternative mechanisms can be used as well.
+
+    A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_banner* and for the rest of possible exceptions, *unhandled_exception_banner* is used.
+
+    For `OSError` exceptions, any additional information included in the exception object is gathered and shown, and no traceback is logged.
+
+    For any other exception, arguments contained in the exception object are included, if present, together with the traceback if available.
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 
-    Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error.
-
-    Intended to be used as default exception hook in `sys.excepthook`.
+    Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error, titled *error_dialog_title*.
 - `format_error(`\
     `    message: str,`\
     `    details: str,`\
