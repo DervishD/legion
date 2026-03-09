@@ -101,6 +101,30 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error.
 
     Intended to be used as default exception hook in `sys.excepthook`.
+- `format_error(`\
+    `    message: str,`\
+    `    details: str,`\
+    `    *,`\
+    `    banner: str,`\
+    `    details_header: str,`\
+    `    details_line_prefix: str,`\
+    `    details_footer: str`\
+    `) -> str`\
+    Format error *message* and, optionally, *details*.
+
+    First, `ERROR_MARKER` and *banner* are prepended to *message*. All the subsequent lines are indented so they are visually aligned under the end of the `ERROR_MARKER`.
+
+    If *details* are provided, they are appended to *message*, separated by a new line character and *details_header*. Each line in *details* is prepended by *details_line_prefix*. Finally, *details_footer* is appended, ending the details section.
+
+    Leading and internal spaces, as well as blank lines, are preserved in both *message* and *details*, but trailing spaces are removed.
+
+    The formatting can be customized using the following keyword-only arguments, but if not provided, default strings are used instead:
+    - *banner*
+    - *details_header*
+    - *details_line_prefix*
+    - *details_footer*
+
+    Usually, the customization can be done using `functools.partial()` to create a new function with the desired defaults, so that they do not have to be provided every time the function is called.
 - `format_oserror(`\
     `    context: str,`\
     `    exc: OSError`\

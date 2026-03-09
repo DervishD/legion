@@ -56,6 +56,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'excepthook',
     'munge_oserror',
     'format_oserror',
+    'format_error',
     'timestamp',
     'run',
     'get_credentials',
@@ -135,13 +136,17 @@ UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 # pylint: enable=unused-variable
 
 
+class _Constants(StrEnum):
+    """Module internal constants."""
+
+    ERROR_BANNER = f'Error in {PROGRAM_NAME}.'
+    ERROR_DETAILS_HEADER = 'Additional error information:'
+    ERROR_DETAILS_LINE_PREFIX = '│ '
+    ERROR_DETAILS_FOOTER = '╰'
+
+
 class _Messages(StrEnum):
     """Module messages."""
-
-    ERROR_HEADER = f'\n{ERROR_MARKER}Error in {PROGRAM_NAME}.'
-    ERROR_DETAILS_HEADING = '\nAdditional error information:'
-    ERROR_DETAILS_PREAMBLE = '│ '
-    ERROR_DETAILS_TAIL = '╰'
 
     UNEXPECTED_OSERROR = 'Unexpected OSError.'
     OSERROR_DETAILS = dedent("""
@@ -175,6 +180,54 @@ class _Messages(StrEnum):
     DEMO_CONSTANT = '{:┄<{}}⟶ ⟦{}⟧\n'
 
 
+def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    message: str,
+    details: str = '',
+    *,
+    banner: str = _Constants.ERROR_BANNER,
+    details_header: str = _Constants.ERROR_DETAILS_HEADER,
+    details_line_prefix: str = _Constants.ERROR_DETAILS_LINE_PREFIX,
+    details_footer: str = _Constants.ERROR_DETAILS_FOOTER,
+) -> str:
+    """Format error *message* and, optionally, *details*.
+
+    First, `ERROR_MARKER` and *banner* are prepended to *message*. All
+    the subsequent lines are indented so they are visually aligned under
+    the end of the `ERROR_MARKER`.
+
+    If *details* are provided, they are appended to *message*, separated
+    by a new line character and *details_header*. Each line in *details*
+    is prepended by *details_line_prefix*. Finally, *details_footer* is
+    appended, ending the details section.
+
+    Leading and internal spaces, as well as blank lines, are preserved
+    in both *message* and *details*, but trailing spaces are removed.
+
+    The formatting can be customized using the following keyword-only
+    arguments, but if not provided, default strings are used instead:
+    - *banner*
+    - *details_header*
+    - *details_line_prefix*
+    - *details_footer*
+
+    Usually, the customization can be done using `functools.partial()`
+    to create a new function with the desired defaults, so that they
+    do not have to be provided every time the function is called.
+    """
+    lines = message.split('\n')
+
+    if details.strip():
+        lines.append('')
+        lines.append(details_header)
+        lines.extend(f'{details_line_prefix}{line}' for line in details.split('\n'))
+        lines.append(details_footer)
+
+    indent = ' ' * len(ERROR_MARKER)
+    lines = [f'{indent}{line}' for line in lines]
+
+    return '\n'.join([f'{ERROR_MARKER}{banner}', *lines])
+
+
 def error(message: str, details: str = '') -> None:
     """Log error *message*, with optional *details* (empty by default).
 
@@ -184,18 +237,7 @@ def error(message: str, details: str = '') -> None:
 
     Finally, everything is logged using `logger.error()`.
     """
-    logger.set_indent(0)
-    logger.error(_Messages.ERROR_HEADER)
-
-    logger.set_indent(len(ERROR_MARKER))
-    logger.error(message)
-
-    if details := details.strip():
-        logger.error(_Messages.ERROR_DETAILS_HEADING)
-        logger.error('\n'.join(f'{_Messages.ERROR_DETAILS_PREAMBLE}{line}' for line in details.split('\n')))
-        logger.error(_Messages.ERROR_DETAILS_TAIL)
-
-    logger.set_indent(0)
+    logger.error(format_error(message, details))
 
 
 # pylint: disable-next=unused-variable
