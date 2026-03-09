@@ -715,9 +715,26 @@ def _get_docs_for_function(name: str) -> str:
     function_signature = signature(func, annotation_format=Format.STRING)
 
     paramstrings: list[str] = []
+    add_positional_only_separator = False
+    add_keyword_only_separator = True
     for parameter in function_signature.parameters.values():
         paramstring = parameter.name
         paramstring += f': {parameter.annotation}' if parameter.annotation != parameter.empty else ''
+
+        if parameter.kind == parameter.POSITIONAL_ONLY:
+            add_positional_only_separator = True
+        elif add_positional_only_separator:
+            # Non-positional-only parameter after positional-only parameters, add separator.
+            paramstrings.append(f'`{_indent_markdown('/')}')
+            add_positional_only_separator = False
+        if parameter.kind == parameter.VAR_POSITIONAL:
+            # *args-like parameter, no need to add '*' as separator for keyword-only parameters.
+            add_keyword_only_separator = False
+        elif parameter.kind == parameter.KEYWORD_ONLY and add_keyword_only_separator:
+            # Keyword-only parameter and no *args-like parameter before, add separator.
+            paramstrings.append(f'`{_indent_markdown('*')}')
+            add_keyword_only_separator = False
+
         if paramstring != 'self':
             paramstrings.append(f'`{_indent_markdown(paramstring)}')
 
