@@ -15,8 +15,8 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 ### Changed
 - Update changelog format
-- Make wait_for_keypress() return `None`
-- Improve run() call signature
+- Make `wait_for_keypress()` return `None`
+- Improve `run()` call signature
 
 ### Added
 - Package documentation is now auto-generated
@@ -54,7 +54,7 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 ### Fixed
 - Version handling
 - Package structure
-- Support for 'help()'
+- Support for `help()`
 
 
 ## [1.1.0] 2025-10-23
