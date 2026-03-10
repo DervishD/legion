@@ -182,4 +182,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     It is a good idea to include a leading new line character in the *prompt* message to ensure it is clearly separated from previous output from the program.
 
-    Please note that determining whether a console is transient or not is entirely based on heuristics, as there no standard way of knowing if a console windows is transient.
+    **NOTE**: there is no standard method of knowing if a console is transient or not, so determining console transience is entirely based on heuristics.
+
+    **NOTE**: is up to the importer to register this function with `atexit.register()`, to call it explicitly, or to use it only if the importer is running as a script instead of being imported.

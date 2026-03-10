@@ -13,6 +13,7 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 ### Changed
 - Most hardcoded messages are now customizable
 - Improved default exception hook, with customizable banners
+- `wait_for_keypress()` is no longer automatically registered with `atexit`
 
 ### Added
 - Unit test framework
