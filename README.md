@@ -94,7 +94,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     - *unhandled_oserror_banner*
     - *error_dialog_title*
 
-    Please note that in order to provide this formatting arguments when using the function as `sys.excepthook`, `functools.partial()` can be used to create a new function with the desired defaults, but other alternative mechanisms can be used as well.
+    **NOTE**: in order to provide this formatting arguments when using the function as `sys.excepthook`, `functools.partial()` can be used to create a new function with the desired defaults, but other alternative mechanisms can be used as well.
 
     A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_banner* and for the rest of possible exceptions, *unhandled_exception_banner* is used.
 

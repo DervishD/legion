@@ -277,9 +277,9 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     - *unhandled_oserror_banner*
     - *error_dialog_title*
 
-    Please note that in order to provide this formatting arguments when
-    using the function as `sys.excepthook`, `functools.partial()` can be
-    used to create a new function with the desired defaults, but other
+    **NOTE**: in order to provide this formatting arguments when using
+    the function as `sys.excepthook`, `functools.partial()` can be used
+    to create a new function with the desired defaults, but other
     alternative mechanisms can be used as well.
 
     A banner is prepended to the exception information, depending on the
