@@ -495,7 +495,8 @@ if sys.platform == 'win32':
 
         If `sys.stdout` is attached to a transient console, the function
         prints a *prompt* message indicating that the program is paused
-        until a key is pressed.
+        until a key is pressed. If no *prompt* is provided as argument,
+        a default string (in English) is used instead.
 
         It is a good idea to include a leading new line character in the
         *prompt* message to ensure it is clearly separated from previous

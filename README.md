@@ -178,7 +178,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `) -> None`\
     Wait for a keypress to continue in particular circumstances.
 
-    If `sys.stdout` is attached to a transient console, the function prints a *prompt* message indicating that the program is paused until a key is pressed.
+    If `sys.stdout` is attached to a transient console, the function prints a *prompt* message indicating that the program is paused until a key is pressed. If no *prompt* is provided as argument, a default string (in English) is used instead.
 
     It is a good idea to include a leading new line character in the *prompt* message to ensure it is clearly separated from previous output from the program.
 
