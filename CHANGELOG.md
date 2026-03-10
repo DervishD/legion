@@ -15,6 +15,7 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 - Improved default exception hook, with customizable banners
 
 ### Added
+- Unit test framework
 - `format_error()` function, for pretty-formatting error messages
 
 

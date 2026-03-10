@@ -5,6 +5,20 @@ requires = [
     "versioningit==3.3.0"
 ]
 
+[dependency-groups]
+dev = [
+    {include-group="tests"},
+    {include-group="lint"},
+]
+tests = [
+    "pytest==9.0.2",
+]
+lint = [
+    "pylint",
+    "vulture",
+    "ruff",
+]
+
 [project]
 name = "legion"
 dynamic = ["version"]
