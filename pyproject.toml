@@ -36,10 +36,7 @@ source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
 
-[tool.versioningit.next-version]
-method = "smallest"
-
 [tool.versioningit.format]
-dirty = "{base_version}+{rev}.dirty"
-distance = "{next_version}.dev{distance}+{rev}"
-distance-dirty = "{next_version}.dev{distance}+{rev}.dirty"
+dirty = "{base_version}+{branch}.{rev}.dirty"
+distance = "{base_version}.post{distance}+{branch}.{rev}"
+distance-dirty = "{base_version}.post{distance}+{branch}.{rev}.dirty"
