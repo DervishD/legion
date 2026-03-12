@@ -16,8 +16,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Path of user's desktop directory.
 - `ERROR_MARKER: str`\
     Marker string prepended to error messages.
-- `LEGION_VERSION: str`\
-    Currently installed version of this module.
+- `LEGION_DISTRIBUTION_NAME: str`\
+    Distribution name for the current package.
 - `PROGRAM_NAME: str`\
     User-friendly name of the currently executing script.
 - `PROGRAM_PATH: pathlib.Path`\
@@ -26,6 +26,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `time.strftime()` compatible format specification for timestamps.
 - `UTF8: str`\
     Normalized name for `UTF-8` encoding.
+- `VERSION_IDENTIFIER_FALLBACK: str`\
+    PyPA compliant version identifier fallback.
 - `logger`\
     Default per-application logger instance.
 

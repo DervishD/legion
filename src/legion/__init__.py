@@ -18,7 +18,7 @@ from annotationlib import Format, get_annotations
 import contextlib
 from enum import StrEnum
 from errno import errorcode
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from inspect import isfunction, signature
 import logging
 from logging.config import dictConfig
@@ -39,9 +39,9 @@ if TYPE_CHECKING:
     from typing import Any, LiteralString
 
 
-__version__ = version(__package__ or Path(__file__).parent.stem)
 __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
-    'LEGION_VERSION',
+    'LEGION_DISTRIBUTION_NAME',
+    'VERSION_IDENTIFIER_FALLBACK',
     'DESKTOP_PATH',
     'PROGRAM_PATH',
     'PROGRAM_NAME',
@@ -115,8 +115,8 @@ def _get_program_path() -> Path:
 
 # Exportable constants.
 # pylint: disable=unused-variable
-LEGION_VERSION: Annotated[str, 'Currently installed version of this module.'] = __version__
-
+LEGION_DISTRIBUTION_NAME: Annotated[str, 'Distribution name for the current package.'] = __name__
+VERSION_IDENTIFIER_FALLBACK: Annotated[str, 'PyPA compliant version identifier fallback.'] = '0!0'
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
 PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
 
@@ -434,7 +434,7 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
 
 def demo() -> None:
     """Demonstration function, shows module constants for now."""
-    sys.stdout.write(f'Legion module version {LEGION_VERSION}\n\n')
+    sys.stdout.write(f'legion package v{version(LEGION_DISTRIBUTION_NAME)}\n\n')
     sys.stdout.write(f'{timestamp.__name__}() {ARROW_R} {timestamp()}\n\n')
     constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
     width = max(len(name) for name in constants) + 1
