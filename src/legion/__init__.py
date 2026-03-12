@@ -19,7 +19,7 @@ import contextlib
 from enum import StrEnum
 from errno import errorcode
 from importlib.metadata import PackageNotFoundError, version
-from inspect import isfunction, signature
+from inspect import currentframe, isclass, isfunction, signature
 import logging
 from logging.config import dictConfig
 from os import environ
@@ -436,8 +436,16 @@ def demo() -> None:
     """Demonstration function, shows module constants for now."""
     sys.stdout.write(f'legion package v{version(LEGION_DISTRIBUTION_NAME)}\n\n')
     sys.stdout.write(f'{timestamp.__name__}() {ARROW_R} {timestamp()}\n\n')
-    constants = {k: v for k, v in globals().items() if k.isupper() and not k.startswith('_')}
-    width = max(len(name) for name in constants) + 1
+
+    width = 0
+    constants: dict[str, str] = {}
+    for name in __all__:
+        obj = globals()[name]
+        if name.startswith('_') or not name.isupper() or isfunction(obj) or isclass(obj):
+            continue
+        width = max(width, len(name) + 1)
+        constants[name] = obj
+
     for constant, value in constants.items():
         sys.stdout.write(_Constants.DEMO_CONSTANT_FMT.format(constant, width, value))
     sys.stdout.flush()
