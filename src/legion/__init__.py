@@ -161,7 +161,6 @@ class _Constants(StrEnum):
     TRACEBACK_HEADER_FMT = '\n\ntraceback:\n{}'
     TRACEBACK_FRAME_HEADER_FMT = '▸ {}\n'
     TRACEBACK_FRAME_LINE_FMT = '  {}, {}: {}\n'
-    TRACEBACK_TOPLEVEL_FRAME_NAME = '<module>'
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
@@ -247,7 +246,6 @@ def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
         if current_frame_source_path != frame.filename:
             traceback += _Constants.TRACEBACK_FRAME_HEADER_FMT.format(frame.filename)
             current_frame_source_path = frame.filename
-        frame.name = PROGRAM_NAME if frame.name == _Constants.TRACEBACK_TOPLEVEL_FRAME_NAME else frame.name
         traceback += _Constants.TRACEBACK_FRAME_LINE_FMT.format(frame.lineno, frame.name, frame.line)
     return traceback
 
