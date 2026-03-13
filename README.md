@@ -16,8 +16,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Path of user's desktop directory.
 - `ERROR_MARKER: str`\
     Marker string prepended to error messages.
-- `LEGION_DISTRIBUTION_NAME: str`\
-    Distribution name for the current package.
 - `PROGRAM_NAME: str`\
     User-friendly name of the currently executing script.
 - `PROGRAM_PATH: pathlib.Path`\
@@ -71,7 +69,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
 ## Functions
 - `demo() -> None`\
-    Demonstration function, shows module constants for now.
+    Demonstrate package features.
 - `docs() -> str`\
     Generate documentation for the module.
 

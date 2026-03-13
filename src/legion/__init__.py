@@ -115,7 +115,6 @@ def _get_program_path() -> Path:
 
 # Exportable constants.
 # pylint: disable=unused-variable
-LEGION_DISTRIBUTION_NAME: Annotated[str, 'Distribution name for the current package.'] = __name__
 VERSION_IDENTIFIER_FALLBACK: Annotated[str, 'PyPA compliant version identifier fallback.'] = '0!0'
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
 PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
