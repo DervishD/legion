@@ -180,9 +180,9 @@ def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ) -> str:
     """Format error *message* and, optionally, *details*.
 
-    First, `ERROR_MARKER` and *banner* are prepended to *message*. All
+    First, an error marker and *banner* are prepended to *message*. All
     the subsequent lines are indented so they are visually aligned under
-    the end of the `ERROR_MARKER`.
+    the end of the error marker.
 
     If *details* are provided, they are appended to *message*, separated
     by a new line character and *details_header*. Each line in *details*

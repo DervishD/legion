@@ -114,7 +114,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `) -> str`\
     Format error *message* and, optionally, *details*.
 
-    First, `ERROR_MARKER` and *banner* are prepended to *message*. All the subsequent lines are indented so they are visually aligned under the end of the `ERROR_MARKER`.
+    First, an error marker and *banner* are prepended to *message*. All the subsequent lines are indented so they are visually aligned under the end of the error marker.
 
     If *details* are provided, they are appended to *message*, separated by a new line character and *details_header*. Each line in *details* is prepended by *details_line_prefix*. Finally, *details_footer* is appended, ending the details section.
 
