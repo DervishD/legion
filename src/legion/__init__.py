@@ -41,8 +41,6 @@ if TYPE_CHECKING:
 
 
 __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
-    'LEGION_DISTRIBUTION_NAME',
-    'VERSION_IDENTIFIER_FALLBACK',
     'DESKTOP_PATH',
     'PROGRAM_PATH',
     'PROGRAM_NAME',
@@ -116,7 +114,6 @@ def _get_program_path() -> Path:
 
 # Exportable constants.
 # pylint: disable=unused-variable
-VERSION_IDENTIFIER_FALLBACK: Annotated[str, 'PyPA compliant version identifier fallback.'] = '0!0'
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
 PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
 

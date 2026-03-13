@@ -24,8 +24,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `time.strftime()` compatible format specification for timestamps.
 - `UTF8: str`\
     Normalized name for `UTF-8` encoding.
-- `VERSION_IDENTIFIER_FALLBACK: str`\
-    PyPA compliant version identifier fallback.
 - `logger`\
     Default per-application logger instance.
 
