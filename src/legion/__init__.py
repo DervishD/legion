@@ -134,14 +134,14 @@ UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 class _Constants(StrEnum):
     """Module internal constants."""
 
-    ERROR_BANNER = f'Error in {PROGRAM_NAME}.'
+    ERROR_BANNER = 'ERROR:'
     ERROR_DETAILS_HEADER = 'Additional error information:'
     ERROR_DETAILS_LINE_PREFIX = '│ '
     ERROR_DETAILS_FOOTER = '╰'
 
-    UNHANDLED_OSERROR_BANNER = 'Unhandled OSError.'
-    UNHANDLED_EXCEPTION_BANNER = 'Unhandled exception.'
-    ERROR_DIALOG_TITLE = f'Unhandled error in {PROGRAM_NAME}'
+    UNHANDLED_OSERROR_HEADING = 'Unhandled OSError.'
+    UNHANDLED_EXCEPTION_HEADING = 'Unhandled exception.'
+    ERROR_DIALOG_TITLE = 'Unhandled error'
 
     OSERROR_PRETTYPRINT_FMT = 'OSError [{}] {} {}.\n{}'
     OSERROR_DETAIL_NOT_AVAILABLE = '???'
@@ -256,8 +256,8 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     exc_value: BaseException,
     exc_traceback: TracebackType | None,
     *,
-    unhandled_exception_banner: str = _Constants.UNHANDLED_EXCEPTION_BANNER,
-    unhandled_oserror_banner: str = _Constants.UNHANDLED_OSERROR_BANNER,
+    unhandled_exception_heading: str = _Constants.UNHANDLED_EXCEPTION_HEADING,
+    unhandled_oserror_heading: str = _Constants.UNHANDLED_OSERROR_HEADING,
     error_dialog_title: str = _Constants.ERROR_DIALOG_TITLE,
 ) -> None:
     """Log unhandled exceptions.
@@ -270,8 +270,8 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
     The formatting can be customized by using the following keyword-only
     arguments, but if not provided, default strings are used:
-    - *unhandled_exception_banner*
-    - *unhandled_oserror_banner*
+    - *unhandled_exception_heading*
+    - *unhandled_oserror_heading*
     - *error_dialog_title*
 
     **NOTE**: in order to provide this formatting arguments when using
@@ -281,8 +281,8 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
     A banner is prepended to the exception information, depending on the
     type of the exception: for `OSError` exception, the banner used is
-    *unhandled_oserror_banner* and for the rest of possible exceptions,
-    *unhandled_exception_banner* is used.
+    *unhandled_oserror_heading* and for the rest of possible exceptions,
+    *unhandled_exception_heading* is used.
 
     For `OSError` exceptions, any additional information included in the
     exception object is gathered and shown, and no traceback is logged.
@@ -295,12 +295,14 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
     Finally, depending on the platform, a modal dialog may be shown to
     ensure the end user notices the error, titled *error_dialog_title*.
+    Please note that the program name is not included by default in the
+    dialog window title, so provide a custom title if that is needed.
     """
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    message = unhandled_oserror_banner if isinstance(exc_value, OSError) else unhandled_exception_banner
+    message = unhandled_oserror_heading if isinstance(exc_value, OSError) else unhandled_exception_heading
     details = _stringize_exception_details(exc_type, exc_value)
     traceback = _stringize_traceback(exc_traceback)
     details += _Constants.TRACEBACK_HEADER_FMT.format(traceback) if traceback else ''
