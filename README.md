@@ -16,10 +16,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Path of user's desktop directory.
 - `ERROR_MARKER: str`\
     Marker string prepended to error messages.
-- `PROGRAM_NAME: str`\
-    User-friendly name of the currently executing script.
-- `PROGRAM_PATH: pathlib.Path`\
-    Path of the currently executing script.
 - `TIMESTAMP_FORMAT: str`\
     `time.strftime()` compatible format specification for timestamps.
 - `UTF8: str`\
@@ -77,8 +73,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_value: BaseException,`\
     `    exc_traceback: TracebackType | None,`\
     `    *,`\
-    `    unhandled_exception_banner: str,`\
-    `    unhandled_oserror_banner: str,`\
+    `    unhandled_exception_heading: str,`\
+    `    unhandled_oserror_heading: str,`\
     `    error_dialog_title: str`\
     `) -> None`\
     Log unhandled exceptions.
@@ -88,13 +84,13 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Unhandled exceptions are logged, using the provided arguments, that is, the exception type (*exc_type*), its value (*exc_value*) and the associated traceback (*exc_traceback*).
 
     The formatting can be customized by using the following keyword-only arguments, but if not provided, default strings are used:
-    - *unhandled_exception_banner*
-    - *unhandled_oserror_banner*
+    - *unhandled_exception_heading*
+    - *unhandled_oserror_heading*
     - *error_dialog_title*
 
     **NOTE**: in order to provide this formatting arguments when using the function as `sys.excepthook`, `functools.partial()` can be used to create a new function with the desired defaults, but other alternative mechanisms can be used as well.
 
-    A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_banner* and for the rest of possible exceptions, *unhandled_exception_banner* is used.
+    A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_heading* and for the rest of possible exceptions, *unhandled_exception_heading* is used.
 
     For `OSError` exceptions, any additional information included in the exception object is gathered and shown, and no traceback is logged.
 
@@ -102,7 +98,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 
-    Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error, titled *error_dialog_title*.
+    Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error, titled *error_dialog_title*. Please note that the program name is not included by default in the dialog window title, so provide a custom title if that is needed.
 - `format_error(`\
     `    message: str,`\
     `    details: str,`\

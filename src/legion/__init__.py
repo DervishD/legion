@@ -42,8 +42,6 @@ if TYPE_CHECKING:
 
 __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'DESKTOP_PATH',
-    'PROGRAM_PATH',
-    'PROGRAM_NAME',
     'DEFAULT_CREDENTIALS_PATH',
     'TIMESTAMP_FORMAT',
     'ERROR_MARKER',
@@ -97,27 +95,9 @@ def _get_desktop_path() -> Path:
     return home_path
 
 
-def _get_program_path() -> Path:
-    """Get the resolved path of the currently executing program."""
-    try:
-        # This method is not totally failproof, because there probably
-        # are situations where the '__file__' attribute of '__main__'
-        # won't exist BUT there's some path involved.
-        #
-        # If one of those situations arise in the future, the code will
-        # be modified accordingly.
-        program_path = sys.executable if getattr(sys, 'frozen', False) else sys.modules['__main__'].__file__
-    except AttributeError:
-        program_path = None
-    return Path(program_path or '__unavailable__.py').resolve()
-
-
 # Exportable constants.
 # pylint: disable=unused-variable
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
-PROGRAM_PATH: Annotated[Path, 'Path of the currently executing script.'] = _get_program_path()
-
-PROGRAM_NAME: Annotated[str, 'User-friendly name of the currently executing script.'] = PROGRAM_PATH.stem
 
 DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
 Default filename used by `get_credentials()` for user credentials.
@@ -718,7 +698,7 @@ Default per-application logger instance.
 
 Its interface is identical to `logging.Logger` objects but it also
 includes indentation support and a simple configuration function.
-"""] = cast('_ConvenienceLogger', logging.getLogger(PROGRAM_NAME))
+"""] = cast('_ConvenienceLogger', logging.getLogger(__name__))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
