@@ -15,6 +15,7 @@ case the code may be useful to others.
 {}
 """  # noqa: D400, D415
 from annotationlib import Format, get_annotations
+import atexit
 import contextlib
 from enum import StrEnum
 from errno import errorcode
@@ -167,7 +168,9 @@ class _Constants(StrEnum):
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
-    DEMO_CONSTANT_FMT = '{:┄<{}}⟶ ⟦{}⟧\n'
+    DEMO_BANNER = '{} package v{}\n'
+    DEMO_TIMESTAMP_FMT = f'{{}}() {ARROW_R} {{}}\n'
+    DEMO_CONSTANT_FMT = f'{{:┄<{{}}}}{ARROW_R} ⟦{{}}⟧'
 
 
 def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -432,9 +435,15 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
 
 
 def demo() -> None:
-    """Demonstration function, shows module constants for now."""
-    sys.stdout.write(f'legion package v{version(LEGION_DISTRIBUTION_NAME)}\n\n')
-    sys.stdout.write(f'{timestamp.__name__}() {ARROW_R} {timestamp()}\n\n')
+    """Demonstrate package features."""
+    atexit.register(logging.shutdown)
+    logger.config()
+
+    with contextlib.suppress(PackageNotFoundError):
+        self_name = __package__ or str(Path(__file__).resolve().parent)
+        logger.info(_Constants.DEMO_BANNER.format(self_name, version(self_name)))
+
+    logger.info(_Constants.DEMO_TIMESTAMP_FMT.format(timestamp.__name__, timestamp()))
 
     width = 0
     constants: dict[str, str] = {}
@@ -446,8 +455,7 @@ def demo() -> None:
         constants[name] = obj
 
     for constant, value in constants.items():
-        sys.stdout.write(_Constants.DEMO_CONSTANT_FMT.format(constant, width, value))
-    sys.stdout.flush()
+        logger.info(_Constants.DEMO_CONSTANT_FMT.format(constant, width, value))
 
 
 if sys.platform == 'win32':
