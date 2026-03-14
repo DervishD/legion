@@ -25,6 +25,7 @@ import logging
 from logging.config import dictConfig
 from os import environ
 from pathlib import Path
+import re
 import subprocess
 import sys
 from textwrap import dedent
@@ -51,7 +52,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'excepthook',
     'munge_oserror',
     'format_oserror',
-    'format_error',
+    'format_message',
     'timestamp',
     'run',
     'get_credentials',
@@ -114,10 +115,7 @@ UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 class _Constants(StrEnum):
     """Module internal constants."""
 
-    ERROR_BANNER = 'Error: '
-    ERROR_DETAILS_HEADER = 'Additional error information:'
-    ERROR_DETAILS_LINE_PREFIX = '│ '
-    ERROR_DETAILS_FOOTER = '╰'
+    INTERNAL_INDENTATION = '  '
 
     UNHANDLED_OSERROR_HEADING = 'Unhandled OSError.'
     UNHANDLED_EXCEPTION_HEADING = 'Unhandled exception.'
@@ -137,10 +135,10 @@ class _Constants(StrEnum):
     OSERROR_ERRORCODES_FMT = '{}/{}'
 
     EXCEPTION_DETAILS_FMT = 'exc_type = {}\nexc_value = {}\nexc_args: {}'
-    EXCEPTION_DETAILS_ARG_FMT = '\n  [{}] {}'
+    EXCEPTION_DETAILS_ARG_FMT = f'\n{INTERNAL_INDENTATION}[{{}}] {{}}'
     TRACEBACK_HEADER_FMT = '\n\ntraceback:\n{}'
     TRACEBACK_FRAME_HEADER_FMT = '▸ {}\n'
-    TRACEBACK_FRAME_LINE_FMT = '  {}, {}: {}\n'
+    TRACEBACK_FRAME_LINE_FMT = f'{INTERNAL_INDENTATION}{{}}, {{}}: {{}}\n'
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
@@ -149,62 +147,34 @@ class _Constants(StrEnum):
     DEMO_CONSTANT_FMT = f'{{:┄<{{}}}}{ARROW_R} ⟦{{}}⟧'
 
 
-def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+def format_message(
     message: str = '',
     details: str = '',
     *,
-    marker: str = ERROR_MARKER,
-    banner: str = _Constants.ERROR_BANNER,
-    details_header: str = _Constants.ERROR_DETAILS_HEADER,
-    details_line_prefix: str = _Constants.ERROR_DETAILS_LINE_PREFIX,
-    details_footer: str = _Constants.ERROR_DETAILS_FOOTER,
+    details_indent: str = ' ',
 ) -> str:
-    """Format error *message* and, *details*. Both are optional.
+    """Format *message*, including *details*. Both are optional.
 
-    If no *message* (or an empty one) is provided, then an empty string
-    is returned, instead of an empty fully formatted one.
-
-    First, both a *marker* and *banner* are prepended to the first line
-    of *message*. All the subsequent lines in *message* are indented so
-    they visually align under the end of the *marker*.
+    The *message* is sanitized: any trailing whitespace is stripped, and
+    any sequence of internal whitespace is converted to a single space.
+    Leading whitespace is preserved, though.
 
     If *details* are provided, they are appended to *message*, separated
-    by a new line character and *details_header*. Each line in *details*
-    is prepended by *details_line_prefix*. Finally, *details_footer* is
-    appended, ending the details section. The entire section is indented
-    so it visually aligns under the end of the error marker.
+    by a newline character, and indented by *details_indent*, which is a
+    single space by default but any string can be used.
 
-    Leading and internal spaces, as well as blank lines, are preserved
-    in both *message* and *details*, but trailing spaces are removed.
-
-    The formatting can be customized using the following keyword-only
-    arguments, but if not provided, default strings are used instead:
-    - *marker*
-    - *banner*
-    - *details_header*
-    - *details_line_prefix*
-    - *details_footer*
-
-    Usually, the customization can be done using `functools.partial()`
-    to create a new function with the desired defaults, so that they
-    do not have to be provided every time the function is called.
+    Multiline *details* are supported. For each line trailing whitespace
+    is stripped and leading whitespace is preserved. This allows to use
+    a per-line arbitrary indentation, and to have visual separation from
+    *message* by including some newline characters at the very beginning
+    of *details*.
     """
-    message_lines = message.strip().split('\n')
-    if not message_lines:
-        return ''
+    output = [re.sub(r'(?<=\S)(\s+)(?=\S)', r' ', message.rstrip())]
 
-    output = [f'{marker}{banner}{message_lines.pop(0)}']
-    output.extend(message_lines)
+    if details.rstrip():
+        output.extend(f'{details_indent}{line.rstrip()}' for line in details.split('\n'))
 
-    details_lines = details.strip().split('\n')
-    if details_lines:
-        output.append('')
-        output.append(details_header)
-        output.extend(f'{details_line_prefix}{line}' for line in details_lines)
-        output.append(details_footer)
-
-    indentation = ' ' * len(marker)
-    return ('\n'.join([f'{indentation}{line.rstrip()}' for line in output])).lstrip()
+    return '\n'.join(output)
 
 
 def _stringize_exception_details(exc_type: type[BaseException], exc_value: BaseException) -> str:
@@ -296,7 +266,7 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     details = _stringize_exception_details(exc_type, exc_value)
     traceback = _stringize_traceback(exc_traceback)
     details += _Constants.TRACEBACK_HEADER_FMT.format(traceback) if traceback else ''
-    logger.error(format_error(message, details))
+    logger.error(format_message(message, details, details_indent=_Constants.INTERNAL_INDENTATION))
 
     # Just in case there is NOT an attached console or a working logging
     # system, the error message is also shown in a modal dialog window,

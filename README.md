@@ -99,34 +99,19 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 
     Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error, titled *error_dialog_title*. Please note that the program name is not included by default in the dialog window title, so provide a custom title if that is needed.
-- `format_error(`\
+- `format_message(`\
     `    message: str,`\
     `    details: str,`\
     `    *,`\
-    `    marker: str,`\
-    `    banner: str,`\
-    `    details_header: str,`\
-    `    details_line_prefix: str,`\
-    `    details_footer: str`\
+    `    details_indent: str`\
     `) -> str`\
-    Format error *message* and, *details*. Both are optional.
+    Format *message*, including *details*. Both are optional.
 
-    If no *message* (or an empty one) is provided, then an empty string is returned, instead of an empty fully formatted one.
+    The *message* is sanitized: any trailing whitespace is stripped, and any sequence of internal whitespace is converted to a single space. Leading whitespace is preserved, though.
 
-    First, both a *marker* and *banner* are prepended to the first line of *message*. All the subsequent lines in *message* are indented so they visually align under the end of the *marker*.
+    If *details* are provided, they are appended to *message*, separated by a newline character, and indented by *details_indent*, which is a single space by default but any string can be used.
 
-    If *details* are provided, they are appended to *message*, separated by a new line character and *details_header*. Each line in *details* is prepended by *details_line_prefix*. Finally, *details_footer* is appended, ending the details section. The entire section is indented so it visually aligns under the end of the error marker.
-
-    Leading and internal spaces, as well as blank lines, are preserved in both *message* and *details*, but trailing spaces are removed.
-
-    The formatting can be customized using the following keyword-only arguments, but if not provided, default strings are used instead:
-    - *marker*
-    - *banner*
-    - *details_header*
-    - *details_line_prefix*
-    - *details_footer*
-
-    Usually, the customization can be done using `functools.partial()` to create a new function with the desired defaults, so that they do not have to be provided every time the function is called.
+    Multiline *details* are supported. For each line trailing whitespace is stripped and leading whitespace is preserved. This allows to use a per-line arbitrary indentation, and to have visual separation from *message* by including some newline characters at the very beginning of *details*.
 - `format_oserror(`\
     `    context: str,`\
     `    exc: OSError`\
