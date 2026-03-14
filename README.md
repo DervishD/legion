@@ -103,20 +103,24 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    message: str,`\
     `    details: str,`\
     `    *,`\
+    `    marker: str,`\
     `    banner: str,`\
     `    details_header: str,`\
     `    details_line_prefix: str,`\
     `    details_footer: str`\
     `) -> str`\
-    Format error *message* and, optionally, *details*.
+    Format error *message* and, *details*. Both are optional.
 
-    First, an error marker and *banner* are prepended to *message*. All the subsequent lines are indented so they are visually aligned under the end of the error marker.
+    If no *message* (or an empty one) is provided, then an empty string is returned, instead of an empty fully formatted one.
 
-    If *details* are provided, they are appended to *message*, separated by a new line character and *details_header*. Each line in *details* is prepended by *details_line_prefix*. Finally, *details_footer* is appended, ending the details section.
+    First, both a *marker* and *banner* are prepended to the first line of *message*. All the subsequent lines in *message* are indented so they visually align under the end of the *marker*.
+
+    If *details* are provided, they are appended to *message*, separated by a new line character and *details_header*. Each line in *details* is prepended by *details_line_prefix*. Finally, *details_footer* is appended, ending the details section. The entire section is indented so it visually aligns under the end of the error marker.
 
     Leading and internal spaces, as well as blank lines, are preserved in both *message* and *details*, but trailing spaces are removed.
 
     The formatting can be customized using the following keyword-only arguments, but if not provided, default strings are used instead:
+    - *marker*
     - *banner*
     - *details_header*
     - *details_line_prefix*

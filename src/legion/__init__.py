@@ -114,7 +114,7 @@ UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 class _Constants(StrEnum):
     """Module internal constants."""
 
-    ERROR_BANNER = 'ERROR:'
+    ERROR_BANNER = 'Error: '
     ERROR_DETAILS_HEADER = 'Additional error information:'
     ERROR_DETAILS_LINE_PREFIX = '│ '
     ERROR_DETAILS_FOOTER = '╰'
@@ -150,30 +150,36 @@ class _Constants(StrEnum):
 
 
 def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
-    message: str,
+    message: str = '',
     details: str = '',
     *,
+    marker: str = ERROR_MARKER,
     banner: str = _Constants.ERROR_BANNER,
     details_header: str = _Constants.ERROR_DETAILS_HEADER,
     details_line_prefix: str = _Constants.ERROR_DETAILS_LINE_PREFIX,
     details_footer: str = _Constants.ERROR_DETAILS_FOOTER,
 ) -> str:
-    """Format error *message* and, optionally, *details*.
+    """Format error *message* and, *details*. Both are optional.
 
-    First, an error marker and *banner* are prepended to *message*. All
-    the subsequent lines are indented so they are visually aligned under
-    the end of the error marker.
+    If no *message* (or an empty one) is provided, then an empty string
+    is returned, instead of an empty fully formatted one.
+
+    First, both a *marker* and *banner* are prepended to the first line
+    of *message*. All the subsequent lines in *message* are indented so
+    they visually align under the end of the *marker*.
 
     If *details* are provided, they are appended to *message*, separated
     by a new line character and *details_header*. Each line in *details*
     is prepended by *details_line_prefix*. Finally, *details_footer* is
-    appended, ending the details section.
+    appended, ending the details section. The entire section is indented
+    so it visually aligns under the end of the error marker.
 
     Leading and internal spaces, as well as blank lines, are preserved
     in both *message* and *details*, but trailing spaces are removed.
 
     The formatting can be customized using the following keyword-only
     arguments, but if not provided, default strings are used instead:
+    - *marker*
     - *banner*
     - *details_header*
     - *details_line_prefix*
@@ -183,18 +189,22 @@ def format_error(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     to create a new function with the desired defaults, so that they
     do not have to be provided every time the function is called.
     """
-    lines = message.split('\n')
+    message_lines = message.strip().split('\n')
+    if not message_lines:
+        return ''
 
-    if details.strip():
-        lines.append('')
-        lines.append(details_header)
-        lines.extend(f'{details_line_prefix}{line}' for line in details.split('\n'))
-        lines.append(details_footer)
+    output = [f'{marker}{banner}{message_lines.pop(0)}']
+    output.extend(message_lines)
 
-    indent = ' ' * len(ERROR_MARKER)
-    lines = [f'{indent}{line}' for line in lines]
+    details_lines = details.strip().split('\n')
+    if details_lines:
+        output.append('')
+        output.append(details_header)
+        output.extend(f'{details_line_prefix}{line}' for line in details_lines)
+        output.append(details_footer)
 
-    return '\n'.join([f'{ERROR_MARKER}{banner}', *lines])
+    indentation = ' ' * len(marker)
+    return ('\n'.join([f'{indentation}{line.rstrip()}' for line in output])).lstrip()
 
 
 def _stringize_exception_details(exc_type: type[BaseException], exc_value: BaseException) -> str:
