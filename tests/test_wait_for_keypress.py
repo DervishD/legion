@@ -35,7 +35,7 @@ def mock_wait_for_keypress(
     return getch_spy
 
 
-@pytest.mark.parametrize(('running_as_script', 'console_attached', 'console_transient', 'expected'), [
+@pytest.mark.parametrize(('has_attached_console', 'is_attached_console_transient', 'expected'), [
     (False, None, False),
     (True, False, False),
     (True, True, True),
@@ -44,12 +44,11 @@ def mock_wait_for_keypress(
     'test_no_wait_for_keypress_no_transient_console',
     'test_do_wait_for_keypress',
 ])
-# pylint: disable=unused-variable
-def test_wait_for_keypress(
+def test_wait_for_keypress(  # pylint: disable=unused-variable
     monkeypatch: pytest.MonkeyPatch, *,
     has_attached_console: bool, is_attached_console_transient: bool,
     expected: bool) -> None:
-    """Test that `wait_for_keypress()` waits only when it should."""
+    """Test that the waiting happens only when it should."""
     getch_spy = mock_wait_for_keypress(
         monkeypatch,
         has_attached_console=has_attached_console,
@@ -59,9 +58,9 @@ def test_wait_for_keypress(
     assert getch_spy.called is expected
 
 
-# pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
 def test_customized_prompt(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    """Test `wait_for_keypress()` customized prompt output."""
+    """Test customized prompt output."""
     custom_prompt = 'This is a custom prompt!'
     mock_wait_for_keypress(monkeypatch,
         prompt=custom_prompt,
