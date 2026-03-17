@@ -119,7 +119,6 @@ class _Constants(StrEnum):
 
     UNHANDLED_OSERROR_HEADING = 'Unhandled OSError.'
     UNHANDLED_EXCEPTION_HEADING = 'Unhandled exception.'
-    ERROR_DIALOG_TITLE = 'Unhandled error'
 
     OSERROR_PRETTYPRINT_FMT = 'OSError [{}] {} {}.\n{}'
     OSERROR_DETAIL_NOT_AVAILABLE = '???'
@@ -210,15 +209,13 @@ def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
     return traceback
 
 
-# pylint: disable-next=unused-variable
-def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+def excepthook(
     exc_type: type[BaseException],
     exc_value: BaseException,
     exc_traceback: TracebackType | None,
     *,
     unhandled_exception_heading: str = _Constants.UNHANDLED_EXCEPTION_HEADING,
     unhandled_oserror_heading: str = _Constants.UNHANDLED_OSERROR_HEADING,
-    error_dialog_title: str = _Constants.ERROR_DIALOG_TITLE,
 ) -> None:
     """Log unhandled exceptions.
 
@@ -232,7 +229,6 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     arguments, but if not provided, default strings are used:
     - *unhandled_exception_heading*
     - *unhandled_oserror_heading*
-    - *error_dialog_title*
 
     **NOTE**: in order to provide this formatting arguments when using
     the function as `sys.excepthook`, `functools.partial()` can be used
@@ -252,11 +248,6 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default
     exception hook is called to preserve keyboard interrupt behavior.
-
-    Finally, depending on the platform, a modal dialog may be shown to
-    ensure the end user notices the error, titled *error_dialog_title*.
-    Please note that the program name is not included by default in the
-    dialog window title, so provide a custom title if that is needed.
     """
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -267,18 +258,6 @@ def excepthook(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     traceback = _stringize_traceback(exc_traceback)
     details += _Constants.TRACEBACK_HEADER_FMT.format(traceback) if traceback else ''
     logger.error(format_message(message, details, details_indent=_Constants.INTERNAL_INDENTATION))
-
-    # Just in case there is NOT an attached console or a working logging
-    # system, the error message is also shown in a modal dialog window,
-    # so the end user is aware of the problem.
-    if sys.platform == 'win32':
-        MB_ICONWARNING = 0x30  # pylint: disable=invalid-name  # noqa: N806
-        MB_OK = 0  # pylint: disable=invalid-name  # noqa: N806
-        MB_TOPMOST = 0x40000  # pylint: disable=invalid-name  # noqa: N806
-        windll.user32.MessageBoxW(None, message, error_dialog_title, MB_ICONWARNING | MB_OK | MB_TOPMOST)
-    if sys.platform == 'darwin':
-        script = f'display dialog "{message}" with title "{error_dialog_title}" with icon caution buttons "OK"'
-        run(('/usr/bin/osascript', '-e', script), capture_output=False, stdout=subprocess.DEVNULL)
 
 
 def munge_oserror(exc: OSError) -> tuple[str, str, str, str, str]:  # pylint: disable=unused-variable

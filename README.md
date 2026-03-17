@@ -74,8 +74,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_traceback: TracebackType | None,`\
     `    *,`\
     `    unhandled_exception_heading: str,`\
-    `    unhandled_oserror_heading: str,`\
-    `    error_dialog_title: str`\
+    `    unhandled_oserror_heading: str`\
     `) -> None`\
     Log unhandled exceptions.
 
@@ -86,7 +85,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     The formatting can be customized by using the following keyword-only arguments, but if not provided, default strings are used:
     - *unhandled_exception_heading*
     - *unhandled_oserror_heading*
-    - *error_dialog_title*
 
     **NOTE**: in order to provide this formatting arguments when using the function as `sys.excepthook`, `functools.partial()` can be used to create a new function with the desired defaults, but other alternative mechanisms can be used as well.
 
@@ -97,8 +95,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     For any other exception, arguments contained in the exception object are included, if present, together with the traceback if available.
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
-
-    Finally, depending on the platform, a modal dialog may be shown to ensure the end user notices the error, titled *error_dialog_title*. Please note that the program name is not included by default in the dialog window title, so provide a custom title if that is needed.
 - `format_message(`\
     `    message: str,`\
     `    details: str,`\
