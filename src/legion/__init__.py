@@ -49,6 +49,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'ARROW_R',
     'ARROW_L',
     'UTF8',
+    'Logger',
     'excepthook',
     'munge_oserror',
     'format_oserror',
@@ -56,9 +57,9 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'timestamp',
     'run',
     'get_credentials',
+    'get_logger',
     'demo',
     'wait_for_keypress',
-    'logger',
     'docs',
 ]
 
@@ -370,6 +371,27 @@ def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[s
         return None
 
 
+def get_logger(name: str) -> Logger:
+    """Get an instance of `legion.Logger` with the specified *name*.
+
+    Unlike `logging.getLogger()`, the argument is **not** optional, so
+    the root logger is **never** returned.
+
+    This function temporarily registers `legion.Logger` as the default
+    logger class, so the returned logger type is always guaranteed to be
+    `legion.Logger`, no matter what other logger classes are registered.
+
+    This is a convenience function to avoid having to register the class
+    by hand, instantiante the logger, restore the previous class, etc.
+    """
+    previous = logging.getLoggerClass()
+    logging.setLoggerClass(Logger)
+    try:
+        return cast('Logger', logging.getLogger(name))
+    finally:
+        logging.setLoggerClass(previous)
+
+
 def demo() -> None:
     """Demonstrate package features."""
     atexit.register(logging.shutdown)
@@ -467,12 +489,32 @@ if sys.platform == 'win32':
             getch()
 
 
-class _ConvenienceLogger(logging.Logger):
+class Logger(logging.Logger):
     """Augmented functionality logger.
 
-    Drop-in replacement for the default Python `logging` logger but with
-    augmented functionality like indentation support, multiline records
-    and a very easy but powerful configuration helper.
+    Drop-in replacement for `logging.Logger` with indentation support,
+    multiline records and a simple but powerful configuration helper.
+
+    Example usage:
+    ```python
+    import logging
+    import legion
+
+    # Option 1: Replace the default Logger globally.
+    # Using `logging.setLoggerClass()` affects *all* subsequent
+    # `logging.getLogger()` calls!
+    logging.setLoggerClass(legion.Logger)
+    logger = logging.getLogger(__name__)
+
+    # Option 2: Use `legion` provided shortcut to get a logger directly.
+    logger = legion.getlogger(__name__)
+
+    # Then configure the logger with default or custom settings:
+    logger.config()  # Check method documentation below for details.
+
+    ```
+
+    The differences from `logging.Logger` are in the following methods:
     """
 
     __INCREASE_INDENT_SYMBOL = '+'
@@ -651,13 +693,7 @@ class _ConvenienceLogger(logging.Logger):
 # Module desired side-effects.
 sys.excepthook = excepthook
 logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
-logging.setLoggerClass(_ConvenienceLogger)
-logger: Annotated[_ConvenienceLogger, """
-Default per-application logger instance.
 
-Its interface is identical to `logging.Logger` objects but it also
-includes indentation support and a simple configuration function.
-"""] = cast('_ConvenienceLogger', logging.getLogger(__name__))
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):

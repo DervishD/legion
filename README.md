@@ -6,100 +6,27 @@
 Since this is many, it's *legion*. This package (currently, a single module) contains miscellaneous functions and constants used in some of the maintenance scripts of my private system. It is shared publicly in case the code may be useful to others.
 
 ## Constants
-- `ARROW_L: str`\
-    Left-pointing arrow character for pretty-printing program output.
-- `ARROW_R: str`\
-    Right-pointing arrow character for pretty-printing program output.
-- `DEFAULT_CREDENTIALS_PATH: pathlib.Path`\
-    Default filename used by `get_credentials()` for user credentials.
 - `DESKTOP_PATH: pathlib.Path`\
     Path of user's desktop directory.
-- `ERROR_MARKER: str`\
-    Marker string prepended to error messages.
+- `DEFAULT_CREDENTIALS_PATH: pathlib.Path`\
+    Default filename used by `get_credentials()` for user credentials.
 - `TIMESTAMP_FORMAT: str`\
     `time.strftime()` compatible format specification for timestamps.
+- `ERROR_MARKER: str`\
+    Marker string prepended to error messages.
+- `ARROW_R: str`\
+    Right-pointing arrow character for pretty-printing program output.
+- `ARROW_L: str`\
+    Left-pointing arrow character for pretty-printing program output.
 - `UTF8: str`\
     Normalized name for `UTF-8` encoding.
-- `logger`\
-    Default per-application logger instance.
-
-    Its interface is identical to `logging.Logger` objects but it also includes indentation support and a simple configuration function:
-    - `logger.config(`\
-        `    full_log_output: str | Path | None,`\
-        `    main_log_output: str | Path | None,`\
-        `    console: bool`\
-        `) -> None`\
-        Configure logger.
-
-        With the default configuration, the behavior of the logger is as follows:
-        - **File logging**
-            - *full_log_output*: receives *all* messages in detailed format (including a timestamp and some debugging info).
-            - *main_log_output*: receives messages with severity `logging.INFO` or higher, with a simpler format but also timestamped.
-            - If a file path is `None`, it is not created.
-        - **Console logging** (if *console* is `True`):
-            - No timestamps are included in the messages.
-            - Messages with severity of exactly `logging.INFO` go to the standard output stream.
-            - Messages with severity of `logging.WARNING` or higher go to the standard error stream.
-        - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
-    - `logger.dedent() -> None`\
-        Decrement current logging indentation level.
-    - `logger.indent() -> None`\
-        Increment current logging indentation level.
-    - `logger.makeRecord(`\
-        `    args: Any,`\
-        `    kwargs: Any`\
-        `) -> logging.LogRecord`\
-        Create a new logging record with indentation.
-
-        Used internally by logger objects, can be called manually, too.
-    - `logger.set_indent(`\
-        `    level: int`\
-        `) -> None`\
-        Set current logging indentation to *level*.
-
-        *level* can be any positive integer or zero.
-
-        For any other value, `ValueError` is raised.
 
 ## Functions
-- `demo() -> None`\
-    Demonstrate package features.
-- `docs() -> str`\
-    Generate documentation for the module.
-
-    Return a Markdown-formatted string containing the documentation for the module/package.
-- `excepthook(`\
-    `    exc_type: type[BaseException],`\
-    `    exc_value: BaseException,`\
-    `    exc_traceback: TracebackType | None,`\
-    `    *,`\
-    `    unhandled_exception_heading: str,`\
-    `    unhandled_oserror_heading: str`\
-    `) -> None`\
-    Log unhandled exceptions.
-
-    Intended to be used as default exception hook in `sys.excepthook`.
-
-    Unhandled exceptions are logged, using the provided arguments, that is, the exception type (*exc_type*), its value (*exc_value*) and the associated traceback (*exc_traceback*).
-
-    The formatting can be customized by using the following keyword-only arguments, but if not provided, default strings are used:
-    - *unhandled_exception_heading*
-    - *unhandled_oserror_heading*
-
-    **NOTE**: in order to provide this formatting arguments when using the function as `sys.excepthook`, `functools.partial()` can be used to create a new function with the desired defaults, but other alternative mechanisms can be used as well.
-
-    A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_heading* and for the rest of possible exceptions, *unhandled_exception_heading* is used.
-
-    For `OSError` exceptions, any additional information included in the exception object is gathered and shown, and no traceback is logged.
-
-    For any other exception, arguments contained in the exception object are included, if present, together with the traceback if available.
-
-    `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 - `format_message(`\
-    `    message: str,`\
-    `    details: str,`\
+    `    message: str = '',`\
+    `    details: str = '',`\
     `    *,`\
-    `    details_indent: str`\
+    `    details_indent: str = ' '`\
     `) -> str`\
     Format *message*, including *details*. Both are optional.
 
@@ -108,25 +35,32 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     If *details* are provided, they are appended to *message*, separated by a newline character, and indented by *details_indent*, which is a single space by default but any string can be used.
 
     Multiline *details* are supported. For each line trailing whitespace is stripped and leading whitespace is preserved. This allows to use a per-line arbitrary indentation, and to have visual separation from *message* by including some newline characters at the very beginning of *details*.
-- `format_oserror(`\
-    `    context: str,`\
-    `    exc: OSError`\
-    `) -> str`\
-    Stringify `OSError` exception *exc* using *context*.
+- `excepthook(`\
+    `    exc_type: type[BaseException],`\
+    `    exc_value: BaseException,`\
+    `    exc_traceback: types.TracebackType | None,`\
+    `    *,`\
+    `    prefix: str = _Constants.UNHANDLED_EXCEPTION_PREFIX`\
+    `) -> None`\
+    Log diagnostic information about unhandled exceptions.
 
-    *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
-- `get_credentials(`\
-    `    credentials_path: Path`\
-    `) -> dict[str, Any] | None`\
-    Read credentials from *credentials_path*.
+    Intended for use as the default exception hook via `sys.excepthook`, either directly, via `functools.partial()`, or through an equivalent mechanism.
 
-    If *credentials_path* is not provided a default path is used. To be precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+    Logs diagnostic information about the unhandled exception using its type, value, and traceback, as provided by *exc_type*, *exc_value*, and *exc_traceback*, respectively.
 
-    The credentials are returned as a simple dictionary. The dictionary has two levels: the first one groups credentials into sections, and the second contains the actual `key-value` pairs.
+    The output is formatted as follows: the optional *prefix*, followed by the exception type name are logged together as a heading, and the remaining diagnostic information on subsequent lines, as needed.
 
-    Each credential is a `key-value` string pair, where the `key` is an identifier for the credential, and the `value` is the corresponding credential.
+    The formatting can be customized by using the following keyword-only arguments, but if not provided, default strings are used:
+    - *unhandled_exception_heading*
+    - *unhandled_oserror_heading*
 
-    If *credentials_path* cannot be read, or has syntax problems, `None` is returned. If it is empty, an empty dictionary is returned.
+    A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_heading* and for the rest of possible exceptions, *unhandled_exception_heading* is used.
+
+    For `OSError` exceptions, any additional information included in the exception object is gathered and shown, and no traceback is logged.
+
+    For any other exception, arguments contained in the exception object are included, if present, together with the traceback if available.
+
+    `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> tuple[str, str, str, str, str]`\
@@ -141,19 +75,50 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     The third item is the error message. The first letter is uppercased and a final period is added. If it does not exist, an empty string is used instead.
 
     The final two items are the paths involved in the *exc* exception, if any, as strings. Depending on the actual exception, there may be zero, one, or two paths involved. If some of the paths do not exist in *exc*, they will be anyway returned in the tuple as `None`.
+- `format_oserror(`\
+    `    context: str,`\
+    `    exc: OSError`\
+    `) -> str`\
+    Stringify `OSError` exception *exc* using *context*.
+
+    *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
+- `timestamp() -> str`\
+    Produce a timestamp string from current local date and time.
 - `run(`\
-    `    command: Sequence[str],`\
-    `    kwargs: Any`\
+    `    command: collections.abc.Sequence[str],`\
+    `    **kwargs: typing.Any`\
     `) -> subprocess.CompletedProcess[str]`\
     Run *command* with convenient defaults.
 
     Run *command*, using *kwargs* as arguments. Just a simple helper for `subprocess.run()` that provides convenient defaults.
 
     For that reason, the keyword arguments accepted in *kwargs* and the return value are the same ones used by `subprocess.run()` itself.
-- `timestamp() -> str`\
-    Produce a timestamp string from current local date and time.
+- `get_credentials(`\
+    `    credentials_path: pathlib.Path = DEFAULT_CREDENTIALS_PATH`\
+    `) -> dict[str, typing.Any] | None`\
+    Read credentials from *credentials_path*.
+
+    If *credentials_path* is not provided a default path is used. To be precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+
+    The credentials are returned as a simple dictionary. The dictionary has two levels: the first one groups credentials into sections, and the second contains the actual `key-value` pairs.
+
+    Each credential is a `key-value` string pair, where the `key` is an identifier for the credential, and the `value` is the corresponding credential.
+
+    If *credentials_path* cannot be read, or has syntax problems, `None` is returned. If it is empty, an empty dictionary is returned.
+- `get_logger(`\
+    `    name: str`\
+    `) -> Logger`\
+    Get an instance of `legion.Logger` with the specified *name*.
+
+    Unlike `logging.getLogger()`, the argument is **not** optional, so the root logger is **never** returned.
+
+    This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
+
+    This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
+- `demo() -> None`\
+    Demonstrate package features.
 - `wait_for_keypress(`\
-    `    prompt: str`\
+    `    prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE`\
     `) -> None`\
     Wait for a keypress to continue in particular circumstances.
 
@@ -164,3 +129,71 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: there is no standard method of knowing if a console is transient or not, so determining console transience is entirely based on heuristics.
 
     **NOTE**: is up to the importer to register this function with `atexit.register()`, to call it explicitly, or to use it only if the importer is running as a script instead of being imported.
+- `docs() -> str`\
+    Generate documentation for the module.
+
+    Return a Markdown-formatted string containing the documentation for the module/package.
+
+## Classes
+- `Logger`\
+    Augmented functionality logger.
+
+    Drop-in replacement for `logging.Logger` with indentation support,
+    multiline records and a simple but powerful configuration helper.
+
+    Example usage:
+    ```python
+    import logging
+    import legion
+
+    # Option 1: Replace the default Logger globally.
+    # Using `logging.setLoggerClass()` affects *all* subsequent
+    # `logging.getLogger()` calls!
+    logging.setLoggerClass(legion.Logger)
+    logger = logging.getLogger(__name__)
+
+    # Option 2: Use `legion` provided shortcut to get a logger directly.
+    logger = legion.getlogger(__name__)
+
+    # Then configure the logger with default or custom settings:
+    logger.config()  # Check method documentation below for details.
+
+    ```
+
+    The differences from `logging.Logger` are in the following methods:
+    - `makeRecord(`\
+        `    *args: typing.Any,`\
+        `    **kwargs: typing.Any`\
+        `) -> logging.LogRecord`\
+        Create a new logging record with indentation.
+
+        Used internally by logger objects, can be called manually, too.
+    - `set_indent(`\
+        `    level: int`\
+        `) -> None`\
+        Set current logging indentation to *level*.
+
+        *level* can be any positive integer or zero.
+
+        For any other value, `ValueError` is raised.
+    - `indent() -> None`\
+        Increment current logging indentation level.
+    - `textwrap.dedent() -> None`\
+        Decrement current logging indentation level.
+    - `config(`\
+        `    full_log_output: str | pathlib.Path | None = None,`\
+        `    main_log_output: str | pathlib.Path | None = None,`\
+        `    console: bool = True`\
+        `) -> None`\
+        Configure logger.
+
+        With the default configuration, the behavior of the logger is as follows:
+        - **File logging**
+            - *full_log_output*: receives *all* messages in detailed format (including a timestamp and some debugging info).
+            - *main_log_output*: receives messages with severity `logging.INFO` or higher, with a simpler format but also timestamped.
+            - If a file path is `None`, it is not created.
+        - **Console logging** (if *console* is `True`):
+            - No timestamps are included in the messages.
+            - Messages with severity of exactly `logging.INFO` go to the standard output stream.
+            - Messages with severity of `logging.WARNING` or higher go to the standard error stream.
+        - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
