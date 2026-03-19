@@ -159,21 +159,22 @@ def format_message(
     any sequence of internal whitespace is converted to a single space.
     Leading whitespace is preserved, though.
 
-    If *details* are provided, they are appended to *message*, separated
-    by a newline character, and indented by *details_indent*, which is a
-    single space by default but any string can be used.
+    If *details* are provided, they are appended to *message*. A newline
+    character is used as a visual separator between them if *message* is
+    not empty. The lines in *detail* are indented by *details_indent*, a
+    a single space by default but any string can be used.
 
-    Multiline *details* are supported. For each line trailing whitespace
-    is stripped and leading whitespace is preserved. This allows to use
-    a per-line arbitrary indentation, and to have visual separation from
-    *message* by including some newline characters at the very beginning
-    of *details*.
+    Multiline *details* are supported and empty lines are preserved. For
+    each line trailing whitespace is stripped and leading whitespace is
+    preserved. This allows to use a per-line arbitrary indentation, and
+    to have visual separation from *message* by including some newline
+    characters at the very beginning of *details*.
     """
-    output = [re.sub(r'(?<=\S)(\s+)(?=\S)', r' ', message.rstrip())]
-
-    if details.rstrip():
-        output.extend(f'{details_indent}{line.rstrip()}' for line in details.split('\n'))
-
+    output: list[str] = []
+    if message and not message.isspace():
+        output.append(re.sub(r'(?<=\S)(\s+)(?=\S)', r' ', message.rstrip()))
+    if details and not details.isspace():
+        output.extend(f'{details_indent}{line}'.rstrip() for line in details.split('\n'))
     return '\n'.join(output)
 
 

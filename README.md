@@ -32,15 +32,15 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     The *message* is sanitized: any trailing whitespace is stripped, and any sequence of internal whitespace is converted to a single space. Leading whitespace is preserved, though.
 
-    If *details* are provided, they are appended to *message*, separated by a newline character, and indented by *details_indent*, which is a single space by default but any string can be used.
+    If *details* are provided, they are appended to *message*. A newline character is used as a visual separator between them if *message* is not empty. The lines in *detail* are indented by *details_indent*, a a single space by default but any string can be used.
 
-    Multiline *details* are supported. For each line trailing whitespace is stripped and leading whitespace is preserved. This allows to use a per-line arbitrary indentation, and to have visual separation from *message* by including some newline characters at the very beginning of *details*.
+    Multiline *details* are supported and empty lines are preserved. For each line trailing whitespace is stripped and leading whitespace is preserved. This allows to use a per-line arbitrary indentation, and to have visual separation from *message* by including some newline characters at the very beginning of *details*.
 - `excepthook(`\
     `    exc_type: type[BaseException],`\
     `    exc_value: BaseException,`\
     `    exc_traceback: types.TracebackType | None,`\
     `    *,`\
-    `    prefix: str = _Constants.UNHANDLED_EXCEPTION_PREFIX`\
+    `    heading: str = _Constants.EXCEPTHOOK_HEADING`\
     `) -> None`\
     Log diagnostic information about unhandled exceptions.
 

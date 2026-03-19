@@ -6,27 +6,41 @@ import pytest
 
 from legion import format_message
 
+MULTIPLIER = 42
 MESSAGE = 'message'
 DETAILS = 'details'
 DETAILS_SEP = '\n'
-INDENT = '*' * 42
+INDENT = '*' * MULTIPLIER
 DEFAULT_INDENT = ' '
 @pytest.mark.parametrize(('message', 'details', 'details_indent', 'expected'), [
-    (None, None, None, ''),
-    ('  ', '  ', None, ''),
-    (None, DETAILS, None, f'{DETAILS_SEP}{DEFAULT_INDENT}{DETAILS}'),
-    (MESSAGE, None, None, MESSAGE),
-    (None, f'{DETAILS}\n{DETAILS}', None, f'{DETAILS_SEP}{DEFAULT_INDENT}{DETAILS}\n{DEFAULT_INDENT}{DETAILS}'),
-    (None, DETAILS, INDENT, f'{DETAILS_SEP}{INDENT}{DETAILS}'),
-    (MESSAGE, f'{DETAILS}\n{DETAILS}', INDENT, f'{MESSAGE}{DETAILS_SEP}{INDENT}{DETAILS}\n{INDENT}{DETAILS}'),
-], ids=[
-    'no_arguments',
-    'empty_arguments',
-    'missing_message',
-    'missing_details',
-    'multiline_details',
-    'custom_details_indent',
-    'full_featured',
+    pytest.param(
+        None, None, None, '',
+        id = 'format_message-no_arguments',
+    ),
+    pytest.param(
+        whitespace, whitespace, None, '',
+        id = 'format_message-empty_arguments',
+    ),
+    pytest.param(
+        None, DETAILS, None, f'{DEFAULT_INDENT}{DETAILS}',
+        id = 'format_message-missing_message',
+    ),
+    pytest.param(
+        MESSAGE, None, None, MESSAGE,
+        id = 'format_message-missing_details',
+    ),
+    pytest.param(
+        None, f'{DETAILS}\n\n{DETAILS}', None, f'{DEFAULT_INDENT}{DETAILS}\n\n{DEFAULT_INDENT}{DETAILS}',
+        id = 'format_message-multiline_details',
+    ),
+    pytest.param(
+        None, DETAILS, INDENT, f'{INDENT}{DETAILS}',
+        id = 'format_message-custom_details_indent',
+    ),
+    pytest.param(
+        MESSAGE, f'{DETAILS}\n{DETAILS}', INDENT, f'{MESSAGE}{DETAILS_SEP}{INDENT}{DETAILS}\n{INDENT}{DETAILS}',
+        id = 'format_message-full_featured',
+    ),
 ])
 # pylint: disable-next=unused-variable
 def test_output(message: str | None, details: str | None, details_indent: str | None, expected: str) -> None:
@@ -40,9 +54,9 @@ def test_output(message: str | None, details: str | None, details_indent: str | 
     assert output == expected
 
 
-def test_sanitize_message() -> None:  # pylint: disable=unused-variable
+def test_format_message_sanitize_message() -> None:  # pylint: disable=unused-variable
     """Test message sanitization."""
-    message = whitespace + f'{MESSAGE}{whitespace}{MESSAGE}' * 42 + whitespace
-    expected = whitespace + f'{MESSAGE} {MESSAGE}' * 42
+    message = whitespace + f'{MESSAGE}{whitespace}{MESSAGE}' * MULTIPLIER + whitespace
+    expected = whitespace + f'{MESSAGE} {MESSAGE}' * MULTIPLIER
     output = format_message(message)
     assert output == expected
