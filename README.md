@@ -40,25 +40,21 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_value: BaseException,`\
     `    exc_traceback: types.TracebackType | None,`\
     `    *,`\
-    `    heading: str = _Constants.EXCEPTHOOK_HEADING`\
+    `    heading: str = __EXCEPTHOOK_DEFAULT_HEADING_MSG`\
     `) -> None`\
     Log diagnostic information about unhandled exceptions.
 
     Intended for use as the default exception hook via `sys.excepthook`, either directly, via `functools.partial()`, or through an equivalent mechanism.
 
-    Logs diagnostic information about the unhandled exception using its type, value, and traceback, as provided by *exc_type*, *exc_value*, and *exc_traceback*, respectively.
+    Diagnostic information about the unhandled exception is logged using *exc_type*, *exc_value*, and *exc_traceback* arguments.
 
-    The output is formatted as follows: the optional *prefix*, followed by the exception type name are logged together as a heading, and the remaining diagnostic information on subsequent lines, as needed.
+    The output is formatted as follows: the first line consists of the *heading* and the exception type name in parentheses. Any remaining diagnostic information is logged on subsequent lines as needed, and with a default indentation. If no *heading* is provided, a default string is used instead.
 
-    The formatting can be customized by using the following keyword-only arguments, but if not provided, default strings are used:
-    - *unhandled_exception_heading*
-    - *unhandled_oserror_heading*
+    Additional information is taken from the tuple of arguments passed to the exception constructor, with one entry per line including the type and the value for each argument.
 
-    A banner is prepended to the exception information, depending on the type of the exception: for `OSError` exception, the banner used is *unhandled_oserror_heading* and for the rest of possible exceptions, *unhandled_exception_heading* is used.
+    For `OSError` exceptions these arguments are not very informative, so the specific attributes of this exception family, including the actual raised subclass, are logged instead, one per line.
 
-    For `OSError` exceptions, any additional information included in the exception object is gathered and shown, and no traceback is logged.
-
-    For any other exception, arguments contained in the exception object are included, if present, together with the traceback if available.
+    Finally, a traceback is included if available, with the most recent entries shown first.
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 - `munge_oserror(`\

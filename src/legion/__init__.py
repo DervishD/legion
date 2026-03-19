@@ -116,14 +116,12 @@ UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 class _Constants(StrEnum):
     """Module internal constants."""
 
-    INTERNAL_INDENTATION = '  '
+    NOT_AVAILABLE = '???'
 
-    UNHANDLED_OSERROR_HEADING = 'Unhandled OSError.'
-    UNHANDLED_EXCEPTION_HEADING = 'Unhandled exception.'
+    EXCEPTHOOK_HEADING_FMT = '{} ({})'
 
-    OSERROR_PRETTYPRINT_FMT = 'OSError [{}] {} {}.\n{}'
-    OSERROR_DETAIL_NOT_AVAILABLE = '???'
-    OSERROR_DETAILS_FMT = dedent("""
+    OSERROR_COMPACT_FMT = 'OSError [{}] {} {}.\n{}'
+    OSERROR_DETAILED_FMT = dedent("""
          type = {}
         errno = {}
      winerror = {}
@@ -298,7 +296,7 @@ def munge_oserror(exc: OSError) -> tuple[str, str, str, str, str]:  # pylint: di
 
     if exc_errno and exc_winerror:
         exc_errorcodes = _Constants.OSERROR_ERRORCODES_FMT.format(exc_errno, exc_winerror)
-    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or _Constants.OSERROR_DETAIL_NOT_AVAILABLE
+    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or _Constants.NOT_AVAILABLE
     exc_message = ''
     if exc.strerror:
         exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip(".")}.'
@@ -315,7 +313,7 @@ def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused
     errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
 
     paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
-    return _Constants.OSERROR_PRETTYPRINT_FMT.format(errorcodes, context, paths, message)
+    return _Constants.OSERROR_COMPACT_FMT.format(errorcodes, context, paths, message)
 
 
 def timestamp() -> str:  # pylint: disable=unused-variable
