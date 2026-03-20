@@ -27,7 +27,6 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from textwrap import dedent
 from time import strftime
 import tomllib
 import traceback as tb
@@ -109,31 +108,22 @@ ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing progr
 UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 
 
+_EXCEPTHOOK_DEFAULT_HEADING = 'Unhandled exception'
+_EXCEPTHOOK_HEADING_FMT = '{} ({})'
+
+_EXCEPTION_ATTRIBUTE_FMT = f'{{:<{{}}}}  {ARROW_R}  {{}}'
+_EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
+
 _OSERROR_WINERROR_FMT = 'WinError{}'
 _OSERROR_ERRORCODES_FMT = '{}/{}'
+
+_TRACEBACK_FRAME_HEADING_MARKER = f'{ARROW_R} '
+_TRACEBACK_FRAME_HEADING_FMT = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
+_TRACEBACK_FRAME_LOCATION_FMT = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKER)}{{}}, {{}}: {{}}\n'
+
+class _Constants(StrEnum):  # TODO: remove, not a good idea
     """Module internal constants."""
 
-    NOT_AVAILABLE = '???'
-
-    EXCEPTHOOK_HEADING_FMT = '{} ({})'
-
-    OSERROR_COMPACT_FMT = 'OSError [{}] {} {}.\n{}'
-    OSERROR_DETAILED_FMT = dedent("""
-         type = {}
-        errno = {}
-     winerror = {}
-     strerror = {}
-     filename = {}
-    filename2 = {}
-    """).strip('\n')
-    OSERROR_WINERROR_FMT = 'WinError{}'
-    OSERROR_ERRORCODES_FMT = '{}/{}'
-
-    EXCEPTION_DETAILS_FMT = 'exc_type = {}\nexc_value = {}\nexc_args: {}'
-    EXCEPTION_DETAILS_ARG_FMT = f'\n{INTERNAL_INDENTATION}[{{}}] {{}}'
-    TRACEBACK_HEADER_FMT = '\n\ntraceback:\n{}'
-    TRACEBACK_FRAME_HEADER_FMT = '▸ {}\n'
-    TRACEBACK_FRAME_LINE_FMT = f'{INTERNAL_INDENTATION}{{}}, {{}}: {{}}\n'
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
@@ -169,25 +159,23 @@ def format_message(
     return '\n'.join(output)
 
 
-def _stringize_exception_details(exc_type: type[BaseException], exc_value: BaseException) -> str:
+def _stringize_exception_details(exc: BaseException) -> str:
     """Extract exception details as a formatted string."""
-    if isinstance(exc_value, OSError):
-        errno_message = _Constants.OSERROR_DETAIL_NOT_AVAILABLE
-        if exc_value.errno:
-            with contextlib.suppress(IndexError):
-                errno_message = errorcode[exc_value.errno]
-        return _Constants.OSERROR_DETAILS_FMT.format(
-            exc_type.__name__,
-            errno_message,
-            exc_value.winerror or _Constants.OSERROR_DETAIL_NOT_AVAILABLE,
-            exc_value.strerror,
-            _Constants.OSERROR_DETAIL_NOT_AVAILABLE if exc_value.filename is None else exc_value.filename,
-            _Constants.OSERROR_DETAIL_NOT_AVAILABLE if exc_value.filename2 is None else exc_value.filename2,
-        )
-    args = ''
-    for arg in exc_value.args:
-        args += _Constants.EXCEPTION_DETAILS_ARG_FMT.format(type(arg).__name__, arg)
-    return _Constants.EXCEPTION_DETAILS_FMT.format(exc_type.__name__, str(exc_value), args)
+    if isinstance(exc, OSError):
+        labels = ('errcodes', 'strerror', 'filename1', 'filename2')
+        values = munge_oserror(exc)[1:]
+    else:
+        labels = tuple(type(value).__name__ for value in exc.args)
+        values = exc.args
+    label_maxlen = max((len(label) for label in labels), default=0)
+
+    output: list[str] = []
+    for label, value in zip(labels, values, strict=True):
+        processed_value = _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE if value is None else value
+        processed_value = processed_value.strip('.') if label == 'strerror' else processed_value
+        output.append(_EXCEPTION_ATTRIBUTE_FMT.format(label, label_maxlen, processed_value))
+
+    return '\n'.join(output)
 
 
 def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
@@ -196,9 +184,9 @@ def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
     traceback = ''
     for frame in tb.extract_tb(exc_traceback):
         if current_frame_source_path != frame.filename:
-            traceback += _Constants.TRACEBACK_FRAME_HEADER_FMT.format(frame.filename)
+            traceback += _TRACEBACK_FRAME_HEADING_FMT.format(frame.filename)
             current_frame_source_path = frame.filename
-        traceback += _Constants.TRACEBACK_FRAME_LINE_FMT.format(frame.lineno, frame.name, frame.line)
+        traceback += _TRACEBACK_FRAME_LOCATION_FMT.format(frame.lineno, frame.name, frame.line)
     return traceback
 
 
@@ -207,37 +195,32 @@ def excepthook(
     exc_value: BaseException,
     exc_traceback: TracebackType | None,
     *,
-    unhandled_exception_heading: str = _Constants.UNHANDLED_EXCEPTION_HEADING,
-    unhandled_oserror_heading: str = _Constants.UNHANDLED_OSERROR_HEADING,
+    heading: str = _EXCEPTHOOK_DEFAULT_HEADING,
 ) -> None:
-    """Log unhandled exceptions.
+    """Log diagnostic information about unhandled exceptions.
 
-    Intended to be used as default exception hook in `sys.excepthook`.
+    Intended for use as the default exception hook via `sys.excepthook`,
+    either directly, via `functools.partial()`, or through an equivalent
+    mechanism.
 
-    Unhandled exceptions are logged, using the provided arguments, that
-    is, the exception type (*exc_type*), its value (*exc_value*) and the
-    associated traceback (*exc_traceback*).
+    Diagnostic information about the unhandled exception is logged using
+    *exc_type*, *exc_value*, and *exc_traceback* arguments.
 
-    The formatting can be customized by using the following keyword-only
-    arguments, but if not provided, default strings are used:
-    - *unhandled_exception_heading*
-    - *unhandled_oserror_heading*
+    The output is formatted as follows: the first line consists of the
+    *heading* and the exception type name in parentheses. Any remaining
+    diagnostic information is logged on subsequent lines as needed, and
+    with a default indentation. If no *heading* is provided, a default
+    string is used instead.
 
-    **NOTE**: in order to provide this formatting arguments when using
-    the function as `sys.excepthook`, `functools.partial()` can be used
-    to create a new function with the desired defaults, but other
-    alternative mechanisms can be used as well.
+    Additional information is taken from the tuple of arguments passed
+    to the exception constructor, with one entry per line including the
+    type and the value for each argument.
 
-    A banner is prepended to the exception information, depending on the
-    type of the exception: for `OSError` exception, the banner used is
-    *unhandled_oserror_heading* and for the rest of possible exceptions,
-    *unhandled_exception_heading* is used.
+    For `OSError` (and derived) exceptions these arguments are not very
+    informative, so the specific attributes of this exception family are
+    logged instead, one per line.
 
-    For `OSError` exceptions, any additional information included in the
-    exception object is gathered and shown, and no traceback is logged.
-
-    For any other exception, arguments contained in the exception object
-    are included, if present, together with the traceback if available.
+    Finally, a traceback is included if available.
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default
     exception hook is called to preserve keyboard interrupt behavior.
@@ -246,11 +229,14 @@ def excepthook(
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    message = unhandled_oserror_heading if isinstance(exc_value, OSError) else unhandled_exception_heading
-    details = _stringize_exception_details(exc_type, exc_value)
-    traceback = _stringize_traceback(exc_traceback)
-    details += _Constants.TRACEBACK_HEADER_FMT.format(traceback) if traceback else ''
-    logger.error(format_message(message, details, details_indent=_Constants.INTERNAL_INDENTATION))
+    exc_heading = _EXCEPTHOOK_HEADING_FMT.format(heading, exc_type.__name__)
+    exc_details = _stringize_exception_details(exc_value)
+
+    if traceback := _stringize_traceback(exc_traceback):
+        exc_details += f'\n\n{traceback}'
+
+    logger = logging.getLogger(__name__)
+    logger.error(format_message(exc_heading, exc_details))
 
 
 def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None, str | None]:

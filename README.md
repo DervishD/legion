@@ -184,7 +184,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
         For any other value, `ValueError` is raised.
     - `indent() -> None`\
         Increment current logging indentation level.
-    - `textwrap.dedent() -> None`\
+    - `dedent() -> None`\
         Decrement current logging indentation level.
     - `config(`\
         `    full_log_output: str | pathlib.Path | None = None,`\
