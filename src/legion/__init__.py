@@ -110,18 +110,18 @@ UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 _DEFAULT_EXCEPTHOOK_HEADING = 'Unhandled exception'
 _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT = '\nPress any key to continue...'
 
-_EXCEPTHOOK_HEADING_FMT = '{} ({})'
+_EXCEPTHOOK_HEADING_TEMPLATE = '{} ({})'
 
-_EXCEPTION_ATTRIBUTE_FMT = f'{{:<{{}}}}  {ARROW_R}  {{}}'
+_EXCEPTION_ATTRIBUTE_TEMPLATE = f'{{:<{{}}}}  {ARROW_R}  {{}}'
 _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
 
-_OSERROR_FMT = 'OSError [{}] {} {}.\n{}'
-_OSERROR_WINERROR_FMT = 'WinError{}'
-_OSERROR_ERRORCODES_FMT = '{}/{}'
+_OSERROR_WITH_CONTEXT_TEMPLATE = 'OSError [{}] {} {}.\n{}'
+_OSERROR_WINERROR_TEMPLATE = 'WinError{}'
+_OSERROR_ERRORCODES_TEMPLATE = '{}/{}'
 
 _TRACEBACK_FRAME_HEADING_MARKER = f'{ARROW_R} '
-_TRACEBACK_FRAME_HEADING_FMT = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
-_TRACEBACK_FRAME_LOCATION_FMT = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKER)}{{}}, {{}}: {{}}\n'
+_TRACEBACK_FRAME_HEADING_TEMPLATE = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
+_TRACEBACK_FRAME_LOCATION_TEMPLATE = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKER)}{{}}, {{}}: {{}}\n'
 
 
 def format_message(
@@ -169,7 +169,7 @@ def _stringize_exception_details(exc: BaseException) -> str:
     for label, value in zip(labels, values, strict=True):
         processed_value = _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE if value is None else value
         processed_value = processed_value.strip('.') if label == 'strerror' else processed_value
-        output.append(_EXCEPTION_ATTRIBUTE_FMT.format(label, label_maxlen, processed_value))
+        output.append(_EXCEPTION_ATTRIBUTE_TEMPLATE.format(label, label_maxlen, processed_value))
 
     return '\n'.join(output)
 
@@ -180,9 +180,9 @@ def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
     traceback = ''
     for frame in tb.extract_tb(exc_traceback):
         if current_frame_source_path != frame.filename:
-            traceback += _TRACEBACK_FRAME_HEADING_FMT.format(frame.filename)
+            traceback += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
             current_frame_source_path = frame.filename
-        traceback += _TRACEBACK_FRAME_LOCATION_FMT.format(frame.lineno, frame.name, frame.line)
+        traceback += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, frame.line)
     return traceback
 
 
@@ -225,7 +225,7 @@ def excepthook(
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    exc_heading = _EXCEPTHOOK_HEADING_FMT.format(heading, exc_type.__name__)
+    exc_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, exc_type.__name__)
     exc_details = _stringize_exception_details(exc_value)
 
     if traceback := _stringize_traceback(exc_traceback):
@@ -269,13 +269,13 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     exc_message = None
 
     with contextlib.suppress(AttributeError):
-        exc_winerror = _OSERROR_WINERROR_FMT.format(exc.winerror)
+        exc_winerror = _OSERROR_WINERROR_TEMPLATE.format(exc.winerror)
 
     with contextlib.suppress(KeyError):
         exc_errno = errorcode[exc.errno or -1]
 
     if exc_errno and exc_winerror:
-        exc_errorcodes = _OSERROR_ERRORCODES_FMT.format(exc_errno, exc_winerror)
+        exc_errorcodes = _OSERROR_ERRORCODES_TEMPLATE.format(exc_errno, exc_winerror)
     exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or None
 
     if exc.strerror:
@@ -293,7 +293,7 @@ def format_oserror(context: str, exc: OSError) -> str:
     errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
 
     paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
-    return _Constants.OSERROR_COMPACT_FMT.format(errorcodes, context, paths, message)
+    return _OSERROR_WITH_CONTEXT_TEMPLATE.format(errorcodes, context, paths, message)
 
 
 def timestamp() -> str:
