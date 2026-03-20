@@ -40,7 +40,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_value: BaseException,`\
     `    exc_traceback: types.TracebackType | None,`\
     `    *,`\
-    `    heading: str = _EXCEPTHOOK_DEFAULT_HEADING_MSG`\
+    `    heading: str = _EXCEPTHOOK_DEFAULT_HEADING`\
     `) -> None`\
     Log diagnostic information about unhandled exceptions.
 
@@ -52,9 +52,9 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     Additional information is taken from the tuple of arguments passed to the exception constructor, with one entry per line including the type and the value for each argument.
 
-    For `OSError` exceptions these arguments are not very informative, so the specific attributes of this exception family, including the actual raised subclass, are logged instead, one per line.
+    For `OSError` (and derived) exceptions these arguments are not very informative, so the specific attributes of this exception family are logged instead, one per line.
 
-    Finally, a traceback is included if available, with the most recent entries shown first.
+    Finally, a traceback is included if available.
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 - `munge_oserror(`\

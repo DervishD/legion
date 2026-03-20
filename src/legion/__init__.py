@@ -282,7 +282,7 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     **NOTE**: depending on operation which caused the exception raising,
     there may be zero, one, or two paths involved.
     """
-    exc_type = type(exc).__name__
+    exc_name = type(exc).__name__
     exc_errno = None
     exc_winerror = None
     exc_errorcodes = None
@@ -301,7 +301,7 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     if exc.strerror:
         exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}.'
 
-    return exc_type, exc_errorcodes, exc_message, exc.filename, exc.filename2
+    return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
 
 
 def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
