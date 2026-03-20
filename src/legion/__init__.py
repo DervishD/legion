@@ -19,8 +19,7 @@ import atexit
 import contextlib
 from enum import StrEnum
 from errno import errorcode
-from importlib.metadata import PackageNotFoundError, version
-from inspect import currentframe, isclass, isfunction, signature
+from inspect import getsource, signature
 import logging
 from logging.config import dictConfig
 from os import environ
@@ -58,7 +57,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
     'run',
     'get_credentials',
     'get_logger',
-    'demo',
     'wait_for_keypress',
     'docs',
 ]
@@ -140,10 +138,6 @@ _OSERROR_ERRORCODES_FMT = '{}/{}'
     TRACEBACK_FRAME_LINE_FMT = f'{INTERNAL_INDENTATION}{{}}, {{}}: {{}}\n'
 
     PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
-
-    DEMO_BANNER = '{} package v{}\n'
-    DEMO_TIMESTAMP_FMT = f'{{}}() {ARROW_R} {{}}\n'
-    DEMO_CONSTANT_FMT = f'{{:┄<{{}}}}{ARROW_R} ⟦{{}}⟧'
 
 
 def format_message(
@@ -395,30 +389,6 @@ def get_logger(name: str) -> Logger:
         return cast('Logger', logging.getLogger(name))
     finally:
         logging.setLoggerClass(previous)
-
-
-def demo() -> None:
-    """Demonstrate package features."""
-    atexit.register(logging.shutdown)
-    logger.config()
-
-    with contextlib.suppress(PackageNotFoundError):
-        self_name = __package__ or str(Path(__file__).resolve().parent)
-        logger.info(_Constants.DEMO_BANNER.format(self_name, version(self_name)))
-
-    logger.info(_Constants.DEMO_TIMESTAMP_FMT.format(timestamp.__name__, timestamp()))
-
-    width = 0
-    constants: dict[str, str] = {}
-    for name in __all__:
-        obj = globals()[name]
-        if name.startswith('_') or not name.isupper() or isfunction(obj) or isclass(obj):
-            continue
-        width = max(width, len(name) + 1)
-        constants[name] = obj
-
-    for constant, value in constants.items():
-        logger.info(_Constants.DEMO_CONSTANT_FMT.format(constant, width, value))
 
 
 if sys.platform == 'win32':
