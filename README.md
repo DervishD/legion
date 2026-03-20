@@ -40,7 +40,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_value: BaseException,`\
     `    exc_traceback: types.TracebackType | None,`\
     `    *,`\
-    `    heading: str = __EXCEPTHOOK_DEFAULT_HEADING_MSG`\
+    `    heading: str = _EXCEPTHOOK_DEFAULT_HEADING_MSG`\
     `) -> None`\
     Log diagnostic information about unhandled exceptions.
 
@@ -59,18 +59,25 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
 - `munge_oserror(`\
     `    exc: OSError`\
-    `) -> tuple[str, str, str, str, str]`\
+    `) -> tuple[str, str | None, str | None, str | None, str | None]`\
     Process `OSError` exception *exc*.
 
-    Process the `OSError` (or any of its subclasses) exception *exc* and return a tuple containing the processed information.
+    Process the `OSError` (or any of its subclasses) exception *exc* and return a tuple with the attributes obtained from the instance.
 
-    First item is the actual `OSError` subclass that was raised, as a string.
+    The types and descriptions of the retrieved attributes are:
+    - `str`: the type name of *exc*
+    - `str`: the `errno` and `winerror` codes
+    - `str`: the error message string, normalized (see below)
+    - `str`: the first filename involved in the exception
+    - `str`: the second filename involved in the exception
 
-    Second item are the `errno` and `winerror` numeric codes. They are combined with a slash character if both are present. If no numeric codes exist in *exc*, a marker is used instead.
+    The only attribute guaranteed to always exist is the first one, the type name of *exc*, any other may not be present and then the stored value will be `None`, to make easier to process the tuple in order to replace missing values with a marker, etc.
 
-    The third item is the error message. The first letter is uppercased and a final period is added. If it does not exist, an empty string is used instead.
+    **NOTE**: the `errno` and `winerror` codes are combined with a slash character if both are present.
 
-    The final two items are the paths involved in the *exc* exception, if any, as strings. Depending on the actual exception, there may be zero, one, or two paths involved. If some of the paths do not exist in *exc*, they will be anyway returned in the tuple as `None`.
+    **NOTE**: the returned error message is normalized if present. The first letter is uppercased and a final period is added.
+
+    **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
 - `format_oserror(`\
     `    context: str,`\
     `    exc: OSError`\
@@ -111,8 +118,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
 
     This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
-- `demo() -> None`\
-    Demonstrate package features.
 - `wait_for_keypress(`\
     `    prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE`\
     `) -> None`\
