@@ -458,6 +458,11 @@ if sys.platform == 'win32':
             sys.stdout.write(prompt)
             sys.stdout.flush()
             getch()
+else:
+    def wait_for_keypress(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        """Stub for platforms where this function is not implemented."""
+        raise NotImplementedError
+
 
 
 class Logger(logging.Logger):
