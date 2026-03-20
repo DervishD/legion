@@ -96,7 +96,6 @@ def _get_desktop_path() -> Path:
 
 
 # Exportable constants.
-# pylint: disable=unused-variable
 DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
 
 DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
@@ -108,7 +107,6 @@ ERROR_MARKER: Annotated[str, 'Marker string prepended to error messages.'] = '**
 ARROW_R: Annotated[str, 'Right-pointing arrow character for pretty-printing program output.'] = '⟶'
 ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing program output.'] = '⟵'
 UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
-# pylint: enable=unused-variable
 
 
 _OSERROR_WINERROR_FMT = 'WinError{}'
@@ -304,7 +302,7 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
 
 
-def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused-variable
+def format_oserror(context: str, exc: OSError) -> str:
     """Stringify `OSError` exception *exc* using *context*.
 
     *context* is typically used to indicate what exactly was the caller
@@ -316,12 +314,11 @@ def format_oserror(context: str, exc: OSError) -> str:  # pylint: disable=unused
     return _Constants.OSERROR_COMPACT_FMT.format(errorcodes, context, paths, message)
 
 
-def timestamp() -> str:  # pylint: disable=unused-variable
+def timestamp() -> str:
     """Produce a timestamp string from current local date and time."""
     return strftime(TIMESTAMP_FORMAT)
 
 
-# pylint: disable-next=unused-variable
 def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
     """Run *command* with convenient defaults.
 
@@ -345,7 +342,6 @@ def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[st
     return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **kwargs))  # noqa: S603, PLW1510
 
 
-# pylint: disable-next=unused-variable
 def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
     """Read credentials from *credentials_path*.
 
@@ -438,7 +434,7 @@ if sys.platform == 'win32':
         return True
 
 
-    def wait_for_keypress(prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE) -> None:  # pylint: disable=unused-variable
+    def wait_for_keypress(prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE) -> None:
         """Wait for a keypress to continue in particular circumstances.
 
         If `sys.stdout` is attached to a transient console, the function

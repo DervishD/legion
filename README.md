@@ -130,6 +130,11 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: there is no standard method of knowing if a console is transient or not, so determining console transience is entirely based on heuristics.
 
     **NOTE**: is up to the importer to register this function with `atexit.register()`, to call it explicitly, or to use it only if the importer is running as a script instead of being imported.
+- `wait_for_keypress(`\
+    `    *args: typing.Any,`\
+    `    **kwargs: typing.Any`\
+    `) -> None`\
+    Stub for platforms where this function is not implemented.
 - `docs() -> str`\
     Generate documentation for the module.
 
