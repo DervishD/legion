@@ -39,25 +39,25 @@ if TYPE_CHECKING:
     from typing import Any, LiteralString
 
 
-__all__: list[str] = [  # pylint: disable=unused-variable  # noqa: RUF022
-    'DESKTOP_PATH',
-    'DEFAULT_CREDENTIALS_PATH',
-    'TIMESTAMP_FORMAT',
-    'ERROR_MARKER',
-    'ARROW_R',
+__all__: list[str] = [  # pylint: disable=unused-variable
     'ARROW_L',
+    'ARROW_R',
+    'DEFAULT_CREDENTIALS_PATH',
+    'DESKTOP_PATH',
+    'ERROR_MARKER',
+    'TIMESTAMP_FORMAT',
     'UTF8',
     'Logger',
+    'docs',
     'excepthook',
-    'munge_oserror',
-    'format_oserror',
     'format_message',
-    'timestamp',
-    'run',
+    'format_oserror',
     'get_credentials',
     'get_logger',
+    'munge_oserror',
+    'run',
+    'timestamp',
     'wait_for_keypress',
-    'docs',
 ]
 
 
