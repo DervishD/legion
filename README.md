@@ -40,7 +40,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_value: BaseException,`\
     `    exc_traceback: types.TracebackType | None,`\
     `    *,`\
-    `    heading: str = _EXCEPTHOOK_DEFAULT_HEADING`\
+    `    heading: str = _DEFAULT_EXCEPTHOOK_HEADING`\
     `) -> None`\
     Log diagnostic information about unhandled exceptions.
 
@@ -119,7 +119,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
 - `wait_for_keypress(`\
-    `    prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE`\
+    `    prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT`\
     `) -> None`\
     Wait for a keypress to continue in particular circumstances.
 

@@ -17,7 +17,6 @@ case the code may be useful to others.
 from annotationlib import Format, get_annotations
 import atexit
 import contextlib
-from enum import StrEnum
 from errno import errorcode
 from inspect import getsource, signature
 import logging
@@ -108,24 +107,21 @@ ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing progr
 UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
 
 
-_EXCEPTHOOK_DEFAULT_HEADING = 'Unhandled exception'
+_DEFAULT_EXCEPTHOOK_HEADING = 'Unhandled exception'
+_DEFAULT_WAIT_FOR_KEYPRESS_PROMPT = '\nPress any key to continue...'
+
 _EXCEPTHOOK_HEADING_FMT = '{} ({})'
 
 _EXCEPTION_ATTRIBUTE_FMT = f'{{:<{{}}}}  {ARROW_R}  {{}}'
 _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
 
+_OSERROR_FMT = 'OSError [{}] {} {}.\n{}'
 _OSERROR_WINERROR_FMT = 'WinError{}'
 _OSERROR_ERRORCODES_FMT = '{}/{}'
 
 _TRACEBACK_FRAME_HEADING_MARKER = f'{ARROW_R} '
 _TRACEBACK_FRAME_HEADING_FMT = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
 _TRACEBACK_FRAME_LOCATION_FMT = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKER)}{{}}, {{}}: {{}}\n'
-
-class _Constants(StrEnum):  # TODO: remove, not a good idea
-    """Module internal constants."""
-
-
-    PRESS_ANY_KEY_MESSAGE = '\nPress any key to continue...'
 
 
 def format_message(
@@ -195,7 +191,7 @@ def excepthook(
     exc_value: BaseException,
     exc_traceback: TracebackType | None,
     *,
-    heading: str = _EXCEPTHOOK_DEFAULT_HEADING,
+    heading: str = _DEFAULT_EXCEPTHOOK_HEADING,
 ) -> None:
     """Log diagnostic information about unhandled exceptions.
 
@@ -420,7 +416,7 @@ if sys.platform == 'win32':
         return True
 
 
-    def wait_for_keypress(prompt: str = _Constants.PRESS_ANY_KEY_MESSAGE) -> None:
+    def wait_for_keypress(prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT) -> None:
         """Wait for a keypress to continue in particular circumstances.
 
         If `sys.stdout` is attached to a transient console, the function
