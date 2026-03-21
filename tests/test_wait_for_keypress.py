@@ -36,13 +36,9 @@ def mock_wait_for_keypress(
 
 
 @pytest.mark.parametrize(('has_attached_console', 'is_attached_console_transient', 'expected'), [
-    (False, None, False),
-    (True, False, False),
-    (True, True, True),
-], ids=[
-    'test_no_wait_for_keypress_no_console_attached',
-    'test_no_wait_for_keypress_no_transient_console',
-    'test_do_wait_for_keypress',
+    pytest.param(False, None, False, id='test_no_wait_for_keypress_no_console_attached'),
+    pytest.param(True, False, False, id='test_no_wait_for_keypress_no_transient_console'),
+    pytest.param(True, True, True, id='test_do_wait_for_keypress'),
 ])
 def test_wait_for_keypress(  # pylint: disable=unused-variable
     monkeypatch: pytest.MonkeyPatch, *,
