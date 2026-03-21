@@ -155,7 +155,7 @@ def format_message(
     return '\n'.join(output)
 
 
-def _stringize_exception_details(exc: BaseException) -> str:
+def _format_exception_details(exc: BaseException) -> str:
     """Extract exception details as a formatted string."""
     if isinstance(exc, OSError):
         labels = ('errcodes', 'strerror', 'filename1', 'filename2')
@@ -174,7 +174,7 @@ def _stringize_exception_details(exc: BaseException) -> str:
     return '\n'.join(output)
 
 
-def _stringize_traceback(exc_traceback: TracebackType | None) -> str:
+def _format_traceback(exc_traceback: TracebackType | None) -> str:
     """Extract traceback as a formatted string."""
     current_frame_source_path = None
     traceback = ''
@@ -226,9 +226,9 @@ def excepthook(
         return
 
     exc_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, exc_type.__name__)
-    exc_details = _stringize_exception_details(exc_value)
+    exc_details = _format_exception_details(exc_value)
 
-    if traceback := _stringize_traceback(exc_traceback):
+    if traceback := _format_traceback(exc_traceback):
         exc_details += f'\n\n{traceback}'
 
     logger = logging.getLogger(__name__)
