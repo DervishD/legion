@@ -39,5 +39,4 @@ def demo() -> None:
         logger.info(DEMO_CONSTANT_FMT.format(constant, width, value))
 
 
-
 demo()
