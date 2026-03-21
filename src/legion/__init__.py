@@ -115,7 +115,7 @@ _EXCEPTHOOK_HEADING_TEMPLATE = '{} ({})'
 _EXCEPTION_ATTRIBUTE_TEMPLATE = f'{{:<{{}}}}  {ARROW_R}  {{}}'
 _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
 
-_OSERROR_WITH_CONTEXT_TEMPLATE = 'OSError [{}] {} {}.\n{}'
+_OSERROR_WITH_CONTEXT_TEMPLATE = 'OSError [{}] {} {}.\n{}.'
 _OSERROR_WINERROR_TEMPLATE = 'WinError{}'
 _OSERROR_ERRORCODES_TEMPLATE = '{}/{}'
 
@@ -257,7 +257,7 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     character if both are present.
 
     **NOTE**: the returned error message is normalized if present. The
-    first letter is uppercased and a final period is added.
+    first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising,
     there may be zero, one, or two paths involved.
@@ -279,7 +279,7 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or None
 
     if exc.strerror:
-        exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}.'
+        exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}'
 
     return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
 

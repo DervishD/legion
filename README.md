@@ -75,7 +75,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     **NOTE**: the `errno` and `winerror` codes are combined with a slash character if both are present.
 
-    **NOTE**: the returned error message is normalized if present. The first letter is uppercased and a final period is added.
+    **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
 - `format_oserror(`\
