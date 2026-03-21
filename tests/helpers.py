@@ -1,9 +1,40 @@
 """Helpers for test units."""
-from typing import TYPE_CHECKING
+import re
+from typing import NamedTuple, TYPE_CHECKING
+
+import legion
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
     from typing import Any
+
+class LogPaths(NamedTuple):  # pylint: disable=unused-variable
+    """Log paths abstraction."""  # noqa: D204
+    log: Path
+    trace: Path
+
+
+LOGGING_NOISE_REGEX = re.compile(r'^\d{8}_\d{6}(?:\.\d{4})?+(?:[A-Z ]++\|)?+(?:[^(]++\(\))?+(?: (?P<message>.*))?$')
+def strip_logging_noise (logline: str) -> str:  # pylint: disable=unused-variable
+    """Process *logline*, removing logging added noise."""
+    match = re.match(LOGGING_NOISE_REGEX, logline)
+    if not match or not match.group('message'):
+        return ''
+    return match.group('message')
+
+
+def format_log_message(message: str, *, levelname:str = '', padding: str = '') -> list[str]:  # pylint: disable=unused-variable
+    """Format *message* so it looks like a logging entry.
+
+    The *levelname* is prepended to the message if provided, and in that
+    case a separator is appended.
+
+    If *padding* is provided, it is inserted before the message.
+    """
+    preamble = f'{levelname:<{legion.Logger.LEVELNAME_MAX_LEN}}{legion.Logger.LEVELNAME_SEPARATOR}' if levelname else ''
+    return [f'{preamble}{padding}{line}'.rstrip() for line in message.split('\n')]
+
 
 class CallableSpy[**P, R]:  # pylint: disable=unused-variable, too-few-public-methods
     """Generic spy pattern for callables."""
