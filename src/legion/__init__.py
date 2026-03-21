@@ -233,7 +233,7 @@ def excepthook(
         formatted_details += '\n\n' if formatted_details else ''
         formatted_details += formatted_traceback
 
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     logger.error(format_message(formatted_heading, formatted_details))
 
 
