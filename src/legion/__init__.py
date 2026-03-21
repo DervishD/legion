@@ -477,13 +477,21 @@ class Logger(logging.Logger):
     The differences from `logging.Logger` are in the following methods:
     """
 
+    LEVELNAME_MAX_LEN = len(max(logging.getLevelNamesMapping(), key=len))
+    LEVELNAME_SEPARATOR = ' | '
     __INCREASE_INDENT_SYMBOL = '+'
     __DECREASE_INDENT_SYMBOL = '-'
     __INDENT_CHAR = ' '
     __FORMAT_STYLE = '{'
-    __LONG_FORMAT = '{{asctime}}.{{msecs:04.0f}} {{levelname:{levelname_max_width}}} | {{funcName}}() {{message}}'
     __SHORT_FORMAT = '{asctime} {message}'
     __CONSOLE_FORMAT = '{message}'
+    __LONG_FORMAT = (
+        '{asctime}.{msecs:04.0f} '
+        f'{{levelname:{LEVELNAME_MAX_LEN}}}'
+        f'{LEVELNAME_SEPARATOR}'
+        '{funcName}() {message}'
+    )
+
 
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize logger with a *name* and an optional *level*."""
