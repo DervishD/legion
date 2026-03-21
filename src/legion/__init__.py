@@ -226,14 +226,15 @@ def excepthook(
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    exc_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, exc_type.__name__)
-    exc_details = _format_exception_details(exc_value)
+    formatted_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, exc_type.__name__)
+    formatted_details = _format_exception_details(exc_value)
 
-    if traceback := _format_traceback(exc_traceback):
-        exc_details += f'\n\n{traceback}'
+    if formatted_traceback := _format_traceback(exc_traceback):
+        formatted_details += '\n\n' if formatted_details else ''
+        formatted_details += formatted_traceback
 
     logger = logging.getLogger(__name__)
-    logger.error(format_message(exc_heading, exc_details))
+    logger.error(format_message(formatted_heading, formatted_details))
 
 
 def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None, str | None]:

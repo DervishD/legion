@@ -193,6 +193,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
         `) -> None`\
         Configure logger.
 
+        This is an **authoritative, application-level setup call** that replaces any existing root logger configuration. It should be called **once and early** in the application lifecycle, before any other logging setup has been established.
+
         With the default configuration, the behavior of the logger is as follows:
         - **File logging**
             - *full_log_output*: receives *all* messages in detailed format (including a timestamp and some debugging info).
