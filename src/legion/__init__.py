@@ -554,6 +554,11 @@ class Logger(logging.Logger):
     ) -> None:
         """Configure logger.
 
+        This is an **authoritative, application-level setup call** that
+        replaces any existing root logger configuration. It should be
+        called **once and early** in the application lifecycle, before
+        any other logging setup has been established.
+
         With the default configuration, the behavior of the logger is as
         follows:
         - **File logging**
@@ -584,9 +589,8 @@ class Logger(logging.Logger):
             'version': 1,
             'disable_existing_loggers': False,
             'loggers': {
-                self.name: {
+                '': {
                     'level': logging.NOTSET,
-                    'propagate': False,
                     'handlers': [],
                 },
             },
@@ -596,11 +600,10 @@ class Logger(logging.Logger):
         handlers = {}
 
         if full_log_output:
-            levelname_max_len = len(max(logging.getLevelNamesMapping(), key=len))
             formatters['full_log_formatter'] = {
                 '()': _MultilineRecordFormatter,
                 'style': self.__FORMAT_STYLE,
-                'format': self.__LONG_FORMAT.format(levelname_max_width=levelname_max_len),
+                'format': self.__LONG_FORMAT,
                 'datefmt': TIMESTAMP_FORMAT,
             }
             handlers['full_log_handler'] = {
@@ -652,9 +655,12 @@ class Logger(logging.Logger):
                 'stream': sys.stderr,
             }
 
+        if not handlers:
+            handlers['null_handler'] = {'class': logging.NullHandler}
+
         logging_configuration['formatters'] = formatters
         logging_configuration['handlers'] = handlers
-        logging_configuration['loggers'][self.name]['handlers'] = handlers.keys()
+        logging_configuration['loggers']['']['handlers'] = handlers.keys()
         dictConfig(logging_configuration)
 
 
