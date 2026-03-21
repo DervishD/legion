@@ -15,31 +15,31 @@ DEFAULT_INDENT = ' '
 @pytest.mark.parametrize(('message', 'details', 'details_indent', 'expected'), [
     pytest.param(
         None, None, None, '',
-        id = 'format_message-no_arguments',
+        id = 'test_format_message_no_arguments',
     ),
     pytest.param(
         whitespace, whitespace, None, '',
-        id = 'format_message-empty_arguments',
+        id = 'test_format_message_empty_arguments',
     ),
     pytest.param(
         None, DETAILS, None, f'{DEFAULT_INDENT}{DETAILS}',
-        id = 'format_message-missing_message',
+        id = 'test_format_message_missing_message',
     ),
     pytest.param(
         MESSAGE, None, None, MESSAGE,
-        id = 'format_message-missing_details',
+        id = 'test_format_message_missing_details',
     ),
     pytest.param(
         None, f'{DETAILS}\n\n{DETAILS}', None, f'{DEFAULT_INDENT}{DETAILS}\n\n{DEFAULT_INDENT}{DETAILS}',
-        id = 'format_message-multiline_details',
+        id = 'test_format_message_multiline_details',
     ),
     pytest.param(
         None, DETAILS, INDENT, f'{INDENT}{DETAILS}',
-        id = 'format_message-custom_details_indent',
+        id = 'test_format_message_custom_details_indent',
     ),
     pytest.param(
         MESSAGE, f'{DETAILS}\n{DETAILS}', INDENT, f'{MESSAGE}{DETAILS_SEP}{INDENT}{DETAILS}\n{INDENT}{DETAILS}',
-        id = 'format_message-full_featured',
+        id = 'test_format_message_full_featured',
     ),
 ])
 # pylint: disable-next=unused-variable
