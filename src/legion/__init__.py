@@ -118,6 +118,7 @@ _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
 _OSERROR_WITH_CONTEXT_TEMPLATE = 'OSError [{}] {} {}.\n{}.'
 _OSERROR_WINERROR_TEMPLATE = 'WinError{}'
 _OSERROR_ERRORCODES_TEMPLATE = '{}/{}'
+_OSERROR_ATTRIBUTE_LABELS = ('errcodes', 'strerror', 'filename1', 'filename2')
 
 _TRACEBACK_FRAME_HEADING_MARKER = f'{ARROW_R} '
 _TRACEBACK_FRAME_HEADING_TEMPLATE = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
@@ -158,7 +159,7 @@ def format_message(
 def _format_exception_details(exc: BaseException) -> str:
     """Extract exception details as a formatted string."""
     if isinstance(exc, OSError):
-        labels = ('errcodes', 'strerror', 'filename1', 'filename2')
+        labels = _OSERROR_ATTRIBUTE_LABELS
         values = munge_oserror(exc)[1:]
     else:
         labels = tuple(type(value).__name__ for value in exc.args)
