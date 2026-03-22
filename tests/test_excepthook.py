@@ -130,11 +130,10 @@ def test_excephook_formatting(
 
     heading = legion._EXCEPTHOOK_HEADING_TEMPLATE.format(legion._DEFAULT_EXCEPTHOOK_HEADING, type(exc).__name__)
     formatted_details = legion._format_exception_details(exc)
-    if formatted_traceback := legion._format_traceback(exc.__traceback__):
-        formatted_details += '\n\n' if formatted_details else ''
-        formatted_details += formatted_traceback
+    formatted_traceback = legion._format_traceback(exc.__traceback__)
+    formatted_details += legion._EXCEPTHOOK_TRACEBACK_SEPARATOR if formatted_details else ''
 
-    expected = legion.format_message(heading, formatted_details).split('\n')
+    expected = legion.format_message(heading, formatted_details + formatted_traceback).split('\n')
     expected.append('')
 
     main_log_file_contents = log_paths.log.read_text(encoding=legion.UTF8)
