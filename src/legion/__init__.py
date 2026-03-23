@@ -599,6 +599,23 @@ class Logger(logging.Logger):
                 preamble = formatted_record[0:formatted_record.rfind(record.message)]
                 return '\n'.join(f'{preamble}{line}'.rstrip() for line in record.message.split('\n'))
 
+        class _LateBindingStreamHandler(logging.StreamHandler[TextIO]):
+            """Late-bindable `StreamHandler`."""  # noqa: D204
+            _ACCEPTED_STREAMS = ('stdout', 'stderr')
+            def __init__(self, stream_name: str) -> None:
+                """."""
+                if stream_name not in self._ACCEPTED_STREAMS:
+                    raise NameError(stream_name, self._ACCEPTED_STREAMS)
+                super().__init__()
+                self.stream_name = stream_name
+            @property
+            def stream(self) -> TextIO:
+                """Get the current stream object."""
+                return cast('TextIO', getattr(sys, self.stream_name))
+            @stream.setter
+            def stream(self, _: TextIO) -> None:  # pyright: ignore[reportIncompatibleVariableOverride]
+                pass
+
         logging_configuration: dict[str, Any] = {
             'version': 1,
             'disable_existing_loggers': False,
@@ -659,14 +676,14 @@ class Logger(logging.Logger):
                 'level': logging.NOTSET,
                 'formatter': 'console_formatter',
                 'filters': [console_filter],
-                'class': logging.StreamHandler,
-                'stream': sys.stdout,
+                '()': _LateBindingStreamHandler,
+                'stream_name': 'stdout',
             }
             handlers['stderr_handler'] = {
                 'level': logging.WARNING,
                 'formatter': 'console_formatter',
-                'class': logging.StreamHandler,
-                'stream': sys.stderr,
+                '()': _LateBindingStreamHandler,
+                'stream_name': 'stderr',
             }
 
         if not handlers:
