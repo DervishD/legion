@@ -559,7 +559,7 @@ class Logger(logging.Logger):
         """Decrement current logging indentation level."""
         self.__set_indent_level(self.__DECREASE_INDENT_SYMBOL)
 
-    def config(self,
+    def config(self,  # noqa: C901
         full_log_output: str | Path | None = None,
         main_log_output: str | Path | None = None,
         console: bool = True,  # noqa: FBT001, FBT002
