@@ -21,6 +21,7 @@ import ast
 import contextlib
 from errno import errorcode
 from inspect import getsource
+import linecache
 import logging
 from logging.config import dictConfig
 from os import environ
@@ -180,14 +181,22 @@ def _format_exception_details(exc: BaseException) -> str:
 
 def _format_traceback(exc_traceback: TracebackType | None) -> str:
     """Extract traceback as a formatted string."""
+    output = ''
+
     current_frame_source_path = None
-    traceback = ''
     for frame in tb.extract_tb(exc_traceback):
         if current_frame_source_path != frame.filename:
-            traceback += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
+            output += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
             current_frame_source_path = frame.filename
-        traceback += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, frame.line)
-    return traceback
+        source_lines: list[str] = []
+        if frame.lineno:
+            source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
+        else:
+            source_lines = [frame.line or '']
+
+        source_lines = [line.strip() for line in source_lines]
+        output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, ''.join(source_lines))
+    return output
 
 
 def excepthook(
