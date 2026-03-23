@@ -114,7 +114,7 @@ _DEFAULT_EXCEPTHOOK_HEADING = 'Unhandled exception'
 _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT = '\nPress any key to continue...'
 
 _EXCEPTHOOK_HEADING_TEMPLATE = '{} ({})'
-_EXCEPTHOOK_TRACEBACK_SEPARATOR = '\n\n'
+_EXCEPTHOOK_BLOCK_SEPARATOR = '\n\n'
 
 _EXCEPTION_ATTRIBUTE_TEMPLATE = f'{{:<{{}}}}  {ARROW_R}  {{}}'
 _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
@@ -240,13 +240,15 @@ def excepthook(
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    formatted_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, exc_type.__name__)
-    formatted_details = _format_exception_details(exc_value)
-    formatted_traceback = _format_traceback(exc_traceback)
-    formatted_details += _EXCEPTHOOK_TRACEBACK_SEPARATOR if formatted_details and formatted_traceback else ''
+    exc = exc_value.__cause__ or (exc_value if exc_value.__suppress_context__ else exc_value.__context__ or exc_value)
+    formatted_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, type(exc).__name__)
+
+    formatted_details = [_format_exception_details(exc)]
+    formatted_details.append(_format_traceback(exc_traceback))
+    formatted_details.append(_format_traceback(exc.__traceback__) if exc.__traceback__ != exc_traceback else '')
 
     logger = get_logger(__name__)
-    logger.error(format_message(formatted_heading, formatted_details + formatted_traceback))
+    logger.error(format_message(formatted_heading, _EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)))
 
 
 def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None, str | None]:
