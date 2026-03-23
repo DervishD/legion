@@ -15,13 +15,20 @@ class LogPaths(NamedTuple):  # pylint: disable=unused-variable
     trace: Path
 
 
-LOGGING_NOISE_REGEX = re.compile(r'^\d{8}_\d{6}(?:\.\d{4})?+(?:[A-Z ]++\|)?+(?:[^(]++\(\))?+(?: (?P<message>.*))?$')
-def strip_logging_noise (logline: str) -> str:  # pylint: disable=unused-variable
-    """Process *logline*, removing logging added noise."""
-    match = re.match(LOGGING_NOISE_REGEX, logline)
-    if not match or not match.group('message'):
-        return ''
-    return match.group('message')
+LOGGING_NOISE_REGEX = re.compile(
+    r'^\d{8}_\d{6}(?:\.\d{4})?+(?:[A-Z ]++\|)?+(?:[^(]++\(\))?+(?: (?P<message>.*))?$',
+    re.MULTILINE,
+)
+def get_denoised_logfile_lines(logfile: Path) -> str:
+    """Return *logfile* contents, de-noised.
+
+    For each line, only the logging message is preserved. The timestamp,
+    logging level, function name, separators, etc. are removed.
+
+    Finally, since the final newline character is removed.
+    """
+    return LOGGING_NOISE_REGEX.sub(r'\g<message>', logfile.read_text(encoding=legion.UTF8)).removesuffix('\n')
+
 
 
 def format_log_message(message: str, *, levelname:str = '', padding: str = '') -> list[str]:  # pylint: disable=unused-variable
