@@ -158,7 +158,7 @@ def format_message(
     if message and not message.isspace():
         output.append(re.sub(r'(?<=\S)(\s+)(?=\S)', r' ', message.rstrip()))
     if details and not details.isspace():
-        output.extend(f'{details_indent}{line}'.rstrip() for line in details.split('\n'))
+        output.append(indent(details, details_indent))
     return '\n'.join(output)
 
 
