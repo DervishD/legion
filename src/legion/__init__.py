@@ -198,7 +198,7 @@ def _format_traceback(exc_traceback: TracebackType | None) -> str:
 
         source_lines = [line.strip() for line in source_lines]
         output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, ''.join(source_lines))
-    return output
+    return output.strip()
 
 
 def excepthook(
