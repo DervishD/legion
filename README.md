@@ -21,6 +21,72 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 - `UTF8: str`\
     Normalized name for `UTF-8` encoding.
 
+## Classes
+- `Logger`\
+    Augmented functionality logger.
+
+    Drop-in replacement for `logging.Logger` with indentation support,
+    multiline records and a simple but powerful configuration helper.
+
+    Example usage:
+    ```python
+    import logging
+    import legion
+
+    # Option 1: Replace the default Logger globally.
+    # Using `logging.setLoggerClass()` affects *all* subsequent
+    # `logging.getLogger()` calls!
+    logging.setLoggerClass(legion.Logger)
+    logger = logging.getLogger(__name__)
+
+    # Option 2: Use `legion` provided shortcut to get a logger directly.
+    logger = legion.getlogger(__name__)
+
+    # Then configure the logger with default or custom settings:
+    logger.config()  # Check method documentation below for details.
+
+    ```
+
+    The differences from `logging.Logger` are in the following methods:
+    - `makeRecord(`\
+        `    *args: typing.Any,`\
+        `    **kwargs: typing.Any`\
+        `) -> logging.LogRecord`\
+        Create a new logging record with indentation.
+
+        Used internally by logger objects, can be called manually, too.
+    - `set_indent(`\
+        `    level: int`\
+        `) -> None`\
+        Set current logging indentation to *level*.
+
+        *level* can be any positive integer or zero.
+
+        For any other value, `ValueError` is raised.
+    - `indent() -> None`\
+        Increment current logging indentation level.
+    - `dedent() -> None`\
+        Decrement current logging indentation level.
+    - `config(`\
+        `    full_log_output: str | pathlib.Path | None = None,`\
+        `    main_log_output: str | pathlib.Path | None = None,`\
+        `    console: bool = True`\
+        `) -> None`\
+        Configure logger.
+
+        This is an **authoritative, application-level setup call** that replaces any existing root logger configuration. It should be called **once and early** in the application lifecycle, before any other logging setup has been established.
+
+        With the default configuration, the behavior of the logger is as follows:
+        - **File logging**
+            - *full_log_output*: receives *all* messages in detailed format (including a timestamp and some debugging info).
+            - *main_log_output*: receives messages with severity `logging.INFO` or higher, with a simpler format but also timestamped.
+            - If a file path is `None`, it is not created.
+        - **Console logging** (if *console* is `True`):
+            - No timestamps are included in the messages.
+            - Messages with severity of exactly `logging.INFO` go to the standard output stream.
+            - Messages with severity of `logging.WARNING` or higher go to the standard error stream.
+        - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
+
 ## Functions
 - `format_message(`\
     `    message: str = '',`\
@@ -139,69 +205,3 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Generate documentation for the module.
 
     Return a Markdown-formatted string containing the documentation for the module/package.
-
-## Classes
-- `Logger`\
-    Augmented functionality logger.
-
-    Drop-in replacement for `logging.Logger` with indentation support,
-    multiline records and a simple but powerful configuration helper.
-
-    Example usage:
-    ```python
-    import logging
-    import legion
-
-    # Option 1: Replace the default Logger globally.
-    # Using `logging.setLoggerClass()` affects *all* subsequent
-    # `logging.getLogger()` calls!
-    logging.setLoggerClass(legion.Logger)
-    logger = logging.getLogger(__name__)
-
-    # Option 2: Use `legion` provided shortcut to get a logger directly.
-    logger = legion.getlogger(__name__)
-
-    # Then configure the logger with default or custom settings:
-    logger.config()  # Check method documentation below for details.
-
-    ```
-
-    The differences from `logging.Logger` are in the following methods:
-    - `makeRecord(`\
-        `    *args: typing.Any,`\
-        `    **kwargs: typing.Any`\
-        `) -> logging.LogRecord`\
-        Create a new logging record with indentation.
-
-        Used internally by logger objects, can be called manually, too.
-    - `set_indent(`\
-        `    level: int`\
-        `) -> None`\
-        Set current logging indentation to *level*.
-
-        *level* can be any positive integer or zero.
-
-        For any other value, `ValueError` is raised.
-    - `indent() -> None`\
-        Increment current logging indentation level.
-    - `dedent() -> None`\
-        Decrement current logging indentation level.
-    - `config(`\
-        `    full_log_output: str | pathlib.Path | None = None,`\
-        `    main_log_output: str | pathlib.Path | None = None,`\
-        `    console: bool = True`\
-        `) -> None`\
-        Configure logger.
-
-        This is an **authoritative, application-level setup call** that replaces any existing root logger configuration. It should be called **once and early** in the application lifecycle, before any other logging setup has been established.
-
-        With the default configuration, the behavior of the logger is as follows:
-        - **File logging**
-            - *full_log_output*: receives *all* messages in detailed format (including a timestamp and some debugging info).
-            - *main_log_output*: receives messages with severity `logging.INFO` or higher, with a simpler format but also timestamped.
-            - If a file path is `None`, it is not created.
-        - **Console logging** (if *console* is `True`):
-            - No timestamps are included in the messages.
-            - Messages with severity of exactly `logging.INFO` go to the standard output stream.
-            - Messages with severity of `logging.WARNING` or higher go to the standard error stream.
-        - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.

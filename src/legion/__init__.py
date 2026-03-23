@@ -10,15 +10,17 @@ the maintenance scripts of my private system. It is shared publicly in
 case the code may be useful to others.
 
 ## Constants
-{}
+{docs_for_constants}
+## Classes
+{docs_for_classes}
 ## Functions
-{}
+{docs_for_functions}
 """  # noqa: D400, D415
-from annotationlib import Format, get_annotations
-import atexit
+from annotationlib import get_annotations
+import ast
 import contextlib
 from errno import errorcode
-from inspect import getsource, signature
+from inspect import getsource
 import logging
 from logging.config import dictConfig
 from os import environ
@@ -491,7 +493,6 @@ class Logger(logging.Logger):
         '{funcName}() {message}'
     )
 
-
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize logger with a *name* and an optional *level*."""
         super().__init__(name, level)
@@ -729,76 +730,94 @@ def _unwrap_markdown(markdown: str) -> str:
     return '\n'.join(unwrapped)
 
 
-def _get_docs_for_function(name: str) -> str:
-    """Get documentation for function *name*."""
-    instance_name, _, function_name = name.partition('.')
-    func: Callable[..., Any] = getattr(globals()[instance_name], function_name) if function_name else globals()[name]
+class DocstringVisitor(ast.NodeVisitor):
+    """AST visitor for getting docstrings."""
 
-    docstring = func.__doc__ or ''
-    doc_fragment = f'`{name}('
-    function_signature = signature(func, annotation_format=Format.STRING)
+    def __init__(self) -> None:
+        """Initialize."""
+        self.import_mapping: dict[str, str] = {}
+        self.within_class_definition = False
+        self.within_function_signature = False
+        self.annotations = get_annotations(sys.modules[__name__])
+        self.doc_fragments_for_functions: list[str] = []
+        self.doc_fragments_for_constants: list[str] = []
+        self.doc_fragments_for_classes: list[str] = []
 
-    paramstrings: list[str] = []
-    add_positional_only_separator = False
-    add_keyword_only_separator = True
-    for parameter in function_signature.parameters.values():
-        paramstring = parameter.name
-        paramstring += f': {parameter.annotation}' if parameter.annotation != parameter.empty else ''
+    def _qualify_names(self, string: str) -> str:
+        """Replace all bare names with fully qualified names."""
+        pattern = rf'\b({'|'.join(re.escape(alias) for alias in self.import_mapping)})\b'
+        return re.sub(pattern, lambda match: self.import_mapping[match.group(1)], string)
 
-        if parameter.kind == parameter.POSITIONAL_ONLY:
-            add_positional_only_separator = True
-        elif add_positional_only_separator:
-            # Non-positional-only parameter after positional-only parameters, add separator.
-            paramstrings.append(f'`{_indent_markdown('/')}')
-            add_positional_only_separator = False
-        if parameter.kind == parameter.VAR_POSITIONAL:
-            # *args-like parameter, no need to add '*' as separator for keyword-only parameters.
-            add_keyword_only_separator = False
-        elif parameter.kind == parameter.KEYWORD_ONLY and add_keyword_only_separator:
-            # Keyword-only parameter and no *args-like parameter before, add separator.
-            paramstrings.append(f'`{_indent_markdown('*')}')
-            add_keyword_only_separator = False
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # pylint: disable=invalid-name
+        """Visit Import node."""
+        if not node.module:
+            return
+        for alias in node.names:
+            self.import_mapping[alias.asname or alias.name] = f'{node.module}.{alias.asname or alias.name}'
 
-        if paramstring != 'self':
-            paramstrings.append(f'`{_indent_markdown(paramstring)}')
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # pylint: disable=invalid-name
+        """Visit FunctionDef node."""
+        name = node.name
 
-    if paramstrings:
-        doc_fragment += f'`\\\n{',`\\\n'.join(paramstrings)}`\\\n`'
+        if name.startswith('__') or (name not in __all__ and not self.within_class_definition):
+            return
 
-    doc_fragment += f') -> {function_signature.return_annotation}`\\\n'
-    doc_fragment += _unwrap_markdown(docstring)
+        doc_fragment = f'`{name}('
 
-    return doc_fragment
+        arguments = [f'`{_indent_markdown(arg)}' for arg in ast.unparse(node.args).split(', ') if arg and arg != 'self']
+        doc_fragment += f'`\\\n{',`\\\n'.join(arguments)}`\\\n`' if arguments else ''
 
+        return_annotation = ast.unparse(node.returns) if node.returns is not None else ''
+        doc_fragment += f'){f' -> {return_annotation}' if return_annotation else ''}`\\\n'
 
-def _get_docs_for_constant(name: str) -> str:
-    """Get documentation for constant *name*."""
-    if name not in (annotations := get_annotations(sys.modules[__name__])):
-        return f'`{name}`'
+        doc_fragment = self._qualify_names(doc_fragment).replace('=', ' = ')
 
-    annotation = annotations[name]
-    module = str(annotation.__origin__.__module__).replace('builtins', '').replace('__main__', '')
-    qualname = str(annotation.__origin__.__qualname__)
-    docstring = '\n'.join(annotation.__metadata__)
-    type_annotation = '' if qualname.startswith('_') else f'{module}{'.' if module else ''}{qualname}'
+        docstring = ast.get_docstring(node)
+        doc_fragment += _unwrap_markdown(docstring) if docstring else ''
 
-    doc_fragment = f'`{name}{': ' if type_annotation else ''}{type_annotation}`\\\n'
-    doc_fragment += f'{_unwrap_markdown(docstring.strip())}'
-    obj = globals()[name]
-    if obj and obj.__class__.__module__ == __name__:
-        extra_docstrings: list[str] = []
+        doc_fragment = f'- {_indent_markdown(doc_fragment).lstrip()}\n'
 
-        for attribute_name, attribute_object in obj.__class__.__dict__.items():
-            if attribute_name.startswith('_') or not callable(attribute_object):
-                continue
-            method_name = f'{name}.{attribute_name}'
-            attribute_docs = _indent_markdown(_get_docs_for_function(method_name)).lstrip()
-            extra_docstrings.append(f'- {attribute_docs}\n')
+        if self.within_class_definition:
+            self.doc_fragments_for_classes.append(f'{_indent_markdown(doc_fragment)}\n')
+        else:
+            self.doc_fragments_for_functions.append(doc_fragment)
 
-        if extra_docstrings:
-            doc_fragment = f'{doc_fragment.rstrip('.')}:\n{''.join(sorted(extra_docstrings))}'
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # pylint: disable=invalid-name
+        """Visit ClassDef node."""
+        name = node.name
 
-    return doc_fragment
+        if name not in __all__:
+            return
+
+        docstring = ast.get_docstring(node)
+        doc_fragment = f'- `{name}`{f'\\\n{_indent_markdown(docstring)}' if docstring else ''}\n'
+        self.doc_fragments_for_classes.append(doc_fragment)
+
+        self.within_class_definition = True
+        self.generic_visit(node)
+        self.within_class_definition = False
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:  # pylint: disable=invalid-name
+        """Visit AnnAssign node."""
+        if not isinstance(node.target, ast.Name):
+            return
+
+        name = node.target.id
+
+        if name not in __all__:
+            return
+
+        annotation = self.annotations[name]
+
+        module = str(annotation.__origin__.__module__).replace('builtins', '').replace('__main__', '')
+        qualname = str(annotation.__origin__.__qualname__)
+        type_annotation = '' if qualname.startswith('_') else f'{module}{'.' if module else ''}{qualname}'
+
+        docstring = '\n'.join(annotation.__metadata__).strip()
+
+        doc_fragment = f'`{name}: {type_annotation}`\\\n{docstring}'
+
+        self.doc_fragments_for_constants.append(f'- {_indent_markdown(doc_fragment).lstrip()}\n')
 
 
 def docs() -> str:
@@ -810,19 +829,11 @@ def docs() -> str:
     if __doc__ is None:
         return ''
 
-    doc_fragments_for_constants: list[str] = []
-    doc_fragments_for_functions: list[str] = []
-    for name in __all__:
-        obj = globals()[name]
-        if isfunction(obj):
-            destination = doc_fragments_for_functions
-            doc_fragment = _get_docs_for_function(name)
-        else:
-            destination = doc_fragments_for_constants
-            doc_fragment = _get_docs_for_constant(name)
-        destination.append(f'- {_indent_markdown(doc_fragment).lstrip()}\n')
+    visitor = DocstringVisitor()
+    visitor.visit(ast.parse(getsource(sys.modules[__name__])))
 
-    docs_for_constants = ''.join(sorted(doc_fragments_for_constants))
-    docs_for_functions = ''.join(sorted(doc_fragments_for_functions))
-
-    return _unwrap_markdown(__doc__).format(docs_for_constants, docs_for_functions)
+    return _unwrap_markdown(__doc__).format(
+        docs_for_constants=''.join(visitor.doc_fragments_for_constants),
+        docs_for_classes=''.join(visitor.doc_fragments_for_classes),
+        docs_for_functions=''.join(visitor.doc_fragments_for_functions),
+    )
