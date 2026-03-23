@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
 """Test suite for `excepthook()` function and helpers."""
 import errno
-import logging
 from os import strerror
-from random import choice, randint
+from random import choice, randint, sample
 from string import ascii_lowercase
 import sys
 import traceback
@@ -15,7 +14,7 @@ import pytest
 # ruff: disable[SLF001]  # pylint: disable=protected-access
 # pyright: reportPrivateUsage=false
 import legion
-from tests.helpers import CallableSpy, strip_logging_noise
+from tests.helpers import CallableSpy, get_denoised_logfile_lines
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -84,8 +83,8 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:  
     mock_frames: list[FrameSummary] = []
 
     # ruff: disable[S311]
-    for _i in range(randint(min_items, max_items)):
-        filename = f'source_file_{choice(ascii_lowercase)}.py'
+    for file_index in sample(ascii_lowercase, randint(min_items, max_items)):
+        filename = f'source_file_{file_index}.py'
         expected += legion._TRACEBACK_FRAME_HEADING_TEMPLATE.format(filename)
         for _j in range(randint(min_items, max_items)):
             location = (randint(min_lineno, max_lineno), f'func_{choice(ascii_lowercase)}')
@@ -99,7 +98,7 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:  
 
     monkeypatch.setattr(traceback, 'extract_tb', patched_extract_tb)
 
-    assert legion._format_traceback(None) == expected
+    assert legion._format_traceback(None) == expected.removesuffix('\n')
 
 
 @pytest.mark.parametrize(('has_args', 'has_traceback'), [
@@ -108,11 +107,12 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:  
     pytest.param(True, False, id='test_excepthook_formatting_no_traceback'),
     pytest.param(False, False, id='test_excepthook_formatting_no_output'),
 ])
+@pytest.mark.usefixtures('logger')
 # pylint: disable-next=unused-variable
 def test_excephook_formatting(
     monkeypatch: pytest.MonkeyPatch,
-    log_paths: LogPaths,
     capsys: pytest.CaptureFixture[str],
+    log_paths: LogPaths,
     has_args: bool,  # noqa: FBT001
     has_traceback: bool,  # noqa: FBT001
 ) -> None:
@@ -122,32 +122,22 @@ def test_excephook_formatting(
 
     monkeypatch.setattr(traceback, 'extract_tb', patched_extract_tb)
 
-    legion.get_logger(__name__).config(main_log_output=log_paths.log, full_log_output=log_paths.trace)
-
     exc = Exception(*((42,) if has_args else ()))
     legion.excepthook(type(exc), exc, exc.__traceback__ if has_traceback else None)
-    logging.shutdown()
 
     heading = legion._EXCEPTHOOK_HEADING_TEMPLATE.format(legion._DEFAULT_EXCEPTHOOK_HEADING, type(exc).__name__)
-    formatted_details = legion._format_exception_details(exc)
-    formatted_traceback = legion._format_traceback(exc.__traceback__)
-    formatted_details += legion._EXCEPTHOOK_TRACEBACK_SEPARATOR if formatted_details else ''
+    formatted_details = [legion._format_exception_details(exc)]
+    formatted_details.append(legion._format_traceback(exc.__traceback__))
 
-    expected = legion.format_message(heading, formatted_details + formatted_traceback).split('\n')
-    expected.append('')
+    expected = legion.format_message(heading, legion._EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details))
 
-    main_log_file_contents = log_paths.log.read_text(encoding=legion.UTF8)
-    main_log_file_contents = [strip_logging_noise(line) for line in main_log_file_contents.split('\n')]
-    assert main_log_file_contents == expected
-
-    full_log_file_contents = log_paths.trace.read_text(encoding=legion.UTF8)
-    full_log_file_contents = [strip_logging_noise(line) for line in full_log_file_contents.split('\n')]
-    assert full_log_file_contents == expected
+    assert get_denoised_logfile_lines(log_paths.log) == expected
+    assert get_denoised_logfile_lines(log_paths.trace) == expected
 
     captured_output = capsys.readouterr()
 
     assert not captured_output.out
-    assert captured_output.err == '\n'.join(expected)
+    assert captured_output.err.removesuffix('\n') == expected
 
 
 # ruff: enable[SLF001]  # pylint: enable=protected-access
