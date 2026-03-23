@@ -191,14 +191,12 @@ def _format_traceback(exc_traceback: TracebackType | None) -> str:
         if current_frame_source_path != frame.filename:
             output += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
             current_frame_source_path = frame.filename
-        source_lines: list[str] = []
+        source = ''
         if frame.lineno:
             source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
-        else:
-            source_lines = [frame.line or '']
+            source = ''.join([line.strip() for line in source_lines])
 
-        source_lines = [line.strip() for line in source_lines]
-        output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, ''.join(source_lines))
+        output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, source or frame.line or '')
     return output.strip()
 
 
