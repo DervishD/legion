@@ -128,6 +128,8 @@ _TRACEBACK_FRAME_HEADING_MARKER = f'{ARROW_R} '
 _TRACEBACK_FRAME_HEADING_TEMPLATE = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
 _TRACEBACK_FRAME_LOCATION_TEMPLATE = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKER)}{{}}, {{}}: {{}}\n'
 
+_MARKDOWN_INDENTATION = ' ' * 4
+
 
 def format_message(
     message: str = '',
@@ -688,11 +690,11 @@ if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
 def _indent_markdown(markdown: str) -> str:
     """Indent all lines in *text_block* by 4 spaces.
 
-    The indentation is four spaces as per markdown specification.aces.
+    The indentation is four spaces as per markdown specification
 
     Lines which only contain whitespace after indenting are stripped.
     """
-    return '\n'.join(f'{' ' * 4}{line}'.rstrip() for line in markdown.splitlines())
+    return '\n'.join(f'{_MARKDOWN_INDENTATION}{line}'.rstrip() for line in markdown.splitlines())
 
 
 def _unwrap_markdown(markdown: str) -> str:
