@@ -31,10 +31,10 @@ import sys
 from time import strftime
 import tomllib
 import traceback as tb
-from typing import Annotated, cast, TYPE_CHECKING
+from typing import Annotated, cast, TextIO, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
     from io import TextIOWrapper
     from types import TracebackType
     from typing import Any, LiteralString
