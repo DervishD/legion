@@ -779,12 +779,13 @@ class DocstringVisitor(ast.NodeVisitor):
         doc_fragment = f'`{name}('
 
         arguments = [f'`{_indent_markdown(arg)}' for arg in ast.unparse(node.args).split(', ') if arg and arg != 'self']
-        doc_fragment += f'`\\\n{',`\\\n'.join(arguments)}`\\\n`' if arguments else ''
+        arguments_fragment = self._qualify_names(f'`\\\n{',`\\\n'.join(arguments)}`\\\n`' if arguments else '')
+        arguments_fragment = arguments_fragment.replace('=', ' = ')
 
-        return_annotation = ast.unparse(node.returns) if node.returns is not None else ''
-        doc_fragment += f'){f' -> {return_annotation}' if return_annotation else ''}`\\\n'
+        return_annotation = self._qualify_names(ast.unparse(node.returns) if node.returns is not None else '')
+        return_fragment = f' -> {return_annotation}' if return_annotation else ''
 
-        doc_fragment = self._qualify_names(doc_fragment).replace('=', ' = ')
+        doc_fragment = f'`{name}({arguments_fragment}){return_fragment}`\\\n'
 
         docstring = ast.get_docstring(node)
         doc_fragment += _unwrap_markdown(docstring) if docstring else ''
