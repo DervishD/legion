@@ -14,7 +14,7 @@ import pytest
 # ruff: disable[SLF001]  # pylint: disable=protected-access
 # pyright: reportPrivateUsage=false
 import legion
-from tests.helpers import CallableSpy, get_denoised_logfile_lines
+from tests.helpers import CallableSpy, LoggingFields, parse_logfile
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -129,15 +129,21 @@ def test_excephook_formatting(
     formatted_details = [legion._format_exception_details(exc)]
     formatted_details.append(legion._format_traceback(exc.__traceback__))
 
-    expected = legion.format_message(heading, legion._EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details))
+    expected = legion.format_message(heading, legion._EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)).split('\n')
 
-    assert get_denoised_logfile_lines(log_paths.log) == expected
-    assert get_denoised_logfile_lines(log_paths.trace) == expected
+    parsed_main_logfile = parse_logfile(log_paths.main)
+    parsed_full_logfile = parse_logfile(log_paths.full)
+
+    assert parsed_main_logfile[LoggingFields.MESSAGES] == expected
+    assert parsed_full_logfile[LoggingFields.MESSAGES] == expected
+
+    assert set(parsed_main_logfile[LoggingFields.LOGLEVELS]) == {''}
+    assert set(parsed_full_logfile[LoggingFields.LOGLEVELS]) == {'ERROR'}
+
 
     captured_output = capsys.readouterr()
 
     assert not captured_output.out
-    assert captured_output.err.removesuffix('\n') == expected
-
+    assert captured_output.err.splitlines() == expected
 
 # ruff: enable[SLF001]  # pylint: enable=protected-access
