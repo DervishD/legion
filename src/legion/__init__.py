@@ -491,7 +491,7 @@ class Logger(logging.Logger):
     """
 
     LEVELNAME_MAX_LEN = len(max(logging.getLevelNamesMapping(), key=len))
-    LEVELNAME_SEPARATOR = ' | '
+    LEVELNAME_SEPARATOR = '|'
     __INCREASE_INDENT_SYMBOL = '+'
     __DECREASE_INDENT_SYMBOL = '-'
     __INDENT_CHAR = ' '
@@ -500,8 +500,8 @@ class Logger(logging.Logger):
     __CONSOLE_FORMAT = '{message}'
     __LONG_FORMAT = (
         '{asctime}.{msecs:04.0f} '
-        f'{{levelname:{LEVELNAME_MAX_LEN}}}'
-        f'{LEVELNAME_SEPARATOR}'
+        f'{{levelname:{LEVELNAME_MAX_LEN}}} '
+        f'{LEVELNAME_SEPARATOR} '
         '{funcName}() {message}'
     )
 
