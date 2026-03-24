@@ -1,4 +1,5 @@
 """Helpers for test units."""
+from enum import auto, StrEnum
 import re
 from typing import NamedTuple, TYPE_CHECKING
 
@@ -9,38 +10,54 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Any
 
+
 class LogPaths(NamedTuple):  # pylint: disable=unused-variable
     """Log paths abstraction."""  # noqa: D204
-    log: Path
-    trace: Path
+    main: Path
+    full: Path
 
 
-LOGGING_NOISE_REGEX = re.compile(
-    r'^\d{8}_\d{6}(?:\.\d{4})?+(?:[A-Z ]++\|)?+(?:[^(]++\(\))?+(?: (?P<message>.*))?$',
-    re.MULTILINE,
-)
-def get_denoised_logfile_lines(logfile: Path) -> str:
-    """Return *logfile* contents, de-noised.
+class LoggingFields(StrEnum):
+    """Field names of a ParsedLogfile."""
 
-    For each line, only the logging message is preserved. The timestamp,
-    logging level, function name, separators, etc. are removed.
+    TIMESTAMPS = auto()
+    LOGLEVELS = auto()
+    FUNCNAMES = auto()
+    MESSAGES = auto()
 
-    Finally, since the final newline character is removed.
+
+PARSE_REGEX = re.compile(rf"""^
+    (?:(?P<{LoggingFields.TIMESTAMPS}>\d{{8}}_\d{{6}}(?:\.\d{{4}})?+)(?:\ (?=.))?)
+    (?:(?P<{LoggingFields.LOGLEVELS}>[A-Z]++)\ ++\{legion.Logger.LEVELNAME_SEPARATOR}(?:\ (?=.))?)?+
+    (?:(?P<{LoggingFields.FUNCNAMES}>[^\s(]++)\(\)(?:\ (?=.))?)?+
+    (?P<{LoggingFields.MESSAGES}>.++)??
+$""", re.MULTILINE | re.VERBOSE)
+
+
+ParsedLogfile = dict[str, list[str | None]]
+def parse_logfile(logfile: Path) -> ParsedLogfile:
+    """Parse the contents of *logfile*.
+
+    Each line is matched against `PARSE_REGEX` and split into the named
+    fields defined in `LoggingFields`. The result is a `ParsedLogfile`
+    dictionary, mapping each field name to a list of the corresponding
+    parsed string values, one entry per line, preserving order.
+
+    Raises `ValueError` if any line does not match `PARSE_REGEX`. The
+    non-matching line is provided as argument to the exception.
     """
-    return LOGGING_NOISE_REGEX.sub(r'\g<message>', logfile.read_text(encoding=legion.UTF8)).removesuffix('\n')
+    result: ParsedLogfile = {name: [] for name in PARSE_REGEX.groupindex}
 
+    contents = logfile.read_text(encoding=legion.UTF8)
 
-
-def format_log_message(message: str, *, levelname:str = '', padding: str = '') -> list[str]:  # pylint: disable=unused-variable
-    """Format *message* so it looks like a logging entry.
-
-    The *levelname* is prepended to the message if provided, and in that
-    case a separator is appended.
-
-    If *padding* is provided, it is inserted before the message.
-    """
-    preamble = f'{levelname:<{legion.Logger.LEVELNAME_MAX_LEN}}{legion.Logger.LEVELNAME_SEPARATOR}' if levelname else ''
-    return [f'{preamble}{padding}{line}'.rstrip() for line in message.split('\n')]
+    for line in contents.splitlines():
+        match = PARSE_REGEX.match(line)
+        if match is None:
+            raise ValueError(line)
+        match_groups = match.groupdict()
+        for name in result:
+            result[name].append(match_groups[name] or '')
+    return result
 
 
 class CallableSpy[**P, R]:  # pylint: disable=unused-variable, too-few-public-methods
