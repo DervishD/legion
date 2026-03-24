@@ -244,7 +244,7 @@ def excepthook(
 
     formatted_details = [_format_exception_details(exc)]
     formatted_details.append(_format_traceback(exc_traceback))
-    formatted_details.append(_format_traceback(exc.__traceback__) if exc.__traceback__ != exc_traceback else '')
+    formatted_details.extend([_format_traceback(exc.__traceback__)] if exc.__traceback__ != exc_traceback else [])
 
     logger = get_logger(__name__)
     logger.error(format_message(formatted_heading, _EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)))
