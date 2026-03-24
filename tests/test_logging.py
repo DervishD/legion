@@ -98,10 +98,10 @@ def test_logging_functions(  # noqa: PLR0913
     assert set(parsed_main_logfile[LoggingFields.LOGLEVELS]) == ({''} if expected.produces_main_log else set())
     assert set(parsed_full_logfile[LoggingFields.LOGLEVELS]) == {levelname}
 
-    captured_output = capsys.readouterr()
+    captured = capsys.readouterr()
 
-    assert captured_output.out.splitlines() == (EXPECTED_CONTENT if expected.produces_stdout else [])
-    assert captured_output.err.splitlines() == (EXPECTED_CONTENT if expected.produces_stderr else [])
+    assert captured.out.splitlines() == (EXPECTED_CONTENT if expected.produces_stdout else [])
+    assert captured.err.splitlines() == (EXPECTED_CONTENT if expected.produces_stderr else [])
 
 
 @pytest.mark.parametrize('message', [
@@ -122,6 +122,6 @@ def test_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: legion.
 
     logging.shutdown()
 
-    captured_output = capsys.readouterr().out
+    captured = capsys.readouterr().out
 
-    assert captured_output == message + terminator
+    assert captured == message + terminator

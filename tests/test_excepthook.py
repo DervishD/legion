@@ -141,9 +141,9 @@ def test_excephook_formatting(
     assert set(parsed_full_logfile[LoggingFields.LOGLEVELS]) == {'ERROR'}
 
 
-    captured_output = capsys.readouterr()
+    captured = capsys.readouterr()
 
-    assert not captured_output.out
-    assert captured_output.err.splitlines() == expected
+    assert not captured.out
+    assert captured.err.splitlines() == expected
 
 # ruff: enable[SLF001]  # pylint: enable=protected-access
