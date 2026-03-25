@@ -89,18 +89,20 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
 ## Functions
 - `format_message(`\
-    `    message: str = '',`\
-    `    details: str = '',`\
+    `    heading: str,`\
+    `    message: str,`\
     `    *,`\
-    `    details_indent: str = ' '`\
+    `    indentation: str = ' '`\
     `) -> str`\
-    Format *message*, including *details*. Both are optional.
+    Return a formatted message with an optional heading.
 
-    The *message* is sanitized: any trailing whitespace is stripped, and any sequence of internal whitespace is converted to a single space. Leading whitespace is preserved, though.
+    The *heading* is normalized: trailing whitespace is stripped and any internal whitespace sequence is collapsed to a single space; leading whitespace is preserved.
 
-    If *details* are provided, they are appended to *message*. A newline character is used as a visual separator between them if *message* is not empty. The lines in *detail* are indented by *details_indent*, a a single space by default but any string can be used.
+    If both *heading* and *message* are non-empty (and not only contain whitespace), they are separated by a blank line. Blank lines within *message* are preserved.
 
-    Multiline *details* are supported and empty lines are preserved. For each line trailing whitespace is stripped and leading whitespace is preserved. This allows to use a per-line arbitrary indentation, and to have visual separation from *message* by including some newline characters at the very beginning of *details*.
+    The *message* may span multiple lines. Each line is indented using *indentation* (a single space by default). Any trailing whitespace is removed from each line, while leading whitespace is preserved, which allows for custom indentation and spacing.
+
+    An empty string is returned when both *heading* and *message* are empty or whitespace-only.
 - `excepthook(`\
     `    exc_type: type[BaseException],`\
     `    exc_value: BaseException,`\

@@ -7,56 +7,68 @@ import pytest
 from legion import format_message
 
 MULTIPLIER = 42
+HEADING = 'heading'
 MESSAGE = 'message'
-DETAILS = 'details'
-DETAILS_SEP = '\n'
-INDENT = '*' * MULTIPLIER
-DEFAULT_INDENT = ' '
-@pytest.mark.parametrize(('message', 'details', 'details_indent', 'expected'), [
+SEPARATOR = '\n'
+INDENTATION = '*' * MULTIPLIER
+DEFAULT_INDENTATION = ' '
+@pytest.mark.parametrize(('heading', 'message', 'indentation', 'expected'), [
     pytest.param(
-        None, None, None, '',
-        id = 'test_format_message_no_arguments',
+        None, None, None,
+        '',
+        id = 'test_format_message_None_arguments',
     ),
     pytest.param(
-        whitespace, whitespace, None, '',
+        '', '', None,
+        '',
         id = 'test_format_message_empty_arguments',
     ),
     pytest.param(
-        None, DETAILS, None, f'{DEFAULT_INDENT}{DETAILS}',
+        '', MESSAGE, None,
+        f'{DEFAULT_INDENTATION}{MESSAGE}',
+        id = 'test_format_message_missing_heading',
+    ),
+    pytest.param(
+        HEADING, '', None,
+        HEADING,
         id = 'test_format_message_missing_message',
     ),
     pytest.param(
-        MESSAGE, None, None, MESSAGE,
-        id = 'test_format_message_missing_details',
+        '', f'{MESSAGE}\n\n{MESSAGE}', None,
+        f'{DEFAULT_INDENTATION}{MESSAGE}\n\n{DEFAULT_INDENTATION}{MESSAGE}',
+        id = 'test_format_message_multiline_message',
     ),
     pytest.param(
-        None, f'{DETAILS}\n\n{DETAILS}', None, f'{DEFAULT_INDENT}{DETAILS}\n\n{DEFAULT_INDENT}{DETAILS}',
-        id = 'test_format_message_multiline_details',
+        '', MESSAGE, INDENTATION,
+        f'{INDENTATION}{MESSAGE}',
+        id = 'test_format_message_custom_indentation',
     ),
     pytest.param(
-        None, DETAILS, INDENT, f'{INDENT}{DETAILS}',
-        id = 'test_format_message_custom_details_indent',
-    ),
-    pytest.param(
-        MESSAGE, f'{DETAILS}\n{DETAILS}', INDENT, f'{MESSAGE}{DETAILS_SEP}{INDENT}{DETAILS}\n{INDENT}{DETAILS}',
+        HEADING, f'{MESSAGE}\n\n{MESSAGE}', INDENTATION,
+        f'{HEADING}{SEPARATOR}{INDENTATION}{MESSAGE}\n\n{INDENTATION}{MESSAGE}',
         id = 'test_format_message_full_featured',
     ),
 ])
 # pylint: disable-next=unused-variable
-def test_output(message: str | None, details: str | None, details_indent: str | None, expected: str) -> None:
+def test_output(heading: str, message: str, indentation: str | None, expected: str) -> None:
     """Test output depending on the arguments."""
-    kwargs = {k: v for k, v in {
-        'message': message,
-        'details': details,
-        'details_indent': details_indent,
-    }.items() if v is not None}
-    output = format_message(**kwargs)
+    kwargs = {} if indentation is None else {'indentation': indentation}
+
+    output = format_message(heading, message, **kwargs)
     assert output == expected
 
+    if heading == '':
+        output = format_message(whitespace, message, **kwargs)
+        assert output == expected
 
-def test_format_message_sanitize_message() -> None:  # pylint: disable=unused-variable
-    """Test message sanitization."""
-    message = whitespace + f'{MESSAGE}{whitespace}{MESSAGE}' * MULTIPLIER + whitespace
-    expected = whitespace + f'{MESSAGE} {MESSAGE}' * MULTIPLIER
-    output = format_message(message)
+    if message == '':
+        output = format_message(heading, whitespace, **kwargs)
+        assert output == expected
+
+
+def test_format_message_sanitize_heading() -> None:  # pylint: disable=unused-variable
+    """Test heading sanitization."""
+    heading = whitespace + f'{HEADING}{whitespace}{HEADING}' * MULTIPLIER + whitespace
+    expected = whitespace + f'{HEADING} {HEADING}' * MULTIPLIER
+    output = format_message(heading, '')
     assert output == expected
