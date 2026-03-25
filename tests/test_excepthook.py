@@ -39,7 +39,7 @@ def test_excepthook_keyboard_interrupt_handling() -> None:  # pylint: disable=un
 @pytest.mark.parametrize(('exc_type', 'arg_labels', 'arg_values', 'munger'), [
     pytest.param(
         OSError,
-        legion._OSERROR_ATTRIBUTE_LABELS,
+        ('errcodes', 'strerror', 'filename1', 'filename2'),
         (errno.ENOENT, strerror(errno.ENOENT), 'filename1', errno.ENOENT, 'filename2'),
         lambda e: legion.munge_oserror(e)[1:], # pyright: ignore[reportUnknownArgumentType,reportUnknownLambdaType]
         id='test_excepthook_format_oserror_details',
@@ -66,7 +66,7 @@ def test_excepthook_format_exception_details(
     munged_args = munger(exc)
     output: list[str] = []
     for label, value in zip(arg_labels, munged_args, strict=True):
-        output.append(legion._EXCEPTION_ATTRIBUTE_TEMPLATE.format(label, label_maxlen, value))
+        output.append(f'{label:<{label_maxlen}}  ⟶  {value}')
     expected = '\n'.join(output)
 
     assert legion._format_exception_details(exc) == expected
@@ -85,12 +85,12 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:  
     # ruff: disable[S311]
     for file_index in sample(ascii_lowercase, randint(min_items, max_items)):
         filename = f'source_file_{file_index}.py'
-        expected += legion._TRACEBACK_FRAME_HEADING_TEMPLATE.format(filename)
+        expected += f'⟶ {filename}\n'
         for _j in range(randint(min_items, max_items)):
             location = (randint(min_lineno, max_lineno), f'func_{choice(ascii_lowercase)}')
             codeline = f'source_code_{choice(ascii_lowercase)}'
             mock_frames.append(FrameSummary(filename, *location, line=codeline))
-            expected += legion._TRACEBACK_FRAME_LOCATION_TEMPLATE.format(*location, codeline)
+            expected += '  {}, {}: {}\n'.format(*location, codeline)
     # ruff: enable[S311]
 
     def patched_extract_tb (_: TracebackType) -> StackSummary:
@@ -125,11 +125,11 @@ def test_excephook_formatting(
     exc = Exception(*((42,) if has_args else ()))
     legion.excepthook(type(exc), exc, exc.__traceback__ if has_traceback else None)
 
-    heading = legion._EXCEPTHOOK_HEADING_TEMPLATE.format(legion._DEFAULT_EXCEPTHOOK_HEADING, type(exc).__name__)
+    heading = f'Unhandled exception ({type(exc).__name__})'
     formatted_details = [legion._format_exception_details(exc)]
     formatted_details.append(legion._format_traceback(exc.__traceback__))
 
-    expected = legion.format_message(heading, legion._EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)).split('\n')
+    expected = legion.format_message(heading, '\n\n'.join(formatted_details)).split('\n')
 
     parsed_main_logfile = parse_logfile(log_paths.main)
     parsed_full_logfile = parse_logfile(log_paths.full)
@@ -139,7 +139,6 @@ def test_excephook_formatting(
 
     assert set(parsed_main_logfile[LoggingFields.LOGLEVELS]) == {''}
     assert set(parsed_full_logfile[LoggingFields.LOGLEVELS]) == {'ERROR'}
-
 
     captured = capsys.readouterr()
 
