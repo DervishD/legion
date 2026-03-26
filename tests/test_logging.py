@@ -27,39 +27,33 @@ def test_logging_paths_creation(log_paths: LogPaths) -> None:
     assert log_paths.main.is_file()
     assert log_paths.full.is_file()
 
-# The 'expected' argument is a tuple containing four items:
-#   - The main log file expected message.
-#   - The full log file expected message.
-#   - The stdout output expected message.
-#   - The stderr output expected message.
-# The expected message is a list of strings, one per message line, with
-# empty lines and trailing newlines stored as empty strings.
-class Expected(NamedTuple):
+
+class OutputSpec(NamedTuple):
     """Expected output abstraction."""  # noqa: D204
     produces_main_log: bool
     produces_full_log: bool
     produces_stdout: bool
     produces_stderr: bool
-@pytest.mark.parametrize(('logging_function_name', 'expected'), [
-   pytest.param('debug', Expected(
+@pytest.mark.parametrize(('logging_function_name', 'output_spec'), [
+   pytest.param('debug', OutputSpec(
         produces_main_log=False,
         produces_full_log=True,
         produces_stdout=False,
         produces_stderr=False,
     ), id='test_logging_functions_debug'),
-    pytest.param('info', Expected(
+    pytest.param('info', OutputSpec(
         produces_main_log=True,
         produces_full_log=True,
         produces_stdout=True,
         produces_stderr=False,
     ), id='test_logging_functions_info'),
-    pytest.param('warning', Expected(
+    pytest.param('warning', OutputSpec(
         produces_main_log=True,
         produces_full_log=True,
         produces_stdout=False,
         produces_stderr=True,
     ), id='test_logging_functions_warning'),
-    pytest.param('error', Expected(
+    pytest.param('error', OutputSpec(
         produces_main_log=True,
         produces_full_log=True,
         produces_stdout=False,
@@ -72,14 +66,14 @@ def test_logging_functions(  # noqa: PLR0913
     logger: legion.Logger,
     log_paths: LogPaths,
     logging_function_name: str,
-    expected: Expected,
+    output_spec: OutputSpec,
 ) -> None:
     """Test all logging functions."""
     levelname = logging_function_name.upper()
     funcname = request.function.__name__
 
     message = 'Test message\nin multiple\n\nlines!\n\n'
-    expected_content = message.split('\n')
+    expected = message.split('\n')
 
     getattr(logger, logging_function_name)(message)
 
@@ -89,19 +83,19 @@ def test_logging_functions(  # noqa: PLR0913
     assert '' not in parsed_main_logfile[LoggingFields.TIMESTAMPS]
     assert '' not in parsed_full_logfile[LoggingFields.TIMESTAMPS]
 
-    assert set(parsed_main_logfile[LoggingFields.FUNCNAMES]) == ({''} if expected.produces_main_log else set())
+    assert set(parsed_main_logfile[LoggingFields.FUNCNAMES]) == ({''} if output_spec.produces_main_log else set())
     assert set(parsed_full_logfile[LoggingFields.FUNCNAMES]) == {funcname}
 
-    assert parsed_main_logfile[LoggingFields.MESSAGES] == (expected_content if expected.produces_main_log else [])
-    assert parsed_full_logfile[LoggingFields.MESSAGES] == (expected_content if expected.produces_full_log else [])
+    assert parsed_main_logfile[LoggingFields.MESSAGES] == (expected if output_spec.produces_main_log else [])
+    assert parsed_full_logfile[LoggingFields.MESSAGES] == (expected if output_spec.produces_full_log else [])
 
-    assert set(parsed_main_logfile[LoggingFields.LOGLEVELS]) == ({''} if expected.produces_main_log else set())
+    assert set(parsed_main_logfile[LoggingFields.LOGLEVELS]) == ({''} if output_spec.produces_main_log else set())
     assert set(parsed_full_logfile[LoggingFields.LOGLEVELS]) == {levelname}
 
     captured = capsys.readouterr()
 
-    assert captured.out.splitlines() == (expected_content if expected.produces_stdout else [])
-    assert captured.err.splitlines() == (expected_content if expected.produces_stderr else [])
+    assert captured.out.splitlines() == (expected if output_spec.produces_stdout else [])
+    assert captured.err.splitlines() == (expected if output_spec.produces_stderr else [])
 
 
 @pytest.mark.parametrize('message', [
