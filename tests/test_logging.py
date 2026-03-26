@@ -13,7 +13,8 @@ import pytest
 import legion
 
 
-def test_logging_paths_creation(log_paths: LogPaths) -> None:  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+def test_logging_paths_creation(log_paths: LogPaths) -> None:
     """Test that the logging paths are created propertly."""
     assert not log_paths.main.is_file()
     assert not log_paths.full.is_file()
@@ -40,8 +41,6 @@ class Expected(NamedTuple):
     produces_full_log: bool
     produces_stdout: bool
     produces_stderr: bool
-TEST_MESSAGE = 'Test message\nin multiple\n\nlines!\n\n'
-EXPECTED_CONTENT = TEST_MESSAGE.split('\n')
 @pytest.mark.parametrize(('logging_function_name', 'expected'), [
    pytest.param('debug', Expected(
         produces_main_log=False,
@@ -81,7 +80,10 @@ def test_logging_functions(  # noqa: PLR0913
     levelname = logging_function_name.upper()
     funcname = request.function.__name__
 
-    getattr(logger, logging_function_name)(TEST_MESSAGE)
+    message = 'Test message\nin multiple\n\nlines!\n\n'
+    expected_content = message.split('\n')
+
+    getattr(logger, logging_function_name)(message)
 
     parsed_main_logfile = parse_logfile(log_paths.main)
     parsed_full_logfile = parse_logfile(log_paths.full)
@@ -92,16 +94,16 @@ def test_logging_functions(  # noqa: PLR0913
     assert set(parsed_main_logfile[LoggingFields.FUNCNAMES]) == ({''} if expected.produces_main_log else set())
     assert set(parsed_full_logfile[LoggingFields.FUNCNAMES]) == {funcname}
 
-    assert parsed_main_logfile[LoggingFields.MESSAGES] == (EXPECTED_CONTENT if expected.produces_main_log else [])
-    assert parsed_full_logfile[LoggingFields.MESSAGES] == (EXPECTED_CONTENT if expected.produces_full_log else [])
+    assert parsed_main_logfile[LoggingFields.MESSAGES] == (expected_content if expected.produces_main_log else [])
+    assert parsed_full_logfile[LoggingFields.MESSAGES] == (expected_content if expected.produces_full_log else [])
 
     assert set(parsed_main_logfile[LoggingFields.LOGLEVELS]) == ({''} if expected.produces_main_log else set())
     assert set(parsed_full_logfile[LoggingFields.LOGLEVELS]) == {levelname}
 
     captured = capsys.readouterr()
 
-    assert captured.out.splitlines() == (EXPECTED_CONTENT if expected.produces_stdout else [])
-    assert captured.err.splitlines() == (EXPECTED_CONTENT if expected.produces_stderr else [])
+    assert captured.out.splitlines() == (expected_content if expected.produces_stdout else [])
+    assert captured.err.splitlines() == (expected_content if expected.produces_stderr else [])
 
 
 @pytest.mark.parametrize('message', [
@@ -112,7 +114,7 @@ def test_logging_functions(  # noqa: PLR0913
     pytest.param('\bLeading and trailing newline.\n', id='test_logging_honor_both_newlines'),
 ])
 # pylint: disable-next=unused-variable
-def test_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: legion.Logger, message: str) -> None:
+def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: legion.Logger, message: str) -> None:
     """Test whether whitespace is honored where it should."""
     terminator = '<TERMINATOR>'
 

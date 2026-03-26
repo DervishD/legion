@@ -3,15 +3,14 @@ from enum import auto, StrEnum
 import re
 from typing import NamedTuple, TYPE_CHECKING
 
-import legion
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
     from typing import Any
 
 
-class LogPaths(NamedTuple):  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+class LogPaths(NamedTuple):
     """Log paths abstraction."""  # noqa: D204
     main: Path
     full: Path
@@ -26,14 +25,6 @@ class LoggingFields(StrEnum):
     MESSAGES = auto()
 
 
-PARSE_REGEX = re.compile(rf"""^
-    (?:(?P<{LoggingFields.TIMESTAMPS}>\d{{8}}_\d{{6}}(?:\.\d{{4}})?+)(?:\ (?=.))?)
-    (?:(?P<{LoggingFields.LOGLEVELS}>[A-Z]++)\ ++\{legion.Logger.LEVELNAME_SEPARATOR}(?:\ (?=.))?)?+
-    (?:(?P<{LoggingFields.FUNCNAMES}>[^\s(]++)\(\)(?:\ (?=.))?)?+
-    (?P<{LoggingFields.MESSAGES}>.++)??
-$""", re.MULTILINE | re.VERBOSE)
-
-
 ParsedLogfile = dict[str, list[str | None]]
 def parse_logfile(logfile: Path) -> ParsedLogfile:
     """Parse the contents of *logfile*.
@@ -46,12 +37,19 @@ def parse_logfile(logfile: Path) -> ParsedLogfile:
     Raises `ValueError` if any line does not match `PARSE_REGEX`. The
     non-matching line is provided as argument to the exception.
     """
-    result: ParsedLogfile = {name: [] for name in PARSE_REGEX.groupindex}
+    logfile_parse_regex = re.compile(rf"""^
+        (?:(?P<{LoggingFields.TIMESTAMPS}>\d{{8}}_\d{{6}}(?:\.\d{{4}})?+)(?:\ (?=.))?)
+        (?:(?P<{LoggingFields.LOGLEVELS}>[A-Z]++)\ ++\|(?:\ (?=.))?)?+
+        (?:(?P<{LoggingFields.FUNCNAMES}>[^\s(]++)\(\)(?:\ (?=.))?)?+
+        (?P<{LoggingFields.MESSAGES}>.++)??
+    $""", re.MULTILINE | re.VERBOSE)
 
-    contents = logfile.read_text(encoding=legion.UTF8)
+    result: ParsedLogfile = {name: [] for name in logfile_parse_regex.groupindex}
+
+    contents = logfile.read_text(encoding='utf-8')
 
     for line in contents.splitlines():
-        match = PARSE_REGEX.match(line)
+        match = logfile_parse_regex.match(line)
         if match is None:
             raise ValueError(line)
         match_groups = match.groupdict()
@@ -60,7 +58,8 @@ def parse_logfile(logfile: Path) -> ParsedLogfile:
     return result
 
 
-class CallableSpy[**P, R]:  # pylint: disable=unused-variable, too-few-public-methods
+# pylint: disable-next=unused-variable, too-few-public-methods
+class CallableSpy[**P, R]:
     """Generic spy pattern for callables."""
 
     def __init__(self, target: Callable[P, R]) -> None:

@@ -40,7 +40,8 @@ def mock_wait_for_keypress(
     pytest.param(True, False, False, id='test_no_wait_for_keypress_no_transient_console'),
     pytest.param(True, True, True, id='test_do_wait_for_keypress'),
 ])
-def test_wait_for_keypress(  # pylint: disable=unused-variable
+# pylint: disable-next=unused-variable
+def test_wait_for_keypress(
     monkeypatch: pytest.MonkeyPatch, *,
     has_attached_console: bool, is_attached_console_transient: bool,
     expected: bool) -> None:

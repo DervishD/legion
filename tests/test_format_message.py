@@ -8,8 +8,9 @@ from legion import format_message
 
 MULTIPLIER = 42
 HEADING = 'heading'
+
+
 MESSAGE = 'message'
-SEPARATOR = '\n'
 INDENTATION = '*' * MULTIPLIER
 DEFAULT_INDENTATION = ' '
 @pytest.mark.parametrize(('heading', 'message', 'indentation', 'expected'), [
@@ -45,30 +46,33 @@ DEFAULT_INDENTATION = ' '
     ),
     pytest.param(
         HEADING, f'{MESSAGE}\n\n{MESSAGE}', INDENTATION,
-        f'{HEADING}{SEPARATOR}{INDENTATION}{MESSAGE}\n\n{INDENTATION}{MESSAGE}',
+        f'{HEADING}\n{INDENTATION}{MESSAGE}\n\n{INDENTATION}{MESSAGE}',
         id = 'test_format_message_full_featured',
     ),
 ])
 # pylint: disable-next=unused-variable
-def test_output(heading: str, message: str, indentation: str | None, expected: str) -> None:
+def test_format_message(heading: str, message: str, indentation: str | None, expected: str) -> None:
     """Test output depending on the arguments."""
     kwargs = {} if indentation is None else {'indentation': indentation}
 
-    output = format_message(heading, message, **kwargs)
-    assert output == expected
+    result = format_message(heading, message, **kwargs)
+    assert result == expected
 
     if heading == '':
-        output = format_message(whitespace, message, **kwargs)
-        assert output == expected
+        result = format_message(whitespace, message, **kwargs)
+        assert result == expected
 
     if message == '':
-        output = format_message(heading, whitespace, **kwargs)
-        assert output == expected
+        result = format_message(heading, whitespace, **kwargs)
+        assert result == expected
 
 
-def test_format_message_sanitize_heading() -> None:  # pylint: disable=unused-variable
-    """Test heading sanitization."""
+# pylint: disable-next=unused-variable
+def test_format_message_heading_normalization() -> None:
+    """Test heading normalization in `format_message()`."""
     heading = whitespace + f'{HEADING}{whitespace}{HEADING}' * MULTIPLIER + whitespace
+
+    result = format_message(heading, '')
     expected = whitespace + f'{HEADING} {HEADING}' * MULTIPLIER
-    output = format_message(heading, '')
-    assert output == expected
+
+    assert result == expected
