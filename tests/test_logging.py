@@ -13,7 +13,6 @@ import pytest
 import legion
 
 
-# pylint: disable-next=unused-variable
 def test_logging_paths_creation(log_paths: LogPaths) -> None:
     """Test that the logging paths are created propertly."""
     assert not log_paths.main.is_file()
@@ -67,7 +66,6 @@ class Expected(NamedTuple):
         produces_stderr=True,
     ), id='test_logging_functions_error'),
 ])
-# pylint: disable-next=unused-variable
 def test_logging_functions(  # noqa: PLR0913
     request: pytest.FixtureRequest,
     capsys: pytest.CaptureFixture[str],
@@ -113,7 +111,6 @@ def test_logging_functions(  # noqa: PLR0913
     pytest.param('Trailing newline.\n', id='test_logging_honor_trailing_newline'),
     pytest.param('\bLeading and trailing newline.\n', id='test_logging_honor_both_newlines'),
 ])
-# pylint: disable-next=unused-variable
 def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: legion.Logger, message: str) -> None:
     """Test whether whitespace is honored where it should."""
     terminator = '<TERMINATOR>'

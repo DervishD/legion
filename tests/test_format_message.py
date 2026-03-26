@@ -50,7 +50,6 @@ DEFAULT_INDENTATION = ' '
         id = 'test_format_message_full_featured',
     ),
 ])
-# pylint: disable-next=unused-variable
 def test_format_message(heading: str, message: str, indentation: str | None, expected: str) -> None:
     """Test output depending on the arguments."""
     kwargs = {} if indentation is None else {'indentation': indentation}
@@ -67,7 +66,6 @@ def test_format_message(heading: str, message: str, indentation: str | None, exp
         assert result == expected
 
 
-# pylint: disable-next=unused-variable
 def test_format_message_heading_normalization() -> None:
     """Test heading normalization in `format_message()`."""
     heading = whitespace + f'{HEADING}{whitespace}{HEADING}' * MULTIPLIER + whitespace

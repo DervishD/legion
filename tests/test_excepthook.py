@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from tests.helpers import LogPaths
 
 
-# pylint: disable-next=unused-variable
 def test_excepthook_keyboard_interrupt_handling() -> None:
     """Test `KeyboardInterrupt` handling."""
     sys.__excepthook__ = CallableSpy(sys.__excepthook__)
@@ -53,7 +52,6 @@ def test_excepthook_keyboard_interrupt_handling() -> None:
         id='test_excepthook_format_exception_details',
     ),
 ])
-# pylint: disable-next=unused-variable
 def test_excepthook_format_exception_details(
     exc_type: type[BaseException],
     arg_labels: tuple[str, ...],
@@ -73,7 +71,6 @@ def test_excepthook_format_exception_details(
     assert legion._format_exception_details(exc) == expected
 
 
-# pylint: disable-next=unused-variable
 def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `_format_traceback()`."""
     min_items = 3
@@ -110,7 +107,6 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
     pytest.param(False, False, id='test_excepthook_formatting_no_output'),
 ])
 @pytest.mark.usefixtures('logger')
-# pylint: disable-next=unused-variable
 def test_excepthook_formatting(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
