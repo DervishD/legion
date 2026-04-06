@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+# pylint: disable-next=unused-variable
 class LogPaths(NamedTuple):
     """Log paths abstraction."""  # noqa: D204
     main: Path
@@ -25,6 +26,7 @@ class LoggingFields(StrEnum):
 
 
 ParsedLogfile = dict[str, list[str | None]]
+# pylint: disable-next=unused-variable
 def parse_logfile(logfile: Path) -> ParsedLogfile:
     """Parse the contents of *logfile*.
 
@@ -57,7 +59,7 @@ def parse_logfile(logfile: Path) -> ParsedLogfile:
     return result
 
 
-# pylint: disable-next=too-few-public-methods
+# pylint: disable-next=unused-variable,too-few-public-methods
 class CallableSpy[**P, R]:
     """Generic spy pattern for callables."""
 

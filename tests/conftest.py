@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 """Configuration file for pytest."""
 import logging
+import os
+import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,6 +16,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
+# pylint: disable-next=unused-variable
 def log_paths(tmp_path: Path) -> Generator[LogPaths]:
     """Generate temporary paths for logging files in *tmp_path*."""
     main_output_path = tmp_path / 'log.txt'
@@ -26,6 +29,7 @@ def log_paths(tmp_path: Path) -> Generator[LogPaths]:
 
 
 @pytest.fixture
+# pylint: disable-next=unused-variable,redefined-outer-name
 def logger(log_paths: LogPaths) -> Generator[legion.Logger]:
     """Set up and return a logger, configured using *log_paths*."""
     logger_instance = legion.get_logger(__name__)
@@ -37,3 +41,28 @@ def logger(log_paths: LogPaths) -> Generator[legion.Logger]:
     logging.shutdown()
 
 
+@pytest.fixture
+# pylint: disable-next=unused-variable
+def unreadable_path(tmp_path: Path, request: pytest.FixtureRequest) -> Generator[Path]:
+    """Create a file in *tmp_path*, unreadable by the current user."""
+    path = tmp_path / request.param
+    path.write_text('')
+
+    subprocess.run(['icacls', str(path), '/inheritance:r'], check=True)  # noqa: S603, S607
+    yield path
+
+    path.unlink()
+
+
+@pytest.fixture
+# pylint: disable-next=unused-variable
+def unwritable_path(tmp_path: Path, request: pytest.FixtureRequest) -> Generator[Path]:
+    """Create a file in *tmp_path*, non writable by the current user."""
+    path = tmp_path / request.param
+    path.write_text('')
+
+    subprocess.run(['icacls', str(path), '/deny', f'{os.environ["USERNAME"]}:W'], check=True)  # noqa: S603, S607
+    yield path
+    subprocess.run(['icacls', str(path), '/grant', f'{os.environ["USERNAME"]}:W'], check=True)  # noqa: S603, S607
+
+    path.unlink()

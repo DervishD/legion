@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-# ruff: disable[SLF001]  # pylint: disable=protected-access
+# ruff: disable[SLF001]
+# pylint: disable=protected-access
 # pyright: reportPrivateUsage=false
 import legion
 from tests.helpers import CallableSpy, LoggingFields, parse_logfile
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from tests.helpers import LogPaths
 
 
+# pylint: disable-next=unused-variable
 def test_excepthook_keyboard_interrupt_handling() -> None:
     """Test `KeyboardInterrupt` handling."""
     sys.__excepthook__ = CallableSpy(sys.__excepthook__)
@@ -52,6 +54,7 @@ def test_excepthook_keyboard_interrupt_handling() -> None:
         id='test_excepthook_format_exception_details',
     ),
 ])
+# pylint: disable-next=unused-variable
 def test_excepthook_format_exception_details(
     exc_type: type[BaseException],
     arg_labels: tuple[str, ...],
@@ -71,6 +74,7 @@ def test_excepthook_format_exception_details(
     assert legion._format_exception_details(exc) == expected
 
 
+# pylint: disable-next=unused-variable
 def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `_format_traceback()`."""
     min_items = 3
@@ -89,7 +93,7 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
             location = (randint(min_lineno, max_lineno), f'func_{choice(ascii_lowercase)}')
             codeline = f'source_code_{choice(ascii_lowercase)}'
             mock_frames.append(FrameSummary(filename, *location, line=codeline))
-            expected += '  {}, {}: {}\n'.format(*location, codeline)
+            expected += '  {}, {}: {}\n'.format(*location, codeline)  # pylint: disable=consider-using-f-string
     # ruff: enable[S311]
 
     def patched_extract_tb (_: TracebackType) -> StackSummary:
@@ -107,6 +111,7 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
     pytest.param(False, False, id='test_excepthook_formatting_no_output'),
 ])
 @pytest.mark.usefixtures('logger')
+# pylint: disable-next=unused-variable
 def test_excepthook_formatting(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
