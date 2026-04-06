@@ -48,7 +48,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'DESKTOP_PATH',
     'ERROR_MARKER',
     'TIMESTAMP_FORMAT',
-    'UTF8',
     'Logger',
     'docs',
     'excepthook',
@@ -107,8 +106,6 @@ TIMESTAMP_FORMAT: Annotated[str, '`time.strftime()` compatible format specificat
 ERROR_MARKER: Annotated[str, 'Marker string prepended to error messages.'] = '*** '
 ARROW_R: Annotated[str, 'Right-pointing arrow character for pretty-printing program output.'] = '⟶'
 ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing program output.'] = '⟵'
-UTF8: Annotated[str, 'Normalized name for `UTF-8` encoding.'] = 'utf-8'
-
 
 _DEFAULT_EXCEPTHOOK_HEADING = 'Unhandled exception'
 _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT = '\nPress any key to continue...'
@@ -641,7 +638,7 @@ class Logger(logging.Logger):
                 'class': logging.FileHandler,
                 'filename': full_log_output,
                 'mode': 'w',
-                'encoding': UTF8,
+                'encoding': 'utf-8',
             }
 
         if main_log_output:
@@ -657,7 +654,7 @@ class Logger(logging.Logger):
                 'class': logging.FileHandler,
                 'filename': main_log_output,
                 'mode': 'w',
-                'encoding': UTF8,
+                'encoding': 'utf-8',
             }
 
         if console:
@@ -700,9 +697,9 @@ logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAM
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
-    cast('TextIOWrapper', sys.stdout).reconfigure(encoding=UTF8)
+    cast('TextIOWrapper', sys.stdout).reconfigure(encoding='utf-8')
 if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
-    cast('TextIOWrapper', sys.stderr).reconfigure(encoding=UTF8)
+    cast('TextIOWrapper', sys.stderr).reconfigure(encoding='utf-8')
 
 
 def _indent_markdown(markdown: str) -> str:

@@ -18,8 +18,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Right-pointing arrow character for pretty-printing program output.
 - `ARROW_L: str`\
     Left-pointing arrow character for pretty-printing program output.
-- `UTF8: str`\
-    Normalized name for `UTF-8` encoding.
 
 ## Classes
 - `Logger`\
