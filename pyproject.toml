@@ -12,6 +12,7 @@ dev = [
 ]
 tests = [
     "pytest==9.0.2",
+    "pytest-cov==7.1.0",
 ]
 lint = [
     "pylint",
@@ -35,6 +36,33 @@ scripts = {"legion" = "legion:demo"}
 source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+order-by-type = false
+
+[tool.pylint.main]
+init-hook = "import sys, os; sys.path.insert(0, os.path.abspath('src'))"
+persistent = false
+jobs = 0
+max-line-length = 120
+enable = "all"
+disable = ["I", "too-many-lines", "too-few-public-methods"]
+allow-global-unused-variables = false
 
 [tool.versioningit.format]
 dirty = "{base_version}+{branch}.{rev}.dirty"
