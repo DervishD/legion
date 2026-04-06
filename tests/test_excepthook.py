@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """Test suite for `excepthook()` function and helpers."""
 import errno
 from os import strerror

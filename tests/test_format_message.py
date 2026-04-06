@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """Test suite for `error()` function."""
 from string import whitespace
 

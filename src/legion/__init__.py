@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """# legion
 
 > 'What is your name?'<br>

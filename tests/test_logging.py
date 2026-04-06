@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """Test suite for the logging system."""
 import logging
 from typing import NamedTuple, TYPE_CHECKING
