@@ -36,6 +36,10 @@ scripts = {"legion" = "legion:demo"}
 source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
+
+[tool.pytest]
+pythonpath = ["src"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py314"
