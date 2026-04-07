@@ -6,8 +6,6 @@
 Since this is many, it's *legion*. This package (currently, a single module) contains miscellaneous functions and constants used in some of the maintenance scripts of my private system. It is shared publicly in case the code may be useful to others.
 
 ## Constants
-- `DESKTOP_PATH: pathlib.Path`\
-    Path of user's desktop directory.
 - `DEFAULT_CREDENTIALS_PATH: pathlib.Path`\
     Default filename used by `get_credentials()` for user credentials.
 - `TIMESTAMP_FORMAT: str`\
@@ -144,6 +142,10 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
+- `get_desktop_path() -> pathlib.Path | None`\
+    Get platform specific path for the desktop directory.
+
+    If the directory could not be determined, `None` is returned. Even if the directory can be determined, it **may not** exist.
 - `format_oserror(`\
     `    context: str,`\
     `    exc: OSError`\

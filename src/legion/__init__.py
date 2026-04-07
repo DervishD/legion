@@ -45,7 +45,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'ARROW_L',
     'ARROW_R',
     'DEFAULT_CREDENTIALS_PATH',
-    'DESKTOP_PATH',
     'ERROR_MARKER',
     'TIMESTAMP_FORMAT',
     'Logger',
@@ -54,6 +53,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'format_message',
     'format_oserror',
     'get_credentials',
+    'get_desktop_path',
     'get_logger',
     'munge_oserror',
     'run',
@@ -63,41 +63,12 @@ __all__: list[str] = [  # pylint: disable=unused-variable
 
 
 if sys.platform == 'win32':
-    from ctypes import byref, c_uint, create_unicode_buffer, windll
-    from ctypes.wintypes import MAX_PATH as _MAX_PATH_LEN
+    from ctypes import byref, c_uint, create_unicode_buffer, Structure, windll
+    from ctypes.wintypes import BYTE, DWORD, LPWSTR, MAX_PATH as _MAX_PATH_LEN, WORD
     from msvcrt import get_osfhandle, getch
 
 
-def _get_desktop_path() -> Path:
-    """Get platform specific path for the desktop."""
-    home_path = Path.home()
-    desktop_basename = 'Desktop'
-
-    if sys.platform == 'win32':
-        hwnd = 0
-        desktop_csidl = 0
-        access_token = 0
-        shgfp_type_current = 0
-        flags = shgfp_type_current
-        buffer = create_unicode_buffer(_MAX_PATH_LEN)
-        windll.shell32.SHGetFolderPathW(hwnd, desktop_csidl, access_token, flags, buffer)
-        return Path(buffer.value)
-
-    if sys.platform == 'darwin':
-        return home_path / desktop_basename
-
-    if sys.platform.startswith('linux'):
-        try:
-            return Path(environ['XDG_DESKTOP_DIR'])
-        except KeyError:
-            return home_path / desktop_basename
-
-    return home_path
-
-
 # Exportable constants.
-DESKTOP_PATH: Annotated[Path, "Path of user's desktop directory."] = _get_desktop_path()
-
 DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
 Default filename used by `get_credentials()` for user credentials.
 """] = Path.home() / '.credentials'
@@ -294,6 +265,36 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
         exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}'
 
     return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
+
+
+def get_desktop_path() -> Path | None:
+    """Get platform specific path for the desktop directory.
+
+    If the directory could not be determined, `None` is returned.
+    Even if the directory can be determined, it **may not** exist.
+    """
+    if sys.platform == 'win32':
+        class GUID(Structure):  # pylint: disable=missing-class-docstring
+            _fields_ = [('Data1', DWORD), ('Data2', WORD), ('Data3', WORD), ('Data4', BYTE * 8)]
+
+        folder_id = GUID()
+        windll.ole32.CLSIDFromString('{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}', byref(folder_id))
+        path = LPWSTR()
+        try:
+            flags = 0
+            access_token = None
+            windll.shell32.SHGetKnownFolderPath(byref(folder_id), flags, access_token, byref(path))
+            if path.value is not None:
+                return Path(path.value)
+        finally:
+            windll.ole32.CoTaskMemFree(path)
+
+    if sys.platform.startswith('linux') or sys.platform == 'darwin':
+        with contextlib.suppress(KeyError):
+            return Path(environ['XDG_DESKTOP_DIR'])
+        return Path.home() / 'Desktop'
+
+    return None
 
 
 def format_oserror(context: str, exc: OSError) -> str:
