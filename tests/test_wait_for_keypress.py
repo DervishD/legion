@@ -1,4 +1,4 @@
-"""Test suite for `main()` function."""
+"""Test units for `main()` function."""
 import pytest
 
 from legion import (

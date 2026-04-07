@@ -1,4 +1,4 @@
-"""Test suite for `excepthook()` function and helpers."""
+"""Test units for `excepthook()` function and helpers."""
 import errno
 from os import strerror
 from random import choice, randint, sample

@@ -1,4 +1,4 @@
-"""Test suite for the logging system."""
+"""Test units for the logging system."""
 import logging
 from typing import NamedTuple, TYPE_CHECKING
 
