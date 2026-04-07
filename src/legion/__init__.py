@@ -99,367 +99,6 @@ _TRACEBACK_FRAME_LOCATION_TEMPLATE = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKE
 _MARKDOWN_INDENTATION = ' ' * 4
 
 
-def format_message(
-    heading: str,
-    message: str,
-    *,
-    indentation: str = ' ',
-) -> str:
-    """Return a formatted message with an optional heading.
-
-    The *heading* is normalized: trailing whitespace is stripped and any
-    internal whitespace sequence is collapsed to a single space; leading
-    whitespace is preserved.
-
-    If both *heading* and *message* are non-empty (and not only contain
-    whitespace), they are separated by a blank line. Blank lines within
-    *message* are preserved.
-
-    The *message* may span multiple lines. Each line is indented using
-    *indentation* (a single space by default). Any trailing whitespace
-    is removed from each line, while leading whitespace is preserved,
-    which allows for custom indentation and spacing.
-
-    An empty string is returned when both *heading* and *message* are
-    empty or whitespace-only.
-    """
-    output: list[str] = []
-    if heading and not heading.isspace():
-        output.append(re.sub(r'(?<=\S)(\s+)(?=\S)', r' ', heading.rstrip()))
-    if message and not message.isspace():
-        output.append(indent(message, indentation))
-    return '\n'.join(output)
-
-
-def _format_exception_details(exc: BaseException) -> str:
-    """Extract exception details as a formatted string."""
-    if isinstance(exc, OSError):
-        labels = _OSERROR_ATTRIBUTE_LABELS
-        values = munge_oserror(exc)[1:]
-    else:
-        labels = tuple(type(value).__name__ for value in exc.args)
-        values = exc.args
-    label_maxlen = max((len(label) for label in labels), default=0)
-
-    output: list[str] = []
-    for label, value in zip(labels, values, strict=True):
-        processed_value = _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE if value is None else value
-        processed_value = processed_value.strip('.') if label == 'strerror' else processed_value
-        output.append(_EXCEPTION_ATTRIBUTE_TEMPLATE.format(label, label_maxlen, processed_value))
-
-    return '\n'.join(output)
-
-
-def _format_traceback(exc_traceback: TracebackType | None) -> str:
-    """Extract traceback as a formatted string."""
-    output = ''
-
-    current_frame_source_path = None
-    for frame in tb.extract_tb(exc_traceback):
-        if current_frame_source_path != frame.filename:
-            output += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
-            current_frame_source_path = frame.filename
-        source = ''
-        if frame.lineno:
-            source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
-            source = ''.join([line.strip() for line in source_lines])
-
-        output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, source or frame.line or '')
-    return output.strip()
-
-
-def excepthook(
-    exc_type: type[BaseException],
-    exc_value: BaseException,
-    exc_traceback: TracebackType | None,
-    *,
-    heading: str = _DEFAULT_EXCEPTHOOK_HEADING,
-) -> None:
-    """Log diagnostic information about unhandled exceptions.
-
-    Intended for use as the default exception hook via `sys.excepthook`,
-    either directly, via `functools.partial()`, or through an equivalent
-    mechanism.
-
-    Diagnostic information about the unhandled exception is logged using
-    *exc_type*, *exc_value*, and *exc_traceback* arguments.
-
-    The output is formatted as follows: the first line consists of the
-    *heading* and the exception type name in parentheses. Any remaining
-    diagnostic information is logged on subsequent lines as needed, and
-    with a default indentation. If no *heading* is provided, a default
-    string is used instead.
-
-    Additional information is taken from the tuple of arguments passed
-    to the exception constructor, with one entry per line including the
-    type and the value for each argument.
-
-    For `OSError` (and derived) exceptions these arguments are not very
-    informative, so the specific attributes of this exception family are
-    logged instead, one per line.
-
-    Finally, a traceback is included if available.
-
-    `KeyboardInterrupt` exceptions are not logged. Instead, the default
-    exception hook is called to preserve keyboard interrupt behavior.
-    """
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-
-    exc = exc_value.__cause__ or (exc_value if exc_value.__suppress_context__ else exc_value.__context__ or exc_value)
-    formatted_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, type(exc).__name__)
-
-    formatted_details = [_format_exception_details(exc)]
-    formatted_details.append(_format_traceback(exc_traceback))
-    formatted_details.extend([_format_traceback(exc.__traceback__)] if exc.__traceback__ != exc_traceback else [])
-
-    logger = get_logger(__name__)
-    logger.error(format_message(formatted_heading, _EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)))
-
-
-def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None, str | None]:
-    """Process `OSError` exception *exc*.
-
-    Process the `OSError` (or any of its subclasses) exception *exc* and
-    return a tuple with the attributes obtained from the instance.
-
-    The types and descriptions of the retrieved attributes are:
-    - `str`: the type name of *exc*
-    - `str`: the `errno` and `winerror` codes
-    - `str`: the error message string, normalized (see below)
-    - `str`: the first filename involved in the exception
-    - `str`: the second filename involved in the exception
-
-    The only attribute guaranteed to always exist is the first one, the
-    type name of *exc*, any other may not be present and then the stored
-    value will be `None`, to make easier to process the tuple in order
-    to replace missing values with a marker, etc.
-
-    **NOTE**: the `errno` and `winerror` codes are combined with a slash
-    character if both are present.
-
-    **NOTE**: the returned error message is normalized if present. The
-    first letter is uppercased and the final period (if any), removed.
-
-    **NOTE**: depending on operation which caused the exception raising,
-    there may be zero, one, or two paths involved.
-    """
-    exc_name = type(exc).__name__
-    exc_errno = None
-    exc_winerror = None
-    exc_errorcodes = None
-    exc_message = None
-
-    with contextlib.suppress(AttributeError):
-        exc_winerror = _OSERROR_WINERROR_TEMPLATE.format(exc.winerror)
-
-    with contextlib.suppress(KeyError):
-        exc_errno = errorcode[exc.errno or -1]
-
-    if exc_errno and exc_winerror:
-        exc_errorcodes = _OSERROR_ERRORCODES_TEMPLATE.format(exc_errno, exc_winerror)
-    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or None
-
-    if exc.strerror:
-        exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}'
-
-    return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
-
-
-def get_desktop_path() -> Path | None:
-    """Get platform specific path for the desktop directory.
-
-    If the directory could not be determined, `None` is returned.
-    Even if the directory can be determined, it **may not** exist.
-    """
-    if sys.platform == 'win32':
-        class GUID(Structure):  # pylint: disable=missing-class-docstring
-            _fields_ = [('Data1', DWORD), ('Data2', WORD), ('Data3', WORD), ('Data4', BYTE * 8)]
-
-        folder_id = GUID()
-        windll.ole32.CLSIDFromString('{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}', byref(folder_id))
-        path = LPWSTR()
-        try:
-            flags = 0
-            access_token = None
-            windll.shell32.SHGetKnownFolderPath(byref(folder_id), flags, access_token, byref(path))
-            if path.value is not None:
-                return Path(path.value)
-        finally:
-            windll.ole32.CoTaskMemFree(path)
-
-    if sys.platform.startswith('linux') or sys.platform == 'darwin':
-        with contextlib.suppress(KeyError):
-            return Path(environ['XDG_DESKTOP_DIR'])
-        return Path.home() / 'Desktop'
-
-    return None
-
-
-def format_oserror(context: str, exc: OSError) -> str:
-    """Stringify `OSError` exception *exc* using *context*.
-
-    *context* is typically used to indicate what exactly was the caller
-    doing when the exception was raised.
-    """
-    errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
-
-    paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
-    return _OSERROR_WITH_CONTEXT_TEMPLATE.format(errorcodes, context, paths, message)
-
-
-def timestamp() -> str:
-    """Produce a timestamp string from current local date and time."""
-    return strftime(TIMESTAMP_FORMAT)
-
-
-def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
-    """Run *command* with convenient defaults.
-
-    Run *command*, using *kwargs* as arguments. Just a simple helper for
-    `subprocess.run()` that provides convenient defaults.
-
-    For that reason, the keyword arguments accepted in *kwargs* and the
-    return value are the same ones used by `subprocess.run()` itself.
-    """
-    kwargs.setdefault('capture_output', True)
-    kwargs.setdefault('check', False)
-
-    if kwargs.get('capture_output'):
-        kwargs.setdefault('text', True)
-        kwargs.setdefault('errors', 'replace')
-
-    if sys.platform == 'win32' and 'creationflags' not in kwargs:
-        kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
-
-    # pylint: disable=subprocess-run-check
-    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **kwargs))  # noqa: S603, PLW1510
-
-
-def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
-    """Read credentials from *credentials_path*.
-
-    If *credentials_path* is not provided a default path is used. To be
-    precise, the value of `DEFAULT_CREDENTIALS_PATH`.
-
-    The credentials are returned as a simple dictionary. The dictionary
-    has two levels: the first one groups credentials into sections, and
-    the second contains the actual `key-value` pairs.
-
-    Each credential is a `key-value` string pair, where the `key` is an
-    identifier for the credential, and the `value` is the corresponding
-    credential.
-
-    If *credentials_path* cannot be read, or has syntax problems, `None`
-    is returned. If it is empty, an empty dictionary is returned.
-    """
-    try:
-        with credentials_path.open('rb') as credentials_file:
-            return tomllib.load(credentials_file)
-    except (OSError, tomllib.TOMLDecodeError):
-        return None
-
-
-def get_logger(name: str) -> Logger:
-    """Get an instance of `legion.Logger` with the specified *name*.
-
-    Unlike `logging.getLogger()`, the argument is **not** optional, so
-    the root logger is **never** returned.
-
-    This function temporarily registers `legion.Logger` as the default
-    logger class, so the returned logger type is always guaranteed to be
-    `legion.Logger`, no matter what other logger classes are registered.
-
-    This is a convenience function to avoid having to register the class
-    by hand, instantiante the logger, restore the previous class, etc.
-    """
-    previous = logging.getLoggerClass()
-    logging.setLoggerClass(Logger)
-    try:
-        return cast('Logger', logging.getLogger(name))
-    finally:
-        logging.setLoggerClass(previous)
-
-
-if sys.platform == 'win32':
-    def _has_attached_console() -> bool:
-        """Predicate for `wait_for_keypress()`.
-
-        Return `True` if there is a real console attached to the file
-        descriptor of the `sys.stdout` file object, `False` otherwise.
-        """
-        # Since 'sys.stdout.isatty()' returns 'True' under Windows when
-        # the 'sys.stdout' stream is redirected to 'NUL', another check,
-        # a bit more complicated, is needed here. The test below has
-        # been adapted from https://stackoverflow.com/a/33168697
-        return windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint()))
-
-
-    def _is_attached_console_transient() -> bool:
-        """Predicate for `wait_for_keypress()`.
-
-        Return `True` if the console which is attached to `sys.stdout`
-        is actually transient.
-        """
-        # Determining if a console is transient is not easy as there is
-        # no bulletproof method available for every possible situation.
-        #
-        # There are TWO main runtime scenarios to consider, though: one
-        # is a frozen executable and the other is a `.py` file. In both
-        # cases the console title has to be obtained first.
-        #
-        # If the console title cannot be determined, then consider that
-        # the console is NOT transient.
-        buffer_size = _MAX_PATH_LEN + 1
-        console_title = create_unicode_buffer(buffer_size)
-        if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
-            return False
-        # For a frozen executable, if the console title is not equal to
-        # `sys.executable`, then the console is NOT transient.
-        #
-        # For a `.py` file, this is more complicated, but in most cases
-        # if the console title contains the name of the `.py` file, the
-        # console is NOT transient.
-        if getattr(sys, 'frozen', False):
-            if console_title.value != sys.executable:
-                return False
-        elif Path(sys.argv[0]).name in console_title.value:
-            return False
-        return True
-
-
-    def wait_for_keypress(prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT) -> None:
-        """Wait for a keypress to continue in particular circumstances.
-
-        If `sys.stdout` is attached to a transient console, the function
-        prints a *prompt* message indicating that the program is paused
-        until a key is pressed. If no *prompt* is provided as argument,
-        a default string (in English) is used instead.
-
-        It is a good idea to include a leading new line character in the
-        *prompt* message to ensure it is clearly separated from previous
-        output from the program.
-
-        **NOTE**: there is no standard method of knowing if a console is
-        transient or not, so determining console transience is entirely
-        based on heuristics.
-
-        **NOTE**: is up to the importer to register this function with
-        `atexit.register()`, to call it explicitly, or to use it only if
-        the importer is running as a script instead of being imported.
-        """
-        if _has_attached_console() and _is_attached_console_transient():
-            sys.stdout.write(prompt)
-            sys.stdout.flush()
-            getch()
-else:
-    def wait_for_keypress(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        """Stub for platforms where this function is not implemented."""
-        raise NotImplementedError
-
-
-
 class Logger(logging.Logger):
     """Augmented functionality logger.
 
@@ -691,18 +330,6 @@ class Logger(logging.Logger):
         dictConfig(logging_configuration)
 
 
-# Module desired side-effects.
-sys.excepthook = excepthook
-logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
-
-# Reconfigure standard output streams so they use UTF-8 encoding even if
-# they are redirected to a file when running the program from a shell.
-if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
-    cast('TextIOWrapper', sys.stdout).reconfigure(encoding='utf-8')
-if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
-    cast('TextIOWrapper', sys.stderr).reconfigure(encoding='utf-8')
-
-
 def _indent_markdown(markdown: str) -> str:
     """Indent all lines in *text_block* by 4 spaces.
 
@@ -865,3 +492,375 @@ def docs() -> str:
         docs_for_classes=''.join(visitor.doc_fragments_for_classes),
         docs_for_functions=''.join(visitor.doc_fragments_for_functions),
     )
+
+
+def _format_exception_details(exc: BaseException) -> str:
+    """Extract exception details as a formatted string."""
+    if isinstance(exc, OSError):
+        labels = _OSERROR_ATTRIBUTE_LABELS
+        values = munge_oserror(exc)[1:]
+    else:
+        labels = tuple(type(value).__name__ for value in exc.args)
+        values = exc.args
+    label_maxlen = max((len(label) for label in labels), default=0)
+
+    output: list[str] = []
+    for label, value in zip(labels, values, strict=True):
+        processed_value = _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE if value is None else value
+        processed_value = processed_value.strip('.') if label == 'strerror' else processed_value
+        output.append(_EXCEPTION_ATTRIBUTE_TEMPLATE.format(label, label_maxlen, processed_value))
+
+    return '\n'.join(output)
+
+
+def _format_traceback(exc_traceback: TracebackType | None) -> str:
+    """Extract traceback as a formatted string."""
+    output = ''
+
+    current_frame_source_path = None
+    for frame in tb.extract_tb(exc_traceback):
+        if current_frame_source_path != frame.filename:
+            output += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
+            current_frame_source_path = frame.filename
+        source = ''
+        if frame.lineno:
+            source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
+            source = ''.join([line.strip() for line in source_lines])
+
+        output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, source or frame.line or '')
+    return output.strip()
+
+
+def excepthook(
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    exc_traceback: TracebackType | None,
+    *,
+    heading: str = _DEFAULT_EXCEPTHOOK_HEADING,
+) -> None:
+    """Log diagnostic information about unhandled exceptions.
+
+    Intended for use as the default exception hook via `sys.excepthook`,
+    either directly, via `functools.partial()`, or through an equivalent
+    mechanism.
+
+    Diagnostic information about the unhandled exception is logged using
+    *exc_type*, *exc_value*, and *exc_traceback* arguments.
+
+    The output is formatted as follows: the first line consists of the
+    *heading* and the exception type name in parentheses. Any remaining
+    diagnostic information is logged on subsequent lines as needed, and
+    with a default indentation. If no *heading* is provided, a default
+    string is used instead.
+
+    Additional information is taken from the tuple of arguments passed
+    to the exception constructor, with one entry per line including the
+    type and the value for each argument.
+
+    For `OSError` (and derived) exceptions these arguments are not very
+    informative, so the specific attributes of this exception family are
+    logged instead, one per line.
+
+    Finally, a traceback is included if available.
+
+    `KeyboardInterrupt` exceptions are not logged. Instead, the default
+    exception hook is called to preserve keyboard interrupt behavior.
+    """
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    exc = exc_value.__cause__ or (exc_value if exc_value.__suppress_context__ else exc_value.__context__ or exc_value)
+    formatted_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, type(exc).__name__)
+
+    formatted_details = [_format_exception_details(exc)]
+    formatted_details.append(_format_traceback(exc_traceback))
+    formatted_details.extend([_format_traceback(exc.__traceback__)] if exc.__traceback__ != exc_traceback else [])
+
+    logger = get_logger(__name__)
+    logger.error(format_message(formatted_heading, _EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)))
+
+
+def format_message(
+    heading: str,
+    message: str,
+    *,
+    indentation: str = ' ',
+) -> str:
+    """Return a formatted message with an optional heading.
+
+    The *heading* is normalized: trailing whitespace is stripped and any
+    internal whitespace sequence is collapsed to a single space; leading
+    whitespace is preserved.
+
+    If both *heading* and *message* are non-empty (and not only contain
+    whitespace), they are separated by a blank line. Blank lines within
+    *message* are preserved.
+
+    The *message* may span multiple lines. Each line is indented using
+    *indentation* (a single space by default). Any trailing whitespace
+    is removed from each line, while leading whitespace is preserved,
+    which allows for custom indentation and spacing.
+
+    An empty string is returned when both *heading* and *message* are
+    empty or whitespace-only.
+    """
+    output: list[str] = []
+    if heading and not heading.isspace():
+        output.append(re.sub(r'(?<=\S)(\s+)(?=\S)', r' ', heading.rstrip()))
+    if message and not message.isspace():
+        output.append(indent(message, indentation))
+    return '\n'.join(output)
+
+
+def format_oserror(context: str, exc: OSError) -> str:
+    """Stringify `OSError` exception *exc* using *context*.
+
+    *context* is typically used to indicate what exactly was the caller
+    doing when the exception was raised.
+    """
+    errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
+
+    paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
+    return _OSERROR_WITH_CONTEXT_TEMPLATE.format(errorcodes, context, paths, message)
+
+
+def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
+    """Read credentials from *credentials_path*.
+
+    If *credentials_path* is not provided a default path is used. To be
+    precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+
+    The credentials are returned as a simple dictionary. The dictionary
+    has two levels: the first one groups credentials into sections, and
+    the second contains the actual `key-value` pairs.
+
+    Each credential is a `key-value` string pair, where the `key` is an
+    identifier for the credential, and the `value` is the corresponding
+    credential.
+
+    If *credentials_path* cannot be read, or has syntax problems, `None`
+    is returned. If it is empty, an empty dictionary is returned.
+    """
+    try:
+        with credentials_path.open('rb') as credentials_file:
+            return tomllib.load(credentials_file)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+
+
+def get_desktop_path() -> Path | None:
+    """Get platform specific path for the desktop directory.
+
+    If the directory could not be determined, `None` is returned.
+    Even if the directory can be determined, it **may not** exist.
+    """
+    if sys.platform == 'win32':
+        class GUID(Structure):  # pylint: disable=missing-class-docstring
+            _fields_ = [('Data1', DWORD), ('Data2', WORD), ('Data3', WORD), ('Data4', BYTE * 8)]
+
+        folder_id = GUID()
+        windll.ole32.CLSIDFromString('{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}', byref(folder_id))
+        path = LPWSTR()
+        try:
+            flags = 0
+            access_token = None
+            windll.shell32.SHGetKnownFolderPath(byref(folder_id), flags, access_token, byref(path))
+            if path.value is not None:
+                return Path(path.value)
+        finally:
+            windll.ole32.CoTaskMemFree(path)
+
+    if sys.platform.startswith('linux') or sys.platform == 'darwin':
+        with contextlib.suppress(KeyError):
+            return Path(environ['XDG_DESKTOP_DIR'])
+        return Path.home() / 'Desktop'
+
+    return None
+
+
+def get_logger(name: str) -> Logger:
+    """Get an instance of `legion.Logger` with the specified *name*.
+
+    Unlike `logging.getLogger()`, the argument is **not** optional, so
+    the root logger is **never** returned.
+
+    This function temporarily registers `legion.Logger` as the default
+    logger class, so the returned logger type is always guaranteed to be
+    `legion.Logger`, no matter what other logger classes are registered.
+
+    This is a convenience function to avoid having to register the class
+    by hand, instantiante the logger, restore the previous class, etc.
+    """
+    previous = logging.getLoggerClass()
+    logging.setLoggerClass(Logger)
+    try:
+        return cast('Logger', logging.getLogger(name))
+    finally:
+        logging.setLoggerClass(previous)
+
+
+def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None, str | None]:
+    """Process `OSError` exception *exc*.
+
+    Process the `OSError` (or any of its subclasses) exception *exc* and
+    return a tuple with the attributes obtained from the instance.
+
+    The types and descriptions of the retrieved attributes are:
+    - `str`: the type name of *exc*
+    - `str`: the `errno` and `winerror` codes
+    - `str`: the error message string, normalized (see below)
+    - `str`: the first filename involved in the exception
+    - `str`: the second filename involved in the exception
+
+    The only attribute guaranteed to always exist is the first one, the
+    type name of *exc*, any other may not be present and then the stored
+    value will be `None`, to make easier to process the tuple in order
+    to replace missing values with a marker, etc.
+
+    **NOTE**: the `errno` and `winerror` codes are combined with a slash
+    character if both are present.
+
+    **NOTE**: the returned error message is normalized if present. The
+    first letter is uppercased and the final period (if any), removed.
+
+    **NOTE**: depending on operation which caused the exception raising,
+    there may be zero, one, or two paths involved.
+    """
+    exc_name = type(exc).__name__
+    exc_errno = None
+    exc_winerror = None
+    exc_errorcodes = None
+    exc_message = None
+
+    with contextlib.suppress(AttributeError):
+        exc_winerror = _OSERROR_WINERROR_TEMPLATE.format(exc.winerror)
+
+    with contextlib.suppress(KeyError):
+        exc_errno = errorcode[exc.errno or -1]
+
+    if exc_errno and exc_winerror:
+        exc_errorcodes = _OSERROR_ERRORCODES_TEMPLATE.format(exc_errno, exc_winerror)
+    exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or None
+
+    if exc.strerror:
+        exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}'
+
+    return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
+
+
+def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
+    """Run *command* with convenient defaults.
+
+    Run *command*, using *kwargs* as arguments. Just a simple helper for
+    `subprocess.run()` that provides convenient defaults.
+
+    For that reason, the keyword arguments accepted in *kwargs* and the
+    return value are the same ones used by `subprocess.run()` itself.
+    """
+    kwargs.setdefault('capture_output', True)
+    kwargs.setdefault('check', False)
+
+    if kwargs.get('capture_output'):
+        kwargs.setdefault('text', True)
+        kwargs.setdefault('errors', 'replace')
+
+    if sys.platform == 'win32' and 'creationflags' not in kwargs:
+        kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+
+    # pylint: disable=subprocess-run-check
+    return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **kwargs))  # noqa: S603, PLW1510
+
+
+def timestamp() -> str:
+    """Produce a timestamp string from current local date and time."""
+    return strftime(TIMESTAMP_FORMAT)
+
+
+if sys.platform == 'win32':
+    def _has_attached_console() -> bool:
+        """Predicate for `wait_for_keypress()`.
+
+        Return `True` if there is a real console attached to the file
+        descriptor of the `sys.stdout` file object, `False` otherwise.
+        """
+        # Since 'sys.stdout.isatty()' returns 'True' under Windows when
+        # the 'sys.stdout' stream is redirected to 'NUL', another check,
+        # a bit more complicated, is needed here. The test below has
+        # been adapted from https://stackoverflow.com/a/33168697
+        return windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint()))
+
+
+    def _is_attached_console_transient() -> bool:
+        """Predicate for `wait_for_keypress()`.
+
+        Return `True` if the console which is attached to `sys.stdout`
+        is actually transient.
+        """
+        # Determining if a console is transient is not easy as there is
+        # no bulletproof method available for every possible situation.
+        #
+        # There are TWO main runtime scenarios to consider, though: one
+        # is a frozen executable and the other is a `.py` file. In both
+        # cases the console title has to be obtained first.
+        #
+        # If the console title cannot be determined, then consider that
+        # the console is NOT transient.
+        buffer_size = _MAX_PATH_LEN + 1
+        console_title = create_unicode_buffer(buffer_size)
+        if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
+            return False
+        # For a frozen executable, if the console title is not equal to
+        # `sys.executable`, then the console is NOT transient.
+        #
+        # For a `.py` file, this is more complicated, but in most cases
+        # if the console title contains the name of the `.py` file, the
+        # console is NOT transient.
+        if getattr(sys, 'frozen', False):
+            if console_title.value != sys.executable:
+                return False
+        elif Path(sys.argv[0]).name in console_title.value:
+            return False
+        return True
+
+
+    def wait_for_keypress(prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT) -> None:
+        """Wait for a keypress to continue in particular circumstances.
+
+        If `sys.stdout` is attached to a transient console, the function
+        prints a *prompt* message indicating that the program is paused
+        until a key is pressed. If no *prompt* is provided as argument,
+        a default string (in English) is used instead.
+
+        It is a good idea to include a leading new line character in the
+        *prompt* message to ensure it is clearly separated from previous
+        output from the program.
+
+        **NOTE**: there is no standard method of knowing if a console is
+        transient or not, so determining console transience is entirely
+        based on heuristics.
+
+        **NOTE**: is up to the importer to register this function with
+        `atexit.register()`, to call it explicitly, or to use it only if
+        the importer is running as a script instead of being imported.
+        """
+        if _has_attached_console() and _is_attached_console_transient():
+            sys.stdout.write(prompt)
+            sys.stdout.flush()
+            getch()
+else:
+    def wait_for_keypress(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        """Stub for platforms where this function is not implemented."""
+        raise NotImplementedError
+
+
+# Module desired side-effects.
+sys.excepthook = excepthook
+logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
+
+# Reconfigure standard output streams so they use UTF-8 encoding even if
+# they are redirected to a file when running the program from a shell.
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    cast('TextIOWrapper', sys.stdout).reconfigure(encoding='utf-8')
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    cast('TextIOWrapper', sys.stderr).reconfigure(encoding='utf-8')

@@ -84,21 +84,10 @@ Since this is many, it's *legion*. This package (currently, a single module) con
         - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
 
 ## Functions
-- `format_message(`\
-    `    heading: str,`\
-    `    message: str,`\
-    `    *,`\
-    `    indentation: str = ' '`\
-    `) -> str`\
-    Return a formatted message with an optional heading.
+- `docs() -> str`\
+    Generate documentation for the module.
 
-    The *heading* is normalized: trailing whitespace is stripped and any internal whitespace sequence is collapsed to a single space; leading whitespace is preserved.
-
-    If both *heading* and *message* are non-empty (and not only contain whitespace), they are separated by a blank line. Blank lines within *message* are preserved.
-
-    The *message* may span multiple lines. Each line is indented using *indentation* (a single space by default). Any trailing whitespace is removed from each line, while leading whitespace is preserved, which allows for custom indentation and spacing.
-
-    An empty string is returned when both *heading* and *message* are empty or whitespace-only.
+    Return a Markdown-formatted string containing the documentation for the module/package.
 - `excepthook(`\
     `    exc_type: type[BaseException],`\
     `    exc_value: BaseException,`\
@@ -121,6 +110,54 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Finally, a traceback is included if available.
 
     `KeyboardInterrupt` exceptions are not logged. Instead, the default exception hook is called to preserve keyboard interrupt behavior.
+- `format_message(`\
+    `    heading: str,`\
+    `    message: str,`\
+    `    *,`\
+    `    indentation: str = ' '`\
+    `) -> str`\
+    Return a formatted message with an optional heading.
+
+    The *heading* is normalized: trailing whitespace is stripped and any internal whitespace sequence is collapsed to a single space; leading whitespace is preserved.
+
+    If both *heading* and *message* are non-empty (and not only contain whitespace), they are separated by a blank line. Blank lines within *message* are preserved.
+
+    The *message* may span multiple lines. Each line is indented using *indentation* (a single space by default). Any trailing whitespace is removed from each line, while leading whitespace is preserved, which allows for custom indentation and spacing.
+
+    An empty string is returned when both *heading* and *message* are empty or whitespace-only.
+- `format_oserror(`\
+    `    context: str,`\
+    `    exc: OSError`\
+    `) -> str`\
+    Stringify `OSError` exception *exc* using *context*.
+
+    *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
+- `get_credentials(`\
+    `    credentials_path: pathlib.Path = DEFAULT_CREDENTIALS_PATH`\
+    `) -> dict[str, typing.Any] | None`\
+    Read credentials from *credentials_path*.
+
+    If *credentials_path* is not provided a default path is used. To be precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+
+    The credentials are returned as a simple dictionary. The dictionary has two levels: the first one groups credentials into sections, and the second contains the actual `key-value` pairs.
+
+    Each credential is a `key-value` string pair, where the `key` is an identifier for the credential, and the `value` is the corresponding credential.
+
+    If *credentials_path* cannot be read, or has syntax problems, `None` is returned. If it is empty, an empty dictionary is returned.
+- `get_desktop_path() -> pathlib.Path | None`\
+    Get platform specific path for the desktop directory.
+
+    If the directory could not be determined, `None` is returned. Even if the directory can be determined, it **may not** exist.
+- `get_logger(`\
+    `    name: str`\
+    `) -> Logger`\
+    Get an instance of `legion.Logger` with the specified *name*.
+
+    Unlike `logging.getLogger()`, the argument is **not** optional, so the root logger is **never** returned.
+
+    This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
+
+    This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> tuple[str, str | None, str | None, str | None, str | None]`\
@@ -142,19 +179,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
-- `get_desktop_path() -> pathlib.Path | None`\
-    Get platform specific path for the desktop directory.
-
-    If the directory could not be determined, `None` is returned. Even if the directory can be determined, it **may not** exist.
-- `format_oserror(`\
-    `    context: str,`\
-    `    exc: OSError`\
-    `) -> str`\
-    Stringify `OSError` exception *exc* using *context*.
-
-    *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
-- `timestamp() -> str`\
-    Produce a timestamp string from current local date and time.
 - `run(`\
     `    command: collections.abc.Sequence[str],`\
     `    **kwargs: typing.Any`\
@@ -164,28 +188,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Run *command*, using *kwargs* as arguments. Just a simple helper for `subprocess.run()` that provides convenient defaults.
 
     For that reason, the keyword arguments accepted in *kwargs* and the return value are the same ones used by `subprocess.run()` itself.
-- `get_credentials(`\
-    `    credentials_path: pathlib.Path = DEFAULT_CREDENTIALS_PATH`\
-    `) -> dict[str, typing.Any] | None`\
-    Read credentials from *credentials_path*.
-
-    If *credentials_path* is not provided a default path is used. To be precise, the value of `DEFAULT_CREDENTIALS_PATH`.
-
-    The credentials are returned as a simple dictionary. The dictionary has two levels: the first one groups credentials into sections, and the second contains the actual `key-value` pairs.
-
-    Each credential is a `key-value` string pair, where the `key` is an identifier for the credential, and the `value` is the corresponding credential.
-
-    If *credentials_path* cannot be read, or has syntax problems, `None` is returned. If it is empty, an empty dictionary is returned.
-- `get_logger(`\
-    `    name: str`\
-    `) -> Logger`\
-    Get an instance of `legion.Logger` with the specified *name*.
-
-    Unlike `logging.getLogger()`, the argument is **not** optional, so the root logger is **never** returned.
-
-    This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
-
-    This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
+- `timestamp() -> str`\
+    Produce a timestamp string from current local date and time.
 - `wait_for_keypress(`\
     `    prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT`\
     `) -> None`\
@@ -203,7 +207,3 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    **kwargs: typing.Any`\
     `) -> None`\
     Stub for platforms where this function is not implemented.
-- `docs() -> str`\
-    Generate documentation for the module.
-
-    Return a Markdown-formatted string containing the documentation for the module/package.
