@@ -158,7 +158,7 @@ class Logger(logging.Logger):
         """Decrement current logging indentation level."""
         self.__set_indent_level(self.__DECREASE_INDENT_SYMBOL)
 
-    def config(self,  # noqa: C901
+    def config(self,
         full_log_output: str | Path | None = None,
         main_log_output: str | Path | None = None,
         console: bool = True,  # noqa: FBT001, FBT002
@@ -198,11 +198,8 @@ class Logger(logging.Logger):
 
         class _LateBindingStreamHandler(logging.StreamHandler[TextIO]):
             """Late-bindable `StreamHandler`."""  # noqa: D204
-            _ACCEPTED_STREAMS = ('stdout', 'stderr')
             def __init__(self, stream_name: str) -> None:
                 """."""
-                if stream_name not in self._ACCEPTED_STREAMS:
-                    raise NameError(stream_name, self._ACCEPTED_STREAMS)
                 super().__init__()
                 self.stream_name = stream_name
             @property
