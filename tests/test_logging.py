@@ -19,13 +19,37 @@ def test_logging_paths_creation(log_paths: LogPaths) -> None:
     assert not log_paths.full.is_file()
 
     logger = legion.get_logger(__name__)
-
     logger.config(main_log_output=log_paths.main, full_log_output=log_paths.full)
-
-    logging.shutdown()
 
     assert log_paths.main.is_file()
     assert log_paths.full.is_file()
+
+    logging.shutdown()
+
+
+# pylint: disable-next=unused-variable
+def test_logging_console_only_handlers() -> None:
+    """Test that proper handlers exist in console-only mode."""
+    legion.get_logger(__name__).config()
+    handlers = logging.getLogger('').handlers
+
+    for handler in handlers:
+        assert type(handler).__name__ == '_LateBindingStreamHandler'
+        assert handler.stream_name in ('stdout', 'stderr')  # pyright: ignore  # noqa: PGH003
+
+    logging.shutdown()
+
+
+# pylint: disable-next=unused-variable
+def test_logging_no_handlers() -> None:
+    """Test that only `NullHandler` exist in muted mode."""
+    legion.get_logger(__name__).config(console=False)
+
+    handlers = logging.getLogger('').handlers
+    assert len(handlers) == 1
+    assert isinstance(handlers[0], logging.NullHandler)
+
+    logging.shutdown()
 
 
 class OutputSpec(NamedTuple):
@@ -115,8 +139,36 @@ def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger:
     logger.info(message)
     logging.StreamHandler.terminator = saved_terminator
 
-    logging.shutdown()
-
     captured = capsys.readouterr().out
 
     assert captured == message + terminator
+
+
+# pylint: disable-next=unused-variable
+def test_logging_indentation(logger: legion.Logger) -> None:
+    """Test that logging requested indentation is honored."""
+    assert logger.indentation == ''  # pylint: disable=use-implicit-booleaness-not-comparison-to-string
+
+    count = 42
+
+    logger.indent()
+    assert logger.indentation == ' '
+    for _ in range(count):
+        logger.indent()
+    assert logger.indentation == ' ' + ' ' * count
+
+    logger.dedent()
+    assert logger.indentation == ' ' * count
+    for _ in range(count):
+        logger.dedent()
+    assert logger.indentation == ''  # pylint: disable=use-implicit-booleaness-not-comparison-to-string
+
+    logger.set_indent(count)
+    assert logger.indentation == ' ' * count
+
+    logger.set_indent(0)
+    assert logger.indentation == ''  # pylint: disable=use-implicit-booleaness-not-comparison-to-string
+
+    invalid_indentation_level = -42
+    with pytest.raises(ValueError, match=str(invalid_indentation_level)):
+        logger.set_indent(invalid_indentation_level)
