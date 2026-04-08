@@ -802,7 +802,6 @@ else:
 
 # Module desired side-effects.
 sys.excepthook = excepthook
-logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt='%Y%m%d_%H%M%S', force=True)
 
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.
