@@ -2,14 +2,15 @@
 import logging
 from typing import NamedTuple, TYPE_CHECKING
 
+import pytest
+
+import legion
 from tests.helpers import LoggingFields, parse_logfile
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from tests.helpers import LogPaths
-
-import pytest  # pylint: disable=wrong-import-position,wrong-import-order
-
-import legion  # pylint: disable=wrong-import-position
 
 
 # pylint: disable-next=unused-variable
@@ -172,3 +173,12 @@ def test_logging_indentation(logger: legion.Logger) -> None:
     invalid_indentation_level = -42
     with pytest.raises(ValueError, match=str(invalid_indentation_level)):
         logger.set_indent(invalid_indentation_level)
+
+
+# pylint: disable-next=unused-variable
+def test_logging_parse_logfile(tmp_path: Path) -> None:
+    """Test `parse_logfile()` helper."""
+    mock_log_file = tmp_path / 'mock_log_file.log'
+    mock_log_file.write_text('invalid_log_line', encoding='utf-8')
+    with pytest.raises(ValueError, match='invalid_log_line'):
+        parse_logfile(mock_log_file)
