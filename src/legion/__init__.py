@@ -734,7 +734,7 @@ if sys.platform == 'win32':
         # the 'sys.stdout' stream is redirected to 'NUL', another check,
         # a bit more complicated, is needed here. The test below has
         # been adapted from https://stackoverflow.com/a/33168697
-        return windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint()))
+        return windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint()))   # pragma: no cover
 
 
     def _is_attached_console_transient() -> bool:

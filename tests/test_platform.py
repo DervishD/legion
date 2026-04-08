@@ -42,3 +42,6 @@ def test_rejects_non_windows(monkeypatch: pytest.MonkeyPatch) -> None:
 
     for symbol in WIN32_ONLY_SYMBOLS:
         assert not hasattr(module, symbol)
+
+    with pytest.raises(NotImplementedError):
+        module.wait_for_keypress()
