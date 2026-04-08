@@ -23,7 +23,7 @@ def evict_module(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # pylint: disable-next=unused-variable
-def test_loads_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_platform_win32(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that the module loads correctly on win32 platform."""
     monkeypatch.setattr('sys.platform', 'win32')
 
@@ -34,7 +34,7 @@ def test_loads_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # pylint: disable-next=unused-variable
-def test_rejects_non_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_platform_non_win32(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that SystemExit is raised on non-win32 platforms."""
     monkeypatch.setattr('sys.platform', 'mock_platform')
 
