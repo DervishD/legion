@@ -5,18 +5,6 @@
 
 Since this is many, it's *legion*. This package (currently, a single module) contains miscellaneous functions and constants used in some of the maintenance scripts of my private system. It is shared publicly in case the code may be useful to others.
 
-## Constants
-- `DEFAULT_CREDENTIALS_PATH: pathlib.Path`\
-    Default filename used by `get_credentials()` for user credentials.
-- `TIMESTAMP_FORMAT: str`\
-    `time.strftime()` compatible format specification for timestamps.
-- `ERROR_MARKER: str`\
-    Marker string prepended to error messages.
-- `ARROW_R: str`\
-    Right-pointing arrow character for pretty-printing program output.
-- `ARROW_L: str`\
-    Left-pointing arrow character for pretty-printing program output.
-
 ## Classes
 - `Logger`\
     Augmented functionality logger.
@@ -93,7 +81,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     `    exc_value: BaseException,`\
     `    exc_traceback: types.TracebackType | None,`\
     `    *,`\
-    `    heading: str = _DEFAULT_EXCEPTHOOK_HEADING`\
+    `    heading: str = 'Unhandled exception'`\
     `) -> None`\
     Log diagnostic information about unhandled exceptions.
 
@@ -133,11 +121,11 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
 - `get_credentials(`\
-    `    credentials_path: pathlib.Path = DEFAULT_CREDENTIALS_PATH`\
+    `    credentials_path: pathlib.Path = pathlib.Path.home() / '.credentials'`\
     `) -> dict[str, typing.Any] | None`\
     Read credentials from *credentials_path*.
 
-    If *credentials_path* is not provided a default path is used. To be precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+    If *credentials_path* is not provided a default path is used. To be precise, a `.credentials` file in the user's home directory.
 
     The credentials are returned as a simple dictionary. The dictionary has two levels: the first one groups credentials into sections, and the second contains the actual `key-value` pairs.
 
@@ -160,19 +148,18 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
 - `munge_oserror(`\
     `    exc: OSError`\
-    `) -> tuple[str, str | None, str | None, str | None, str | None]`\
+    `) -> dict[str, str | None]`\
     Process `OSError` exception *exc*.
 
-    Process the `OSError` (or any of its subclasses) exception *exc* and return a tuple with the attributes obtained from the instance.
+    Process the `OSError` (or any of its subclasses) exception *exc* and return a dictionary with the attributes obtained from the instance.
 
-    The types and descriptions of the retrieved attributes are:
-    - `str`: the type name of *exc*
-    - `str`: the `errno` and `winerror` codes
-    - `str`: the error message string, normalized (see below)
-    - `str`: the first filename involved in the exception
-    - `str`: the second filename involved in the exception
+    The keys and descriptions for the retrieved attributes are:
+    - `errcodes: str`: the `errno` and `winerror` codes
+    - `strerror: str`: the error message string, normalized (see below)
+    - `filename1: str`: the first filename involved in the exception
+    - `filename2: str`: the second filename involved in the exception
 
-    The only attribute guaranteed to always exist is the first one, the type name of *exc*, any other may not be present and then the stored value will be `None`, to make easier to process the tuple in order to replace missing values with a marker, etc.
+    Attributes are not guaranteed to exist, and in that case the stored value will be `None`, to make the dictionary easier to process, for examply for replacing missing values with a marker, etc.
 
     **NOTE**: the `errno` and `winerror` codes are combined with a slash character if both are present.
 
@@ -188,10 +175,14 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Run *command*, using *kwargs* as arguments. Just a simple helper for `subprocess.run()` that provides convenient defaults.
 
     For that reason, the keyword arguments accepted in *kwargs* and the return value are the same ones used by `subprocess.run()` itself.
-- `timestamp() -> str`\
+- `timestamp(`\
+    `    template: str = '%Y%m%d_%H%M%S'`\
+    `) -> str`\
     Produce a timestamp string from current local date and time.
+
+    The function is actually a simple alias for `strftime()`, but using a default common `template` for the formatting string. Actually, any valid `strftime()` compatible formatting string can be used.
 - `wait_for_keypress(`\
-    `    prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT`\
+    `    prompt: str = '\nPress any key to continue...'`\
     `) -> None`\
     Wait for a keypress to continue in particular circumstances.
 

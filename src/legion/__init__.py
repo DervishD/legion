@@ -8,14 +8,11 @@ module) contains miscellaneous functions and constants used in some of
 the maintenance scripts of my private system. It is shared publicly in
 case the code may be useful to others.
 
-## Constants
-{docs_for_constants}
 ## Classes
 {docs_for_classes}
 ## Functions
 {docs_for_functions}
 """  # noqa: D400, D415
-from annotationlib import get_annotations
 import ast
 import contextlib
 from errno import errorcode
@@ -23,7 +20,7 @@ from inspect import getsource
 import linecache
 import logging
 from logging.config import dictConfig
-from os import environ
+from os import environ, fsdecode
 from pathlib import Path
 import re
 import subprocess
@@ -32,7 +29,7 @@ from textwrap import indent
 from time import strftime
 import tomllib
 import traceback as tb
-from typing import Annotated, cast, TextIO, TYPE_CHECKING
+from typing import cast, TextIO, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -42,11 +39,6 @@ if TYPE_CHECKING:
 
 
 __all__: list[str] = [  # pylint: disable=unused-variable
-    'ARROW_L',
-    'ARROW_R',
-    'DEFAULT_CREDENTIALS_PATH',
-    'ERROR_MARKER',
-    'TIMESTAMP_FORMAT',
     'Logger',
     'docs',
     'excepthook',
@@ -66,37 +58,6 @@ if sys.platform == 'win32':
     from ctypes import byref, c_uint, create_unicode_buffer, Structure, windll
     from ctypes.wintypes import BYTE, DWORD, LPWSTR, MAX_PATH as _MAX_PATH_LEN, WORD
     from msvcrt import get_osfhandle, getch
-
-
-# Exportable constants.
-DEFAULT_CREDENTIALS_PATH: Annotated[Path, """
-Default filename used by `get_credentials()` for user credentials.
-"""] = Path.home() / '.credentials'
-
-TIMESTAMP_FORMAT: Annotated[str, '`time.strftime()` compatible format specification for timestamps.'] = '%Y%m%d_%H%M%S'
-ERROR_MARKER: Annotated[str, 'Marker string prepended to error messages.'] = '*** '
-ARROW_R: Annotated[str, 'Right-pointing arrow character for pretty-printing program output.'] = '⟶'
-ARROW_L: Annotated[str, 'Left-pointing arrow character for pretty-printing program output.'] = '⟵'
-
-_DEFAULT_EXCEPTHOOK_HEADING = 'Unhandled exception'
-_DEFAULT_WAIT_FOR_KEYPRESS_PROMPT = '\nPress any key to continue...'
-
-_EXCEPTHOOK_HEADING_TEMPLATE = '{} ({})'
-_EXCEPTHOOK_BLOCK_SEPARATOR = '\n\n'
-
-_EXCEPTION_ATTRIBUTE_TEMPLATE = f'{{:<{{}}}}  {ARROW_R}  {{}}'
-_EXCEPTION_ATTRIBUTE_NOT_AVAILABLE = '???'
-
-_OSERROR_WITH_CONTEXT_TEMPLATE = 'OSError [{}] {} {}.\n{}.'
-_OSERROR_WINERROR_TEMPLATE = 'WinError{}'
-_OSERROR_ERRORCODES_TEMPLATE = '{}/{}'
-_OSERROR_ATTRIBUTE_LABELS = ('errcodes', 'strerror', 'filename1', 'filename2')
-
-_TRACEBACK_FRAME_HEADING_MARKER = f'{ARROW_R} '
-_TRACEBACK_FRAME_HEADING_TEMPLATE = f'{_TRACEBACK_FRAME_HEADING_MARKER}{{}}\n'
-_TRACEBACK_FRAME_LOCATION_TEMPLATE = f'{' ' * len(_TRACEBACK_FRAME_HEADING_MARKER)}{{}}, {{}}: {{}}\n'
-
-_MARKDOWN_INDENTATION = ' ' * 4
 
 
 class Logger(logging.Logger):
@@ -133,6 +94,7 @@ class Logger(logging.Logger):
     __DECREASE_INDENT_SYMBOL = '-'
     __INDENT_CHAR = ' '
     __FORMAT_STYLE = '{'
+    __TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
     __SHORT_FORMAT = '{asctime} {message}'
     __CONSOLE_FORMAT = '{message}'
     __LONG_FORMAT = (
@@ -270,7 +232,7 @@ class Logger(logging.Logger):
                 '()': _MultilineRecordFormatter,
                 'style': self.__FORMAT_STYLE,
                 'format': self.__LONG_FORMAT,
-                'datefmt': TIMESTAMP_FORMAT,
+                'datefmt': self.__TIMESTAMP_FORMAT,
             }
             handlers['full_log_handler'] = {
                 'level': logging.NOTSET,
@@ -286,7 +248,7 @@ class Logger(logging.Logger):
                 '()': _MultilineRecordFormatter,
                 'style': self.__FORMAT_STYLE,
                 'format': self.__SHORT_FORMAT,
-                'datefmt': TIMESTAMP_FORMAT,
+                'datefmt': self.__TIMESTAMP_FORMAT,
             }
             handlers['main_log_handler'] = {
                 'level': logging.INFO,
@@ -333,11 +295,12 @@ class Logger(logging.Logger):
 def _indent_markdown(markdown: str) -> str:
     """Indent all lines in *text_block* by 4 spaces.
 
-    The indentation is four spaces as per markdown specification
+    The indentation is four spaces as per Markdown specification.
 
     Lines which only contain whitespace after indenting are stripped.
     """
-    return '\n'.join(f'{_MARKDOWN_INDENTATION}{line}'.rstrip() for line in markdown.splitlines())
+    indentation = ' ' * 4  # Markdown spec requirement.
+    return '\n'.join(f'{indentation}{line}'.rstrip() for line in markdown.splitlines())
 
 
 def _unwrap_markdown(markdown: str) -> str:
@@ -391,10 +354,7 @@ class DocstringVisitor(ast.NodeVisitor):
         """Initialize."""
         self.import_mapping: dict[str, str] = {}
         self.within_class_definition = False
-        self.within_function_signature = False
-        self.annotations = get_annotations(sys.modules[__name__])
         self.doc_fragments_for_functions: list[str] = []
-        self.doc_fragments_for_constants: list[str] = []
         self.doc_fragments_for_classes: list[str] = []
 
     def _qualify_names(self, string: str) -> str:
@@ -452,28 +412,6 @@ class DocstringVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         self.within_class_definition = False
 
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:  # pylint: disable=invalid-name
-        """Visit AnnAssign node."""
-        if not isinstance(node.target, ast.Name):
-            return
-
-        name = node.target.id
-
-        if name not in __all__:
-            return
-
-        annotation = self.annotations[name]
-
-        module = str(annotation.__origin__.__module__).replace('builtins', '').replace('__main__', '')
-        qualname = str(annotation.__origin__.__qualname__)
-        type_annotation = '' if qualname.startswith('_') else f'{module}{'.' if module else ''}{qualname}'
-
-        docstring = '\n'.join(annotation.__metadata__).strip()
-
-        doc_fragment = f'`{name}: {type_annotation}`\\\n{docstring}'
-
-        self.doc_fragments_for_constants.append(f'- {_indent_markdown(doc_fragment).lstrip()}\n')
-
 
 def docs() -> str:
     """Generate documentation for the module.
@@ -488,7 +426,6 @@ def docs() -> str:
     visitor.visit(ast.parse(getsource(sys.modules[__name__])))
 
     return _unwrap_markdown(__doc__).format(
-        docs_for_constants=''.join(visitor.doc_fragments_for_constants),
         docs_for_classes=''.join(visitor.doc_fragments_for_classes),
         docs_for_functions=''.join(visitor.doc_fragments_for_functions),
     )
@@ -497,38 +434,41 @@ def docs() -> str:
 def _format_exception_details(exc: BaseException) -> str:
     """Extract exception details as a formatted string."""
     if isinstance(exc, OSError):
-        labels = _OSERROR_ATTRIBUTE_LABELS
-        values = munge_oserror(exc)[1:]
+        munged = munge_oserror(exc)
+        labels = munged.keys()
+        values = munged.values()
     else:
         labels = tuple(type(value).__name__ for value in exc.args)
         values = exc.args
     label_maxlen = max((len(label) for label in labels), default=0)
 
     output: list[str] = []
+
     for label, value in zip(labels, values, strict=True):
-        processed_value = _EXCEPTION_ATTRIBUTE_NOT_AVAILABLE if value is None else value
+        processed_value = (str(value).strip() if value is not None else '') or '???'
         processed_value = processed_value.strip('.') if label == 'strerror' else processed_value
-        output.append(_EXCEPTION_ATTRIBUTE_TEMPLATE.format(label, label_maxlen, processed_value))
+        output.append(f'{label:<{label_maxlen}}  ⟶  {processed_value}')
 
     return '\n'.join(output)
 
 
 def _format_traceback(exc_traceback: TracebackType | None) -> str:
     """Extract traceback as a formatted string."""
-    output = ''
+    output: list[str] = []
+    marker = '⟶ '
+    padding = ' ' * len(marker)
 
     current_frame_source_path = None
     for frame in tb.extract_tb(exc_traceback):
         if current_frame_source_path != frame.filename:
-            output += _TRACEBACK_FRAME_HEADING_TEMPLATE.format(frame.filename)
+            output.append(f'{marker}{frame.filename}')
             current_frame_source_path = frame.filename
         source = ''
         if frame.lineno:
             source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
             source = ''.join([line.strip() for line in source_lines])
-
-        output += _TRACEBACK_FRAME_LOCATION_TEMPLATE.format(frame.lineno, frame.name, source or frame.line or '')
-    return output.strip()
+        output.append(f'{padding}{frame.lineno}, {frame.name}: {source or frame.line or ''}')
+    return '\n'.join(output)
 
 
 def excepthook(
@@ -536,7 +476,7 @@ def excepthook(
     exc_value: BaseException,
     exc_traceback: TracebackType | None,
     *,
-    heading: str = _DEFAULT_EXCEPTHOOK_HEADING,
+    heading: str = 'Unhandled exception',
 ) -> None:
     """Log diagnostic information about unhandled exceptions.
 
@@ -571,14 +511,14 @@ def excepthook(
         return
 
     exc = exc_value.__cause__ or (exc_value if exc_value.__suppress_context__ else exc_value.__context__ or exc_value)
-    formatted_heading = _EXCEPTHOOK_HEADING_TEMPLATE.format(heading, type(exc).__name__)
+    formatted_heading = f'{heading} ({type(exc).__name__})'
 
     formatted_details = [_format_exception_details(exc)]
     formatted_details.append(_format_traceback(exc_traceback))
     formatted_details.extend([_format_traceback(exc.__traceback__)] if exc.__traceback__ != exc_traceback else [])
 
     logger = get_logger(__name__)
-    logger.error(format_message(formatted_heading, _EXCEPTHOOK_BLOCK_SEPARATOR.join(formatted_details)))
+    logger.error(format_message(formatted_heading, '\n\n'.join(formatted_details)))
 
 
 def format_message(
@@ -619,17 +559,19 @@ def format_oserror(context: str, exc: OSError) -> str:
     *context* is typically used to indicate what exactly was the caller
     doing when the exception was raised.
     """
-    errorcodes, message, path1, path2 = munge_oserror(exc)[1:]
+    munged = munge_oserror(exc)
 
-    paths = f"'{path1}'{f" {ARROW_R} '{path2}'" if path2 else ''}"
-    return _OSERROR_WITH_CONTEXT_TEMPLATE.format(errorcodes, context, paths, message)
+    # pylint: disable-next=unidiomatic-typecheck
+    exc_label = 'OSError' if type(exc) is OSError else f'OS.{type(exc).__name__}'
+    paths = f"'{munged['filename1']}'{f" ⟶ '{munged['filename2']}'" if munged['filename2'] else ''}"
+    return f'{exc_label} [{munged['errcodes']}] {context} {paths}.\n{munged['strerror']}.'
 
 
-def get_credentials(credentials_path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, Any] | None:
+def get_credentials(credentials_path: Path = Path.home() / '.credentials') -> dict[str, Any] | None:  # noqa: B008
     """Read credentials from *credentials_path*.
 
     If *credentials_path* is not provided a default path is used. To be
-    precise, the value of `DEFAULT_CREDENTIALS_PATH`.
+    precise, a `.credentials` file in the user's home directory.
 
     The credentials are returned as a simple dictionary. The dictionary
     has two levels: the first one groups credentials into sections, and
@@ -700,23 +642,21 @@ def get_logger(name: str) -> Logger:
         logging.setLoggerClass(previous)
 
 
-def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None, str | None]:
+def munge_oserror(exc: OSError) -> dict[str, str | None]:
     """Process `OSError` exception *exc*.
 
     Process the `OSError` (or any of its subclasses) exception *exc* and
-    return a tuple with the attributes obtained from the instance.
+    return a dictionary with the attributes obtained from the instance.
 
-    The types and descriptions of the retrieved attributes are:
-    - `str`: the type name of *exc*
-    - `str`: the `errno` and `winerror` codes
-    - `str`: the error message string, normalized (see below)
-    - `str`: the first filename involved in the exception
-    - `str`: the second filename involved in the exception
+    The keys and descriptions for the retrieved attributes are:
+    - `errcodes: str`: the `errno` and `winerror` codes
+    - `strerror: str`: the error message string, normalized (see below)
+    - `filename1: str`: the first filename involved in the exception
+    - `filename2: str`: the second filename involved in the exception
 
-    The only attribute guaranteed to always exist is the first one, the
-    type name of *exc*, any other may not be present and then the stored
-    value will be `None`, to make easier to process the tuple in order
-    to replace missing values with a marker, etc.
+    Attributes are not guaranteed to exist, and in that case the stored
+    value will be `None`, to make the dictionary easier to process, for
+    examply for replacing missing values with a marker, etc.
 
     **NOTE**: the `errno` and `winerror` codes are combined with a slash
     character if both are present.
@@ -727,26 +667,30 @@ def munge_oserror(exc: OSError) -> tuple[str, str | None, str | None, str | None
     **NOTE**: depending on operation which caused the exception raising,
     there may be zero, one, or two paths involved.
     """
-    exc_name = type(exc).__name__
     exc_errno = None
     exc_winerror = None
     exc_errorcodes = None
     exc_message = None
 
     with contextlib.suppress(AttributeError):
-        exc_winerror = _OSERROR_WINERROR_TEMPLATE.format(exc.winerror)
+        exc_winerror = f'WinError{exc.winerror}'
 
     with contextlib.suppress(KeyError):
         exc_errno = errorcode[exc.errno or -1]
 
     if exc_errno and exc_winerror:
-        exc_errorcodes = _OSERROR_ERRORCODES_TEMPLATE.format(exc_errno, exc_winerror)
+        exc_errorcodes = f'{exc_errno}/{exc_winerror}'
     exc_errorcodes = exc_errorcodes or exc_errno or exc_winerror or None
 
     if exc.strerror:
         exc_message = f'{exc.strerror[0].upper()}{exc.strerror[1:].rstrip('.')}'
 
-    return exc_name, exc_errorcodes, exc_message, exc.filename, exc.filename2
+    return {
+        'errcodes': exc_errorcodes,
+        'strerror': exc_message,
+        'filename1': fsdecode(exc.filename) if isinstance(exc.filename, bytes) else exc.filename,
+        'filename2': fsdecode(exc.filename) if isinstance(exc.filename2, bytes) else exc.filename2,
+    }
 
 
 def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
@@ -772,9 +716,14 @@ def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[st
     return cast('subprocess.CompletedProcess[str]', subprocess.run(command, **kwargs))  # noqa: S603, PLW1510
 
 
-def timestamp() -> str:
-    """Produce a timestamp string from current local date and time."""
-    return strftime(TIMESTAMP_FORMAT)
+def timestamp(template: str = '%Y%m%d_%H%M%S') -> str:
+    """Produce a timestamp string from current local date and time.
+
+    The function is actually a simple alias for `strftime()`, but using
+    a default common `template` for the formatting string. Actually, any
+    valid `strftime()` compatible formatting string can be used.
+    """
+    return strftime(template)
 
 
 if sys.platform == 'win32':
@@ -824,7 +773,7 @@ if sys.platform == 'win32':
         return True
 
 
-    def wait_for_keypress(prompt: str = _DEFAULT_WAIT_FOR_KEYPRESS_PROMPT) -> None:
+    def wait_for_keypress(prompt: str = '\nPress any key to continue...') -> None:
         """Wait for a keypress to continue in particular circumstances.
 
         If `sys.stdout` is attached to a transient console, the function
@@ -856,7 +805,7 @@ else:
 
 # Module desired side-effects.
 sys.excepthook = excepthook
-logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt=TIMESTAMP_FORMAT, force=True)
+logging.basicConfig(level=logging.NOTSET, format='%(message)s', datefmt='%Y%m%d_%H%M%S', force=True)
 
 # Reconfigure standard output streams so they use UTF-8 encoding even if
 # they are redirected to a file when running the program from a shell.

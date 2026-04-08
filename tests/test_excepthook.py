@@ -37,36 +37,38 @@ def test_excepthook_keyboard_interrupt_handling() -> None:
     assert sys.__excepthook__.calls[0][1] == args
 
 
-@pytest.mark.parametrize(('exc_type', 'arg_labels', 'arg_values', 'munger'), [
+@pytest.mark.parametrize(('exc_type', 'exc_args', 'munger'), [
     pytest.param(
         OSError,
-        ('errcodes', 'strerror', 'filename1', 'filename2'),
         (errno.ENOENT, strerror(errno.ENOENT), 'filename1', errno.ENOENT, 'filename2'),
-        lambda e: legion.munge_oserror(e)[1:], # pyright: ignore[reportUnknownArgumentType,reportUnknownLambdaType]
+        legion.munge_oserror,
         id='test_excepthook_format_oserror_details',
     ),
     pytest.param(
         Exception,
-        ('str', 'int'),
         ('sample', 42),
-        lambda e: e.args, # pyright: ignore[reportUnknownArgumentType,reportUnknownLambdaType,reportUnknownMemberType]
+        None,
         id='test_excepthook_format_exception_details',
     ),
 ])
 # pylint: disable-next=unused-variable
 def test_excepthook_format_exception_details(
     exc_type: type[BaseException],
-    arg_labels: tuple[str, ...],
-    arg_values: tuple[object, ...],
-    munger: Callable[[BaseException], tuple[object, ...]],
+    exc_args: tuple[object, ...],
+    munger: Callable[[BaseException], dict[str, str | None]] | None,
 ) -> None:
-    """Test `_format_exception_details`."""
-    exc = exc_type(*arg_values)
-    label_maxlen = max((len(label) for label in arg_labels), default=0)
+    """Test `_format_exception_details()`."""
+    exc = exc_type(*exc_args)
 
-    munged_args = munger(exc)
+    if munger is None:
+        munged = dict(zip([type(arg).__name__ for arg in exc_args], exc_args, strict=True))
+    else:
+        munged = munger(exc)
+
+    label_maxlen = max((len(label) for label in munged), default=0)
+
     output: list[str] = []
-    for label, value in zip(arg_labels, munged_args, strict=True):
+    for label, value in munged.items():
         output.append(f'{label:<{label_maxlen}}  ⟶  {value}')
     expected = '\n'.join(output)
 

@@ -7,17 +7,40 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 
 ## [Development]
+The biggest breaking change in this major release is removing from the module as
+much implicit behavior as possible, to avoid unexpected side effects. This means
+that some constants have been removed or replaced by API calls, and some of the
+side effects are no longer implicit.
+
 ### Removed
+- `demo()` is no longer importable
+- Default `logger`.
+- Registration of customized logger into `logging.setLoggerClass`
+- `excepthook()` no longer shows an error modal dialog
 - `error()` function. It was not used anywhere so it is safe to remove
+- All previously exported constants
 
 ### Changed
+- Logging system is now more cooperative with `logging` module
+- Logging of unhandled exceptions
+- `munge_oserror()` now returns a dictionary, not a tuple
+- `munge_oserror()` now uses `None` for any missing attribute instead of a mix
+  of `None`, empty strings, markers, etc.
+- `munge_oserror()` now removes ending period (if any) from `strerror`
+- `munge_oserror()` no longer returns the exception type name
+- `_ConvenienceLogger` is now exported and it is named `Logger`
 - Most hardcoded messages are now customizable
-- Improved default exception hook, with customizable banners
+- Improved default exception hook, with customizable heading
 - `wait_for_keypress()` is no longer automatically registered with `atexit`
+- Documentation
 
 ### Added
 - Unit test framework
-- `format_error()` function, for pretty-formatting error messages
+- `format_message()` function, for pretty-formatting messages
+- `Logger` class, an augmented functionality logger
+
+### Fixed
+- Output of `demo()` function
 
 
 ## [2.1.0] 2026-02-21
