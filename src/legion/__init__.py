@@ -344,7 +344,7 @@ def _unwrap_markdown(markdown: str) -> str:
     return '\n'.join(unwrapped)
 
 
-class DocstringVisitor(ast.NodeVisitor):
+class _DocstringVisitor(ast.NodeVisitor):
     """AST visitor for getting docstrings."""
 
     def __init__(self) -> None:
@@ -419,7 +419,7 @@ def docs() -> str:
     if __doc__ is None:
         return ''
 
-    visitor = DocstringVisitor()
+    visitor = _DocstringVisitor()
     visitor.visit(ast.parse(getsource(sys.modules[__name__])))
 
     return _unwrap_markdown(__doc__).format(
