@@ -16,6 +16,7 @@ case the code may be useful to others.
 import ast
 import contextlib
 from errno import errorcode
+import functools
 from inspect import getsource
 import linecache
 import logging
@@ -32,7 +33,7 @@ import traceback as tb
 from typing import cast, TextIO, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from io import TextIOWrapper
     from types import TracebackType
     from typing import Any, LiteralString
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
 __all__: list[str] = [  # pylint: disable=unused-variable
     'Logger',
     'docs',
+    'ensure_utf8_output',
     'excepthook',
     'format_message',
     'format_oserror',
@@ -428,6 +430,24 @@ def docs() -> str:
     )
 
 
+def ensure_utf8_output[**P, R](f: Callable[P, R]) -> Callable[P, R]:
+    """Ensure UTF-8 encoding on output streams for the wrapped function.
+
+    Reconfigure standard output streams so they use UTF-8 encoding even
+    if they are redirected to a file when running the program from the
+    command line, particularly on win32 platform, where the encoding in
+    that case is locale-dependent and may not be UTF-8.
+    """
+    @functools.wraps(f)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+            cast('TextIOWrapper', sys.stdout).reconfigure(encoding='utf-8')
+        if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+            cast('TextIOWrapper', sys.stderr).reconfigure(encoding='utf-8')
+        return f(*args, **kwargs)
+    return wrapper
+
+
 def _format_exception_details(exc: BaseException) -> str:
     """Extract exception details as a formatted string."""
     if isinstance(exc, OSError):
@@ -798,14 +818,3 @@ else:
     def wait_for_keypress(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         """Stub for platforms where this function is not implemented."""
         raise NotImplementedError
-
-
-# Module desired side-effects.
-sys.excepthook = excepthook
-
-# Reconfigure standard output streams so they use UTF-8 encoding even if
-# they are redirected to a file when running the program from a shell.
-if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
-    cast('TextIOWrapper', sys.stdout).reconfigure(encoding='utf-8')
-if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
-    cast('TextIOWrapper', sys.stderr).reconfigure(encoding='utf-8')

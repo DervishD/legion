@@ -14,11 +14,14 @@ side effects are no longer implicit.
 
 ### Removed
 - `demo()` is no longer importable
-- Default `logger`.
+- Default `logger`
 - Registration of customized logger into `logging.setLoggerClass`
 - `excepthook()` no longer shows an error modal dialog
 - `error()` function. It was not used anywhere so it is safe to remove
 - All previously exported constants
+- Implicit side-effects (the caller has to run them explicitly):
+    - `excepthook()` installation
+    - `sys.stdout` and `sys.stderr` reconfiguration into `utf-8` mode
 
 ### Changed
 - Logging system is now more cooperative with `logging` module
@@ -38,6 +41,7 @@ side effects are no longer implicit.
 - Unit test framework
 - `format_message()` function, for pretty-formatting messages
 - `Logger` class, an augmented functionality logger
+- `ensure_utf8_output()` decorator for enabling `utf-8` mode in output streams
 
 ### Fixed
 - Output of `demo()` function

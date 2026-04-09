@@ -76,6 +76,13 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Generate documentation for the module.
 
     Return a Markdown-formatted string containing the documentation for the module/package.
+- `ensure_utf8_output(`\
+    `    f: collections.abc.Callable[P,`\
+    `    R]`\
+    `) -> collections.abc.Callable[P, R]`\
+    Ensure UTF-8 encoding on output streams for the wrapped function.
+
+    Reconfigure standard output streams so they use UTF-8 encoding even if they are redirected to a file when running the program from the command line, particularly on win32 platform, where the encoding in that case is locale-dependent and may not be UTF-8.
 - `excepthook(`\
     `    exc_type: type[BaseException],`\
     `    exc_value: BaseException,`\
