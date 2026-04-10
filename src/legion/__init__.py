@@ -358,8 +358,40 @@ class _DocstringVisitor(ast.NodeVisitor):
 
     def _qualify_names(self, string: str) -> str:
         """Replace all bare names with fully qualified names."""
+        if not self.import_mapping:
+            return string
         pattern = rf'\b({'|'.join(re.escape(alias) for alias in self.import_mapping)})\b'
         return re.sub(pattern, lambda match: self.import_mapping[match.group(1)], string)
+
+    def _format_ast_arguments(self, node: ast.arguments) -> str:
+        """Format an ast.arguments *node* to Markdown."""
+        markdown: list[str] = []
+
+        def _format_ast_arg (arg_node: ast.arg | None, default_expr: ast.expr | None = None) -> str:
+            if arg_node is None:
+                return ''
+            annotation = f': {ast.unparse(arg_node.annotation)}' if arg_node.annotation is not None else ''
+            default_value = f' = {ast.unparse(default_expr)}' if default_expr is not None else ''
+            return f'{arg_node.arg}{self._qualify_names(annotation + default_value)}'
+
+        normal_args = node.posonlyargs + node.args
+        normal_defaults = [None] * (len(normal_args) - len(node.defaults)) + node.defaults
+        for index, item in enumerate(zip(normal_args, normal_defaults, strict=True), 1):
+            markdown.append(_format_ast_arg(*item))
+            if index == len(node.posonlyargs):
+                markdown.append('/')
+
+        if node.vararg or node.kwonlyargs:
+            markdown.append(f'*{_format_ast_arg(node.vararg)}')
+
+        for arg_node, default_expr in zip(node.kwonlyargs, node.kw_defaults, strict=True):
+            markdown.append(_format_ast_arg(arg_node, default_expr))
+
+        if node.kwarg:
+            markdown.append(f'**{_format_ast_arg(node.kwarg)}')
+
+        markdown = [f'`{_indent_markdown(arg)}' for arg in markdown]
+        return f'`\\\n{",`\\\n".join(markdown)}`\\\n`' if markdown else ''
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # pylint: disable=invalid-name
         """Visit Import node."""
@@ -377,10 +409,13 @@ class _DocstringVisitor(ast.NodeVisitor):
 
         doc_fragment = f'`{name}('
 
-        arguments = [f'`{_indent_markdown(arg)}' for arg in ast.unparse(node.args).split(', ') if arg and arg != 'self']
-        arguments_fragment = self._qualify_names(f'`\\\n{',`\\\n'.join(arguments)}`\\\n`' if arguments else '')
-        arguments_fragment = arguments_fragment.replace('=', ' = ')
+        if self.within_class_definition:
+            if node.args.posonlyargs and node.args.posonlyargs[0].arg == 'self':
+                node.args.posonlyargs.pop(0)
+            elif node.args.args and node.args.args[0].arg == 'self':
+                node.args.args.pop(0)
 
+        arguments_fragment = self._format_ast_arguments(node.args)
         return_annotation = self._qualify_names(ast.unparse(node.returns) if node.returns is not None else '')
         return_fragment = f' -> {return_annotation}' if return_annotation else ''
 
