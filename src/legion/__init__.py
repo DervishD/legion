@@ -8,10 +8,8 @@ module) contains miscellaneous functions and constants used in some of
 the maintenance scripts of my private system. It is shared publicly in
 case the code may be useful to others.
 
-## Classes
-{docs_for_classes}
-## Functions
-{docs_for_functions}
+## API reference
+{}
 """  # noqa: D400, D415
 import ast
 import contextlib
@@ -351,17 +349,21 @@ class _DocstringVisitor(ast.NodeVisitor):
 
     def __init__(self) -> None:
         """Initialize."""
-        self.import_mapping: dict[str, str] = {}
-        self.within_class_definition = False
-        self.doc_fragments_for_functions: list[str] = []
-        self.doc_fragments_for_classes: list[str] = []
+        self._import_mapping: dict[str, str] = {}
+        self._within_class_definition = False
+        self._function_fragments: list[str] = []
+        self._class_fragments: list[str] = []
+
+    def get_full_docs(self) -> str:
+        """Get the full docs so far retrieved."""
+        return ''.join(self._class_fragments + self._function_fragments)
 
     def _qualify_names(self, string: str) -> str:
         """Replace all bare names with fully qualified names."""
-        if not self.import_mapping:
+        if not self._import_mapping:
             return string
-        pattern = rf'\b({'|'.join(re.escape(alias) for alias in self.import_mapping)})\b'
-        return re.sub(pattern, lambda match: self.import_mapping[match.group(1)], string)
+        pattern = rf'\b({'|'.join(re.escape(alias) for alias in self._import_mapping)})\b'
+        return re.sub(pattern, lambda match: self._import_mapping[match.group(1)], string)
 
     def _format_ast_arguments(self, node: ast.arguments) -> str:
         """Format an ast.arguments *node* to Markdown."""
@@ -398,18 +400,18 @@ class _DocstringVisitor(ast.NodeVisitor):
         if not node.module:
             return
         for alias in node.names:
-            self.import_mapping[alias.asname or alias.name] = f'{node.module}.{alias.asname or alias.name}'
+            self._import_mapping[alias.asname or alias.name] = f'{node.module}.{alias.asname or alias.name}'
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # pylint: disable=invalid-name
         """Visit FunctionDef node."""
         name = node.name
 
-        if name.startswith('__') or (name not in __all__ and not self.within_class_definition):
+        if name.startswith('__') or (name not in __all__ and not self._within_class_definition):
             return
 
         doc_fragment = f'`{name}('
 
-        if self.within_class_definition:
+        if self._within_class_definition:
             if node.args.posonlyargs and node.args.posonlyargs[0].arg == 'self':
                 node.args.posonlyargs.pop(0)
             elif node.args.args and node.args.args[0].arg == 'self':
@@ -426,10 +428,10 @@ class _DocstringVisitor(ast.NodeVisitor):
 
         doc_fragment = f'- {_indent_markdown(doc_fragment).lstrip()}\n'
 
-        if self.within_class_definition:
-            self.doc_fragments_for_classes.append(f'{_indent_markdown(doc_fragment)}\n')
+        if self._within_class_definition:
+            self._class_fragments.append(f'{_indent_markdown(doc_fragment)}\n')
         else:
-            self.doc_fragments_for_functions.append(doc_fragment)
+            self._function_fragments.append(doc_fragment)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:  # pylint: disable=invalid-name
         """Visit ClassDef node."""
@@ -440,11 +442,11 @@ class _DocstringVisitor(ast.NodeVisitor):
 
         docstring = ast.get_docstring(node)
         doc_fragment = f'- `{name}`{f'\\\n{_indent_markdown(docstring)}' if docstring else ''}\n'
-        self.doc_fragments_for_classes.append(doc_fragment)
+        self._class_fragments.append(doc_fragment)
 
-        self.within_class_definition = True
+        self._within_class_definition = True
         self.generic_visit(node)
-        self.within_class_definition = False
+        self._within_class_definition = False
 
 
 def docs() -> str:
@@ -459,10 +461,7 @@ def docs() -> str:
     visitor = _DocstringVisitor()
     visitor.visit(ast.parse(getsource(sys.modules[__name__])))
 
-    return _unwrap_markdown(__doc__).format(
-        docs_for_classes=''.join(visitor.doc_fragments_for_classes),
-        docs_for_functions=''.join(visitor.doc_fragments_for_functions),
-    )
+    return _unwrap_markdown(__doc__).format(visitor.get_full_docs())
 
 
 def ensure_utf8_output[**P, R](f: Callable[P, R]) -> Callable[P, R]:

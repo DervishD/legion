@@ -5,7 +5,7 @@
 
 Since this is many, it's *legion*. This package (currently, a single module) contains miscellaneous functions and constants used in some of the maintenance scripts of my private system. It is shared publicly in case the code may be useful to others.
 
-## Classes
+## API reference
 - `Logger`\
     Augmented functionality logger.
 
@@ -70,8 +70,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
             - Messages with severity of exactly `logging.INFO` go to the standard output stream.
             - Messages with severity of `logging.WARNING` or higher go to the standard error stream.
         - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
-
-## Functions
 - `docs() -> str`\
     Generate documentation for the module.
 
