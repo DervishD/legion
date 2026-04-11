@@ -10,8 +10,14 @@ if TYPE_CHECKING:
 
 
 # pylint: disable-next=unused-variable
-class LogPaths(NamedTuple):
-    """Log paths abstraction."""  # noqa: D204
+class LoggingPaths(NamedTuple):
+    """Abstraction of logging file paths.
+
+    To wit, the two logging file paths used by `Logger`, `main` for the
+    main logging file, containing end-user logging messages and `full`,
+    the tracing logging file, containing everything that was logged.
+    """
+
     main: Path
     full: Path
 

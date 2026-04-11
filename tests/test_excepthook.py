@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
 
-    from tests.helpers import LogPaths
+    from tests.helpers import LoggingPaths
 
 
 # pylint: disable-next=unused-variable
@@ -97,10 +97,10 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
             expected += '  {}, {}: {}\n'.format(*location, codeline)  # pylint: disable=consider-using-f-string
     # ruff: enable[S311]
 
-    def patched_extract_tb (_: TracebackType) -> StackSummary:
+    def mock_extract_tb (_: TracebackType) -> StackSummary:
         return StackSummary.from_list(mock_frames)
 
-    monkeypatch.setattr(traceback, 'extract_tb', patched_extract_tb)
+    monkeypatch.setattr(traceback, 'extract_tb', mock_extract_tb)
 
     assert legion._format_traceback(None) == expected.removesuffix('\n')
 
@@ -116,7 +116,7 @@ def test_excepthook_format_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_excepthook_formatting(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
-    log_paths: LogPaths,
+    logging_paths: LoggingPaths,
     has_args: bool,  # noqa: FBT001
     has_traceback: bool,  # noqa: FBT001
 ) -> None:
@@ -135,8 +135,8 @@ def test_excepthook_formatting(
 
     expected = legion.format_message(heading, '\n\n'.join(formatted_details)).split('\n')
 
-    parsed_main_logfile = parse_logfile(log_paths.main)
-    parsed_full_logfile = parse_logfile(log_paths.full)
+    parsed_main_logfile = parse_logfile(logging_paths.main)
+    parsed_full_logfile = parse_logfile(logging_paths.full)
 
     assert parsed_main_logfile[LoggingFields.MESSAGES] == expected
     assert parsed_full_logfile[LoggingFields.MESSAGES] == expected

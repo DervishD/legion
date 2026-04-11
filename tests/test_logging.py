@@ -10,20 +10,20 @@ from tests.helpers import LoggingFields, parse_logfile
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from tests.helpers import LogPaths
+    from tests.helpers import LoggingPaths
 
 
 # pylint: disable-next=unused-variable
-def test_logging_paths_creation(log_paths: LogPaths) -> None:
+def test_logging_paths_creation(logging_paths: LoggingPaths) -> None:
     """Test that the logging paths are created propertly."""
-    assert not log_paths.main.is_file()
-    assert not log_paths.full.is_file()
+    assert not logging_paths.main.is_file()
+    assert not logging_paths.full.is_file()
 
     logger = legion.get_logger(__name__)
-    logger.config(main_log_output=log_paths.main, full_log_output=log_paths.full)
+    logger.config(main_log_output=logging_paths.main, full_log_output=logging_paths.full)
 
-    assert log_paths.main.is_file()
-    assert log_paths.full.is_file()
+    assert logging_paths.main.is_file()
+    assert logging_paths.full.is_file()
 
     logging.shutdown()
 
@@ -90,7 +90,7 @@ def test_logging_functions(  # noqa: PLR0913
     request: pytest.FixtureRequest,
     capsys: pytest.CaptureFixture[str],
     logger: legion.Logger,
-    log_paths: LogPaths,
+    logging_paths: LoggingPaths,
     logging_function_name: str,
     output_spec: OutputSpec,
 ) -> None:
@@ -103,8 +103,8 @@ def test_logging_functions(  # noqa: PLR0913
 
     getattr(logger, logging_function_name)(message)
 
-    parsed_main_logfile = parse_logfile(log_paths.main)
-    parsed_full_logfile = parse_logfile(log_paths.full)
+    parsed_main_logfile = parse_logfile(logging_paths.main)
+    parsed_full_logfile = parse_logfile(logging_paths.full)
 
     assert '' not in parsed_main_logfile[LoggingFields.TIMESTAMPS]
     assert '' not in parsed_full_logfile[LoggingFields.TIMESTAMPS]
