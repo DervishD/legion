@@ -1,10 +1,13 @@
 """Test platform-specific behavior."""
 import importlib
-import sys
+from typing import TYPE_CHECKING
 
 import pytest
 
 import legion
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 MODULE_NAME = legion.__name__
 WIN32_ONLY_SYMBOLS = (
@@ -15,18 +18,11 @@ WIN32_ONLY_SYMBOLS = (
 )
 
 
-@pytest.fixture(autouse=True)
 # pylint: disable-next=unused-variable
-def evict_module(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ensure the module is evicted before each test."""
-    monkeypatch.delitem(sys.modules, MODULE_NAME, raising=False)
-
-
-# pylint: disable-next=unused-variable
-def test_platform_win32(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_platform_win32(monkeypatch: pytest.MonkeyPatch, evict_module: Callable[[str], None]) -> None:
     """Test that the module loads correctly on win32 platform."""
+    evict_module(MODULE_NAME)
     monkeypatch.setattr('sys.platform', 'win32')
-
     module = importlib.import_module(MODULE_NAME)
 
     for symbol in WIN32_ONLY_SYMBOLS:
@@ -34,10 +30,10 @@ def test_platform_win32(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # pylint: disable-next=unused-variable
-def test_platform_non_win32(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_platform_non_win32(monkeypatch: pytest.MonkeyPatch, evict_module: Callable[[str], None]) -> None:
     """Test that SystemExit is raised on non-win32 platforms."""
+    evict_module(MODULE_NAME)
     monkeypatch.setattr('sys.platform', 'mock_platform')
-
     module = importlib.import_module(MODULE_NAME)
 
     for symbol in WIN32_ONLY_SYMBOLS:
