@@ -1,6 +1,5 @@
 """Configuration file for pytest."""
 import logging
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
@@ -9,7 +8,7 @@ import legion
 from tests.helpers import LoggingPaths
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Generator
     from pathlib import Path
 
 
@@ -37,17 +36,3 @@ def logger(logging_paths: LoggingPaths) -> Generator[legion.Logger]:
     yield logger_instance
 
     logging.shutdown()
-
-
-@pytest.fixture
-# pylint: disable-next=unused-variable
-def evict_module(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], None]:
-    """Evict *module_name* from the currently loaded modules.
-
-    It is actually a factory, and returns the real evictor, which then
-    can be called to evict the module. This simplifies parameter passing
-    for the fixture.
-    """
-    def module_evictor(module_name: str) -> None:
-        monkeypatch.delitem(sys.modules, module_name, raising=False)
-    return module_evictor
