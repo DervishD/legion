@@ -308,40 +308,31 @@ def _unwrap_markdown(markdown: str) -> str:
     """
     unwrapped: list[str] = []
     paragraph = ''
-    last_indent = 0
-
     for line in markdown.splitlines():
-        stripped_line = line.rstrip()
-        current_indent = len(line) - len(stripped_line)
+        rstripped_line = line.rstrip()
 
-        if not stripped_line:
+        if not rstripped_line:
             paragraph = f'{paragraph}{'\n' if paragraph else ''}'
             unwrapped.append(paragraph)
             paragraph = ''
-        elif stripped_line.endswith('<br>'):
-            paragraph = f'{f'{paragraph}\n' if paragraph else ''}{stripped_line.replace('<br>', '\\')}'
+        elif rstripped_line.endswith('<br>'):
+            paragraph = f'{f'{paragraph}\n' if paragraph else ''}{rstripped_line.replace('<br>', '\\')}'
             unwrapped.append(paragraph)
             paragraph = ''
-        elif stripped_line.lstrip().startswith('- '):
+        elif rstripped_line.lstrip().startswith('- '):
             unwrapped.append(paragraph)
-            paragraph = stripped_line
-        elif stripped_line.startswith(('# ', '## ', '> ')):
-            paragraph = f'{paragraph}{'\n' if paragraph else ''}{stripped_line}'
+            paragraph = rstripped_line
+        elif rstripped_line.startswith(('# ', '## ', '> ')):
+            paragraph = f'{paragraph}{'\n' if paragraph else ''}{rstripped_line}'
             unwrapped.append(paragraph)
             paragraph = ''
-        elif current_indent != last_indent:
-            unwrapped.append(paragraph)
-            paragraph = stripped_line
-            last_indent = current_indent
         elif paragraph:
-            paragraph += f'{' ' if paragraph else ''}{stripped_line.lstrip()}'
+            paragraph += f'{' ' if paragraph else ''}{rstripped_line.lstrip()}'
         else:
-            paragraph = stripped_line
+            paragraph = rstripped_line
+    unwrapped.append(paragraph)
 
-    if paragraph:
-        unwrapped.append(paragraph)
-
-    return '\n'.join(unwrapped)
+    return '\n'.join(unwrapped).rstrip()
 
 
 class _DocstringVisitor(ast.NodeVisitor):
