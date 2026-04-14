@@ -676,7 +676,7 @@ def get_logger(name: str) -> Logger:
     """Get an instance of `legion.Logger` with the specified *name*.
 
     Unlike `logging.getLogger()`, the argument is **not** optional, so
-    the root logger is **never** returned.
+    the root logger is **never** returned by default.
 
     This function temporarily registers `legion.Logger` as the default
     logger class, so the returned logger type is always guaranteed to be
