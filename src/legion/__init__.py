@@ -351,8 +351,6 @@ class _DocstringVisitor(ast.NodeVisitor):
 
     def _qualify_names(self, string: str) -> str:
         """Replace all bare names with fully qualified names."""
-        if not self._import_mapping:
-            return string
         pattern = rf'\b({'|'.join(re.escape(alias) for alias in self._import_mapping)})\b'
         return re.sub(pattern, lambda match: self._import_mapping[match.group(1)], string)
 
@@ -372,7 +370,7 @@ class _DocstringVisitor(ast.NodeVisitor):
         for index, item in enumerate(zip(normal_args, normal_defaults, strict=True), 1):
             markdown.append(_format_ast_arg(*item))
             if index == len(node.posonlyargs):
-                markdown.append('/')
+                markdown.append('/')  # pragma: no cover  # Until posonlyargs are used in the module.
 
         if node.vararg or node.kwonlyargs:
             markdown.append(f'*{_format_ast_arg(node.vararg)}')
@@ -388,8 +386,6 @@ class _DocstringVisitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # pylint: disable=invalid-name
         """Visit Import node."""
-        if not node.module:
-            return
         for alias in node.names:
             self._import_mapping[alias.asname or alias.name] = f'{node.module}.{alias.asname or alias.name}'
 
@@ -404,8 +400,8 @@ class _DocstringVisitor(ast.NodeVisitor):
 
         if self._within_class_definition:
             if node.args.posonlyargs and node.args.posonlyargs[0].arg == 'self':
-                node.args.posonlyargs.pop(0)
-            elif node.args.args and node.args.args[0].arg == 'self':
+                node.args.posonlyargs.pop(0)  # pragma: no cover  # Until posonlyargs are used in the module.
+            elif node.args.args and node.args.args[0].arg == 'self':  # pragma: no branch
                 node.args.args.pop(0)
 
         arguments_fragment = self._format_ast_arguments(node.args)
@@ -441,13 +437,9 @@ class _DocstringVisitor(ast.NodeVisitor):
 
 
 def docs() -> str:
-    """Generate documentation for the module.
-
-    Return a Markdown-formatted string containing the documentation for
-    the module/package.
-    """
-    if __doc__ is None:
-        return ''
+    """Return this module documentation in Markdown format."""
+    if __doc__ is None:  # pragma: no cover
+        raise RuntimeError
 
     visitor = _DocstringVisitor()
     visitor.visit(ast.parse(getsource(sys.modules[__name__])))
