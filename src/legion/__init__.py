@@ -723,7 +723,7 @@ def munge_oserror(exc: OSError) -> dict[str, str | None]:
         'errcodes': exc_errorcodes,
         'strerror': exc_message,
         'filename1': fsdecode(exc.filename) if isinstance(exc.filename, bytes) else exc.filename,
-        'filename2': fsdecode(exc.filename) if isinstance(exc.filename2, bytes) else exc.filename2,
+        'filename2': fsdecode(exc.filename2) if isinstance(exc.filename2, bytes) else exc.filename2,
     }
 
 
