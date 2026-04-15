@@ -17,7 +17,6 @@ import legion
 from tests.helpers import CallableSpy, LoggingFields, parse_logfile
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from types import TracebackType
 
     from tests.helpers import LoggingPaths
@@ -37,42 +36,77 @@ def test_excepthook_keyboard_interrupt_handling() -> None:
     assert sys.__excepthook__.calls[0][1] == args
 
 
-@pytest.mark.parametrize(('exc_type', 'exc_args', 'munger'), [
+@pytest.mark.parametrize(('exception', 'expected'), [
     pytest.param(
-        OSError,
-        (errno.ENOENT, strerror(errno.ENOENT), 'filename1', errno.ENOENT, 'filename2'),
-        legion.munge_oserror,
-        id='test_excepthook_format_oserror_details',
+        OSError(errno.ENOENT, strerror(errno.ENOENT) + '...', 'mock_filename1.txt', errno.ENOENT, 'mock_filename2.txt'),
+        (
+            f'errcodes   ⟶  {errno.errorcode[errno.ENOENT]}/WinError{errno.ENOENT}\n'
+            f'strerror   ⟶  {strerror(errno.ENOENT)}\n'
+             'filename1  ⟶  mock_filename1.txt\n'
+             'filename2  ⟶  mock_filename2.txt'
+        ),
+        id='test__format_exception_details_oserror_baseline',
     ),
     pytest.param(
-        Exception,
-        ('sample', 42),
-        None,
-        id='test_excepthook_format_exception_details',
+        OSError(errno.ENOENT, None, 'mock_filename1.txt', errno.ENOENT),
+        (
+            f'errcodes   ⟶  {errno.errorcode[errno.ENOENT]}/WinError{errno.ENOENT}\n'
+             'strerror   ⟶  ???\n'
+             'filename1  ⟶  mock_filename1.txt\n'
+             'filename2  ⟶  ???'
+        ),
+        id='test__format_exception_details_oserror_partial',
+    ),
+    pytest.param(
+        OSError(),
+        (
+            'errcodes   ⟶  WinErrorNone\n'
+            'strerror   ⟶  ???\n'
+            'filename1  ⟶  ???\n'
+            'filename2  ⟶  ???'
+        ),
+        id='test__format_exception_details_oserror_void',
+    ),
+    pytest.param(
+        Exception('mock message', 42, 3.14, True),  # noqa: FBT003
+        (
+             'str    ⟶  mock message\n'
+             'int    ⟶  42\n'
+             'float  ⟶  3.14\n'
+             'bool   ⟶  True'
+        ),
+        id='test__format_exception_details_exception',
+    ),
+    pytest.param(
+        Exception(),
+        '',
+        id='test__format_exception_details_void',
+    ),
+    pytest.param(
+        Exception(None),
+        'NoneType  ⟶  ???',
+        id='test__format_exception_details_none',
+    ),
+    pytest.param(
+        Exception(''),
+        'str  ⟶  ???',
+        id='test__format_exception_details_empty',
+    ),
+    pytest.param(
+        Exception(' ' * 42),
+        'str  ⟶  ???',
+        id='test__format_exception_details_whitespace',
+    ),
+    pytest.param(
+        Exception('  stripped  '),
+        'str  ⟶  stripped',
+        id='test__format_exception_details_strip',
     ),
 ])
 # pylint: disable-next=unused-variable
-def test_excepthook_format_exception_details(
-    exc_type: type[BaseException],
-    exc_args: tuple[object, ...],
-    munger: Callable[[BaseException], dict[str, str | None]] | None,
-) -> None:
+def test__format_exception_details(exception: Exception, expected: str) -> None:
     """Test `_format_exception_details()`."""
-    exc = exc_type(*exc_args)
-
-    if munger is None:
-        munged = dict(zip([type(arg).__name__ for arg in exc_args], exc_args, strict=True))
-    else:
-        munged = munger(exc)
-
-    label_maxlen = max((len(label) for label in munged), default=0)
-
-    output: list[str] = []
-    for label, value in munged.items():
-        output.append(f'{label:<{label_maxlen}}  ⟶  {value}')
-    expected = '\n'.join(output)
-
-    assert legion._format_exception_details(exc) == expected
+    assert legion._format_exception_details(exception) == expected
 
 
 # pylint: disable-next=unused-variable
