@@ -243,6 +243,48 @@ def test__format_traceback_linecache(monkeypatch: pytest.MonkeyPatch, lines: lis
     assert legion._format_traceback(None) == f'⟶ mock_file.py\n  1, mock_func: {expected}'
 
 
+@pytest.mark.parametrize(('code', 'expected_type'), [
+    pytest.param(
+        'raise ValueError',
+        'ValueError',
+        id='test_excepthook_exception_resolution_plain_raise',
+    ),
+    pytest.param(
+        'try: raise ValueError\nexcept ValueError as e: raise RuntimeError from e',
+        'ValueError',
+        id='test_excepthook_exception_resolution_with_cause',
+    ),
+    pytest.param(
+        'try: raise ValueError\nexcept ValueError: raise RuntimeError',
+        'ValueError',
+        id='test_excepthook_exception_resolution_with_context',
+    ),
+    pytest.param(
+        'try: raise ValueError\nexcept ValueError: raise RuntimeError from None',
+        'RuntimeError',
+        id='test_excepthook_exception_resolution_suppressed',
+    ),
+])
+# pylint: disable-next=unused-variable
+def test_excepthook_exception_resolution(monkeypatch: pytest.MonkeyPatch, code: str, expected_type: str) -> None:
+    """Test `excepthook()` exception nesting resolution."""
+    def mock_format_message(heading: str, *_: object) -> str:
+        return heading
+    monkeypatch.setattr(legion, 'format_message', mock_format_message)
+
+    def mock_logger_error(message: str, *_: object) -> str:
+        return message
+    error_spy = CallableSpy(mock_logger_error)
+    monkeypatch.setattr(legion.Logger, 'error', error_spy)
+
+    try:
+        exec(code)  # noqa: S102  # pylint: disable=exec-used
+    except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
+        legion.excepthook(type(exc), exc, exc.__traceback__)
+
+    assert f'({expected_type})' in error_spy.calls[0][0]
+
+
 @pytest.mark.parametrize(('has_args', 'has_traceback'), [
     pytest.param(True, True, id='test_excepthook_formatting_full_output'),
     pytest.param(False, True, id='test_excepthook_formatting_no_details'),
