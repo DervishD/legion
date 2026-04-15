@@ -16,37 +16,37 @@ DEFAULT_INDENTATION = ' '
     pytest.param(
         None, None, None,
         '',
-        id = 'test_format_message_None_arguments',
+        id='test_format_message_None_arguments',
     ),
     pytest.param(
         '', '', None,
         '',
-        id = 'test_format_message_empty_arguments',
+        id='test_format_message_empty_arguments',
     ),
     pytest.param(
         '', MESSAGE, None,
         f'{DEFAULT_INDENTATION}{MESSAGE}',
-        id = 'test_format_message_missing_heading',
+        id='test_format_message_missing_heading',
     ),
     pytest.param(
         HEADING, '', None,
         HEADING,
-        id = 'test_format_message_missing_message',
+        id='test_format_message_missing_message',
     ),
     pytest.param(
         '', f'{MESSAGE}\n\n{MESSAGE}', None,
         f'{DEFAULT_INDENTATION}{MESSAGE}\n\n{DEFAULT_INDENTATION}{MESSAGE}',
-        id = 'test_format_message_multiline_message',
+        id='test_format_message_multiline_message',
     ),
     pytest.param(
         '', MESSAGE, INDENTATION,
         f'{INDENTATION}{MESSAGE}',
-        id = 'test_format_message_custom_indentation',
+        id='test_format_message_custom_indentation',
     ),
     pytest.param(
         HEADING, f'{MESSAGE}\n\n{MESSAGE}', INDENTATION,
         f'{HEADING}\n{INDENTATION}{MESSAGE}\n\n{INDENTATION}{MESSAGE}',
-        id = 'test_format_message_full_featured',
+        id='test_format_message_full_featured',
     ),
 ])
 # pylint: disable-next=unused-variable
