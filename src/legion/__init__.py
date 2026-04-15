@@ -497,10 +497,9 @@ def _format_traceback(exc_traceback: TracebackType | None) -> str:
         if current_frame_source_path != frame.filename:
             output.append(f'{marker}{frame.filename}')
             current_frame_source_path = frame.filename
-        source = ''
-        if frame.lineno:
-            source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
-            source = ''.join([line.strip() for line in source_lines])
+        frame.lineno = frame.lineno or 1
+        source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
+        source = ''.join([line.strip() for line in source_lines])
         output.append(f'{padding}{frame.lineno}, {frame.name}: {source or frame.line or ''}')
     return '\n'.join(output)
 
