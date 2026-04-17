@@ -465,8 +465,58 @@ def ensure_utf8_output[**P, R](f: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
-def _format_exception_details(exc: BaseException) -> str:
-    """Extract exception details as a formatted string."""
+def _format_exception(exc: BaseException, chain_marker: str) -> str:
+    """Format exception instance *exc* contents.
+
+    Return a multiline string with the following items:
+        - the exception type name, with a *chain_marker* when it is the
+        `__cause__` or the `__context__` of the previous exception.
+        - the exception argument values, labelled.
+        - the traceback.
+
+    The string does **NOT** end in a newline character, every section is
+    properly aligned and indented, and bullet-like markers are used for
+    visual separation between items when needed. The actual format used
+    is not relevant and no assumptions should be made about it.
+    """
+    exc_marker = '* '
+    exc_indent = ' ' * len(exc_marker)
+    tb_marker = '> '
+    tb_indent = ' ' * len(tb_marker)
+
+    formatted_exception = exc_marker
+    formatted_exception += f'[{chain_marker}] ' if chain_marker else ''
+    formatted_exception += f'{type(exc).__name__}:\n'
+
+    munged_exception_args = _munge_exception_args(exc)
+    for label, value in munged_exception_args:
+        formatted_exception += f'{exc_indent}{label}: {value}\n'
+    formatted_exception += '\n' if munged_exception_args else ''
+
+    current_frame_filename = None
+    for filename, line, name, code in _munge_exception_traceback(exc):
+        if current_frame_filename != filename:
+            formatted_exception += f'{exc_indent}{tb_marker}{filename}:\n'
+            current_frame_filename = filename
+        formatted_exception += f'{exc_indent}{tb_indent}{line}, {name}{f': {code}' if code else ''}\n'
+    return formatted_exception
+
+
+def _munge_exception_args(exc: BaseException) -> list[tuple[str, str]]:
+    """Process arguments from exception instance *exc*.
+
+    Return a list with one item per processed argument. Can be empty if
+    the exception instance does not have arguments. Each item is a tuple
+    containing a label for the argument and its value, as strings.
+
+    Labels are left-padded with spaces so they all have the same length.
+    The labels are the canonical names of the argument types, except for
+    `OSError` instances (and subclasses), where the labels are the names
+    of the arguments rather than their types.
+
+    Values are the printable representation of the argument objects, as
+    returned by `repr()`.
+    """
     if isinstance(exc, OSError):
         munged = munge_oserror(exc)
         labels = munged.keys()
@@ -474,34 +524,68 @@ def _format_exception_details(exc: BaseException) -> str:
     else:
         labels = tuple(type(value).__name__ for value in exc.args)
         values = exc.args
+
     label_maxlen = max((len(label) for label in labels), default=0)
 
-    output: list[str] = []
-
+    munged_args: list[tuple[str, str]] = []
     for label, value in zip(labels, values, strict=True):
-        processed_value = (str(value).strip() if value is not None else '') or '???'
-        processed_value = processed_value.strip('.') if label == 'strerror' else processed_value
-        output.append(f'{label:<{label_maxlen}}  ⟶  {processed_value}')
+        munged_args.append((f'{label:>{label_maxlen}}', repr(value)))
 
-    return '\n'.join(output)
+    return munged_args
 
 
-def _format_traceback(exc_traceback: TracebackType | None) -> str:
-    """Extract traceback as a formatted string."""
-    output: list[str] = []
-    marker = '⟶ '
-    padding = ' ' * len(marker)
+def _munge_exception_traceback(exc: BaseException) -> list[tuple[str, str, str, str]]:
+    """Process traceback from exception instance *exc*.
 
-    current_frame_source_path = None
-    for frame in tb.extract_tb(exc_traceback):
-        if current_frame_source_path != frame.filename:
-            output.append(f'{marker}{frame.filename}')
-            current_frame_source_path = frame.filename
+    Return a list with one item per frame. Can be empty if no traceback
+    is present in the exception instance.
+
+    Each item is a tuple containing the frame filename, the line number,
+    the function name (or equivalent) and the source code for the frame
+    if available (or an empty string if not). All elements are strings,
+    including the frame line number.
+    """
+    # """Extract traceback as a formatted string."""
+    munged_traceback: list[tuple[str, str, str, str]] = []
+    for frame in tb.extract_tb(exc.__traceback__):
         frame.lineno = frame.lineno or 1
-        source_lines = linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
-        source = ''.join([line.strip() for line in source_lines]) or frame.line
-        output.append(f'{padding}{frame.lineno}, {frame.name}{f': {source}' if source else ''}')
-    return '\n'.join(output)
+        source_code = ''.join([
+            line.strip() for line in linecache.getlines(frame.filename)[frame.lineno-1:frame.end_lineno]
+        ])
+        munged_traceback.append((frame.filename, str(frame.lineno), frame.name, source_code or frame.line or ''))
+    return munged_traceback
+
+
+def _get_exception_chain(exc: BaseException) -> list[tuple[BaseException, str]]:
+    """Get an exception chain from *exc*.
+
+    Return a list with one item per exception in *exc* chain. The chain
+    is reversed, so the first element in the returned chain is the last
+    exception in *exc* chain, the root cause for the chain. This is so
+    the returned chain is expressed in *chronological* order, with the
+    cause first, instead of the Python's default *structural* order with
+    the effect, the last unhandled exception, appears first.
+    """
+    chain: list[tuple[BaseException, str]] = []
+    seen: set[int] = set()
+    cause___marker = ' __cause__ '  # Both markers must have same length.
+    context_marker = '__context__'  # Both markers must have same length.
+
+    while id(exc) not in seen:  # pragma: no branch
+        seen.add(id(exc))  # Avoids technically 'impossible' cycles.
+
+        if exc.__cause__ is not None:
+            chain.append((exc, cause___marker))
+            exc = exc.__cause__
+        elif exc.__context__ is not None and not exc.__suppress_context__:
+            chain.append((exc, context_marker))
+            exc = exc.__context__
+        else:
+            chain.append((exc, ''))
+            break
+
+    chain.reverse()
+    return chain
 
 
 def excepthook(
@@ -543,15 +627,13 @@ def excepthook(
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    exc = exc_value.__cause__ or (exc_value if exc_value.__suppress_context__ else exc_value.__context__ or exc_value)
-    formatted_heading = f'{heading} ({type(exc).__name__})'
-
-    formatted_details = [_format_exception_details(exc)]
-    formatted_details.append(_format_traceback(exc_traceback))
-    formatted_details.extend([_format_traceback(exc.__traceback__)] if exc.__traceback__ != exc_traceback else [])
+    chain = _get_exception_chain(exc_value)
+    message = ''
+    for exc, chain_marker in chain:
+        message += _format_exception(exc, chain_marker) + '\n'
 
     logger = get_logger(__name__)
-    logger.error(format_message(formatted_heading, '\n\n'.join(formatted_details)))
+    logger.error(format_message(heading, message))
 
 
 def format_message(

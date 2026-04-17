@@ -13,7 +13,7 @@ that some constants have been removed or replaced by API calls, and some of the
 side effects are no longer implicit.
 
 ### Removed
-- `demo()` is no longer importable
+- `demo()` function
 - Default `logger`
 - Registration of customized logger into `logging.setLoggerClass`
 - `excepthook()` no longer shows an error modal dialog
@@ -42,6 +42,7 @@ side effects are no longer implicit.
 - `format_message()` function, for pretty-formatting messages
 - `Logger` class, an augmented functionality logger
 - `ensure_utf8_output()` decorator for enabling `utf-8` mode in output streams
+- `excepthook()` supports exception chaining
 
 ### Fixed
 - Output of `demo()` function
