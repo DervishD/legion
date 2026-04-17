@@ -366,9 +366,9 @@ def test_excepthook(monkeypatch: pytest.MonkeyPatch) -> None:
     excepthook(Exception, exc, None)
     for spy in (_get_exception_chain_spy, format_message_spy, error_spy):
         assert spy.called
-        assert len(spy.calls) == 1
+        assert spy.call_count == 1
     assert _format_exception_spy.called
-    assert len(_format_exception_spy.calls) == len(mock_exception_chain)
+    assert _format_exception_spy.call_count == len(mock_exception_chain)
     assert _get_exception_chain_spy.calls[0] == (mock_exception_chain, (exc,), {})
     assert _format_exception_spy.calls[0] == (mock_formatted_exception, mock_exception_chain[0], {})
     assert _format_exception_spy.calls[1] == (mock_formatted_exception, mock_exception_chain[1], {})

@@ -105,5 +105,5 @@ def test_run(
     run(mock_command, **input_kwargs)
 
     assert subprocess_run_spy.called
-    assert len(subprocess_run_spy.calls) == 1
+    assert subprocess_run_spy.call_count == 1
     assert subprocess_run_spy.calls[0] == (mock_subprocess_run_retval, (mock_command,), expected_kwargs)
