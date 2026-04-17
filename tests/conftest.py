@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-import legion
+from legion import get_logger, Logger
 from tests.helpers import LoggingPaths
 
 if TYPE_CHECKING:
@@ -27,9 +27,9 @@ def logging_paths(tmp_path: Path) -> Generator[LoggingPaths]:
 
 @pytest.fixture
 # pylint: disable-next=unused-variable,redefined-outer-name
-def logger(logging_paths: LoggingPaths) -> Generator[legion.Logger]:
+def logger(logging_paths: LoggingPaths) -> Generator[Logger]:
     """Set up and return a logger, configured using *log_paths*."""
-    logger_instance = legion.get_logger(__name__)
+    logger_instance = get_logger(__name__)
 
     logger_instance.config(main_log_output=logging_paths.main, full_log_output=logging_paths.full)
 
