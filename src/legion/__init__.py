@@ -48,6 +48,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'get_desktop_path',
     'get_logger',
     'git_repository_root',
+    'load_pyproject',
     'munge_oserror',
     'run',
     'timestamp',
@@ -770,6 +771,28 @@ def git_repository_root(cwd: Path | None = None) -> Path | None:
     """
     result = run(['git', 'rev-parse', '--show-toplevel'], cwd=(cwd or Path()).resolve(), encoding='utf-8')
     return None if result.returncode else Path(result.stdout.strip()).resolve()
+
+
+def load_pyproject(project_dir: Path | None = None) -> dict[str, Any] | None:
+    """Load `pyproject.toml` file and parse it into a dictionary.
+
+    The file is assumed to be in `TOML` syntax.
+
+    The file is looked up in *project_dir* if provided, otherwise in the
+    root of the current Git repository. `None` is returned when the file
+    does not exist or cannot be read, or if *project_dir* was not given
+    and the root of the current Git repository cannot be determined.
+
+    If the file can be found and its syntax is correct, a dictionary is
+    returned, containing a representation of the file contents according
+    to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax
+    of the `TOML` document is invalid.
+    """
+    if (pyproject_basedir := project_dir or git_repository_root()) is not None:
+        pyproject_toml_path = pyproject_basedir.resolve() / 'pyproject.toml'
+        with contextlib.suppress(PermissionError, FileNotFoundError):
+            return tomllib.loads(pyproject_toml_path.read_text(encoding='utf-8'))
+    return None
 
 
 def munge_oserror(exc: OSError) -> dict[str, str | None]:

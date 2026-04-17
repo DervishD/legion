@@ -156,6 +156,16 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     The lookup is performed relative to *cwd*. If not provided, then the current working directory is used.
 
     This function runs `git rev-parse --show-toplevel` and returns the fully resolved path of the repository root if the command succeeds, or `None` otherwise.
+- `load_pyproject(`\
+    `    project_dir: pathlib.Path | None = None`\
+    `) -> dict[str, typing.Any] | None`\
+    Load `pyproject.toml` file and parse it into a dictionary.
+
+    The file is assumed to be in `TOML` syntax.
+
+    The file is looked up in *project_dir* if provided, otherwise in the root of the current Git repository. `None` is returned when the file does not exist or cannot be read, or if *project_dir* was not given and the root of the current Git repository cannot be determined.
+
+    If the file can be found and its syntax is correct, a dictionary is returned, containing a representation of the file contents according to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax of the `TOML` document is invalid.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> dict[str, str | None]`\

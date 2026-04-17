@@ -43,6 +43,8 @@ side effects are no longer implicit.
 - `Logger` class, an augmented functionality logger
 - `ensure_utf8_output()` decorator for enabling `utf-8` mode in output streams
 - `excepthook()` supports exception chaining
+- `git_repository_root()` function, for getting the current repository root path
+- `load_pyproject()` function, for loading current project's `pyproject.toml`
 
 ### Fixed
 - Output of `demo()` function
