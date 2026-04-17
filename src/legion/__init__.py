@@ -47,6 +47,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'get_credentials',
     'get_desktop_path',
     'get_logger',
+    'git_repository_root',
     'munge_oserror',
     'run',
     'timestamp',
@@ -755,6 +756,20 @@ def get_logger(name: str) -> Logger:
         return cast('Logger', logging.getLogger(name))
     finally:
         logging.setLoggerClass(previous)
+
+
+def git_repository_root(cwd: Path = Path()) -> Path | None:
+    """Return the root directory of a Git repository.
+
+    The lookup is performed relative to *cwd*, which by default is the
+    current working directory.
+
+    This function runs `git rev-parse --show-toplevel` and returns the
+    fully resolved path of the repository root if the command succeeds,
+    or `None` otherwise.
+    """
+    result = run(['git', 'rev-parse', '--show-toplevel'], cwd=cwd.resolve(), encoding='utf-8')
+    return None if result.returncode else Path(result.stdout.strip()).resolve()
 
 
 def munge_oserror(exc: OSError) -> dict[str, str | None]:

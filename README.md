@@ -148,6 +148,14 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
 
     This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
+- `git_repository_root(`\
+    `    cwd: pathlib.Path = pathlib.Path()`\
+    `) -> pathlib.Path | None`\
+    Return the root directory of a Git repository.
+
+    The lookup is performed relative to *cwd*, which by default is the current working directory.
+
+    This function runs `git rev-parse --show-toplevel` and returns the fully resolved path of the repository root if the command succeeds, or `None` otherwise.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> dict[str, str | None]`\
