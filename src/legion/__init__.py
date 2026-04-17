@@ -758,17 +758,17 @@ def get_logger(name: str) -> Logger:
         logging.setLoggerClass(previous)
 
 
-def git_repository_root(cwd: Path = Path()) -> Path | None:
+def git_repository_root(cwd: Path | None = None) -> Path | None:
     """Return the root directory of a Git repository.
 
-    The lookup is performed relative to *cwd*, which by default is the
-    current working directory.
+    The lookup is performed relative to *cwd*. If not provided, then the
+    current working directory is used.
 
     This function runs `git rev-parse --show-toplevel` and returns the
     fully resolved path of the repository root if the command succeeds,
     or `None` otherwise.
     """
-    result = run(['git', 'rev-parse', '--show-toplevel'], cwd=cwd.resolve(), encoding='utf-8')
+    result = run(['git', 'rev-parse', '--show-toplevel'], cwd=(cwd or Path()).resolve(), encoding='utf-8')
     return None if result.returncode else Path(result.stdout.strip()).resolve()
 
 

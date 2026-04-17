@@ -149,11 +149,11 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
 - `git_repository_root(`\
-    `    cwd: pathlib.Path = pathlib.Path()`\
+    `    cwd: pathlib.Path | None = None`\
     `) -> pathlib.Path | None`\
     Return the root directory of a Git repository.
 
-    The lookup is performed relative to *cwd*, which by default is the current working directory.
+    The lookup is performed relative to *cwd*. If not provided, then the current working directory is used.
 
     This function runs `git rev-parse --show-toplevel` and returns the fully resolved path of the repository root if the command succeeds, or `None` otherwise.
 - `munge_oserror(`\
