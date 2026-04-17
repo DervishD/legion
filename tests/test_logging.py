@@ -4,7 +4,7 @@ from typing import NamedTuple, TYPE_CHECKING
 
 import pytest
 
-import legion
+from legion import get_logger, Logger
 from tests.helpers import LoggingFields, parse_logfile
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ def test_logging_paths_creation(logging_paths: LoggingPaths) -> None:
     assert not logging_paths.main.is_file()
     assert not logging_paths.full.is_file()
 
-    logger = legion.get_logger(__name__)
+    logger = get_logger(__name__)
     logger.config(main_log_output=logging_paths.main, full_log_output=logging_paths.full)
 
     assert logging_paths.main.is_file()
@@ -31,7 +31,7 @@ def test_logging_paths_creation(logging_paths: LoggingPaths) -> None:
 # pylint: disable-next=unused-variable
 def test_logging_console_only_handlers() -> None:
     """Test that proper handlers exist in console-only mode."""
-    legion.get_logger(__name__).config()
+    get_logger(__name__).config()
     handlers = logging.getLogger('').handlers
 
     for handler in handlers:
@@ -44,7 +44,7 @@ def test_logging_console_only_handlers() -> None:
 # pylint: disable-next=unused-variable
 def test_logging_no_handlers() -> None:
     """Test that only `NullHandler` exist in muted mode."""
-    legion.get_logger(__name__).config(console=False)
+    get_logger(__name__).config(console=False)
 
     handlers = logging.getLogger('').handlers
     assert len(handlers) == 1
@@ -89,7 +89,7 @@ class OutputSpec(NamedTuple):
 def test_logging_functions(  # noqa: PLR0913
     request: pytest.FixtureRequest,
     capsys: pytest.CaptureFixture[str],
-    logger: legion.Logger,
+    logger: Logger,
     logging_paths: LoggingPaths,
     logging_function_name: str,
     output_spec: OutputSpec,
@@ -132,7 +132,7 @@ def test_logging_functions(  # noqa: PLR0913
     pytest.param('\bLeading and trailing newline.\n', id='test_logging_honor_both_newlines'),
 ])
 # pylint: disable-next=unused-variable
-def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: legion.Logger, message: str) -> None:
+def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: Logger, message: str) -> None:
     """Test whether whitespace is honored where it should."""
     terminator = '<TERMINATOR>'
 
@@ -146,7 +146,7 @@ def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger:
 
 
 # pylint: disable-next=unused-variable
-def test_logging_indentation(logger: legion.Logger) -> None:
+def test_logging_indentation(logger: Logger) -> None:
     """Test that logging requested indentation is honored."""
     assert logger.indentation == ''  # pylint: disable=use-implicit-booleaness-not-comparison-to-string
 
