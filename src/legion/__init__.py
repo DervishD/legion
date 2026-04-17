@@ -678,7 +678,7 @@ def format_oserror(context: str, exc: OSError) -> str:
 
     # pylint: disable-next=unidiomatic-typecheck
     exc_label = 'OSError' if type(exc) is OSError else f'OS.{type(exc).__name__}'
-    paths = f"'{munged['filename1']}'{f" ⟶ '{munged['filename2']}'" if munged['filename2'] else ''}"
+    paths = f"'{munged['filename1']}'{f" -> '{munged['filename2']}'" if munged['filename2'] else ''}"
     return f'{exc_label} [{munged['errcodes']}] {context} {paths}.\n{munged['strerror']}.'
 
 
