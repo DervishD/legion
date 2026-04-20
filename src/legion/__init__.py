@@ -467,12 +467,14 @@ def ensure_utf8_output[**P, R](f: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
+# pylint: disable-next=too-many-locals
 def _format_exception(exc: BaseException, chain_marker: str) -> str:
     """Format exception instance *exc* contents.
 
     Return a multiline string with the following items:
-        - the exception type name, with a *chain_marker* when it is the
-        `__cause__` or the `__context__` of the previous exception.
+        - the exception type name, preceded by a *chain_marker* if it is
+          the `__cause__` or the `__context__` of the previous exception
+          and followed by a string representation of the exception.
         - the exception argument values, labelled.
         - the traceback.
 
@@ -485,10 +487,13 @@ def _format_exception(exc: BaseException, chain_marker: str) -> str:
     exc_indent = ' ' * len(exc_marker)
     tb_marker = '> '
     tb_indent = ' ' * len(tb_marker)
+    exc_text = f'{exc}'.strip()
 
     formatted_exception = exc_marker
     formatted_exception += f'[{chain_marker}] ' if chain_marker else ''
-    formatted_exception += f'{type(exc).__name__}:\n'
+    formatted_exception += type(exc).__name__
+    formatted_exception += f': {exc_text}' if exc_text else ''
+    formatted_exception += '\n'
 
     munged_exception_args = _munge_exception_args(exc)
     for label, value in munged_exception_args:
@@ -635,7 +640,7 @@ def excepthook(
         message += _format_exception(exc, chain_marker) + '\n'
 
     logger = get_logger(__name__)
-    logger.error(format_message(heading, message))
+    logger.error(format_message(heading, message.rstrip()))
 
 
 def format_message(

@@ -232,17 +232,20 @@ def test_excepthook__munge_exception_traceback_linecache(
     assert _munge_exception_traceback(Exception()) == [('mock_file.py', '1', 'mock_func', expected)]
 
 
-@pytest.mark.parametrize(('marker', 'expected'), [
-    pytest.param('', '', id='test_excepthook__format_exception_chain_marker_empty'),
-    pytest.param('mock_marker', '[mock_marker] ', id='test_excepthook__format_exception_chain_marker_baseline'),
+@pytest.mark.parametrize(('marker', 'strexc'), [
+    pytest.param('', '', id='test_excepthook__format_exception_header_empty'),
+    pytest.param('mock_marker', '', id='test_excepthook__format_exception_header_marker'),
+    pytest.param('', 'mock_strexc', id='test_excepthook__format_exception_header_strexc'),
+    pytest.param('mock_marker', 'mock_strexc', id='test_excepthook__format_exception_header_both'),
 ])
 # pylint: disable-next=unused-variable
-def test_excepthook__format_exception_header(marker: str, expected: str) -> None:
+def test_excepthook__format_exception_header(marker: str, strexc: str) -> None:
     """Test `_format_exception()` header handling."""
-    exc = Exception()
-    result = _format_exception(exc, marker)
-    assert type(exc).__name__ in result
-    assert expected in result
+    exc = Exception(strexc) if strexc else Exception()
+    header = _format_exception(exc, marker).splitlines()[0]
+    assert type(exc).__name__ in header
+    assert header.startswith(f'* [{marker}] ' if marker else '')
+    assert header.endswith(f': {strexc}' if strexc else '')
 
 
 @pytest.mark.parametrize(('arguments', 'expected'), [
