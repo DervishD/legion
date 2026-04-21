@@ -1,9 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = [
-    "setuptools==80.9.0",
-    "versioningit==3.3.0"
-]
+requires = ["setuptools==80.9.0"]
 
 [dependency-groups]
 dev = [
@@ -37,6 +34,9 @@ source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
 
+[tool.setuptools.dynamic]
+version = {attr = "legion.about.VERSION"}
+
 [tool.pytest]
 pythonpath = ["src"]
 
@@ -67,11 +67,6 @@ max-line-length = 120
 enable = "all"
 disable = ["I", "too-many-lines", "too-few-public-methods"]
 allow-global-unused-variables = false
-
-[tool.versioningit.format]
-dirty = "{base_version}+{branch}.{rev}.dirty"
-distance = "{base_version}.post{distance}+{branch}.{rev}"
-distance-dirty = "{base_version}.post{distance}+{branch}.{rev}.dirty"
 
 [tool.coverage.run]
 branch = true
