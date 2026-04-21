@@ -1,4 +1,4 @@
-"""Test units for `error()` function."""
+"""Test units for `format_message()` function."""
 from string import whitespace
 
 import pytest
