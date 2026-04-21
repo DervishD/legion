@@ -122,6 +122,26 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Stringify `OSError` exception *exc* using *context*.
 
     *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
+- `generate_metadata_file(`\
+    `    output_path_factory: collections.abc.Callable[[dict[str, typing.Any]], pathlib.Path | None],`\
+    `    template: str,`\
+    `    extra_metadata: dict[str, typing.Any] | None = None`\
+    `) -> pathlib.Path | None`\
+    Generate a file by rendering a template using project metadata.
+
+    The metadata is obtained from the `pyproject.toml` file contents, if available, and it is merged with *extra_metadata* if provided (it is `None` by default) so metadata keys can be appended or overridden if necessary, and an additional key named `project_root` containing the repository root is provided as as a default value which can be later overridden via `pyproject.toml` or *extra_metadata*. If the project version is absent from `pyproject.toml` or *extra_metadata*, it is resolved dynamically and injected into the combined metadata.
+
+    The output file is generated using *output_path_factory*, which gets a copy of the retrieved metadata and returns the output `Path`. This allows the caller to produce an output file path using metadata: ```python template = '...' output_path_factory = lambda m: Path(m['project_root'] / 'src' / 'output.txt') generate_metadata_file(output_path_factory, template) ``` If the factory returns `None`, no file is generated.
+
+    The *template* is any `str.format_map()`-compatible template whose placeholders are filled from the merged metadata.
+
+    The path of the written output file is returned, or `None` if any of the steps fails:
+    - the project root cannot be determined.
+    - the `pyproject.toml` file cannot be loaded (it is not found, it is not readable, it has syntax errors, etc.).
+    - the project version cannot be resolved.
+    - the *output_path_factory* returns `None`.
+
+    **Note**: metadata dictionaries are deep-merged, so nested keys can be merged instead of entirely replaced, as would be the case with a shallow merge, which is the default for the `dict` union operator.
 - `get_credentials(`\
     `    credentials_path: pathlib.Path = pathlib.Path.home() / '.credentials'`\
     `) -> dict[str, typing.Any] | None`\
