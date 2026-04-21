@@ -1,42 +1,32 @@
 """."""
-import atexit
 import contextlib
-from importlib.metadata import PackageNotFoundError, version
-from inspect import isclass, isfunction
-import logging
-from pathlib import Path
+import sys
 
-import legion
-
-__all__ = []
-
-DEMO_BANNER = '{} package v{}\n'
-DEMO_TIMESTAMP_FMT = f'{{}}() {legion.ARROW_R} {{}}\n'
-DEMO_CONSTANT_FMT = f'{{:┄<{{}}}}{legion.ARROW_R} ⟦{{}}⟧'
+from legion import docs, ensure_utf8_output, excepthook, git_repository_root, load_pyproject
 
 
-def demo() -> None:
-    """Demonstrate package features."""
-    atexit.register(logging.shutdown)
+@ensure_utf8_output
+def main() -> None:
+    """."""
+    sys.excepthook = excepthook
 
-    logger = legion.get_logger(__name__)
-    with contextlib.suppress(PackageNotFoundError):
-        self_name = __package__ or str(Path(__file__).resolve().parent)
-        logger.info(DEMO_BANNER.format(self_name, version(self_name)))
+    if (project_root := git_repository_root()) is None:
+        msg = f'{project_root=!r}'
+        raise RuntimeError(msg)
 
-    logger.info(DEMO_TIMESTAMP_FMT.format(legion.timestamp.__name__, legion.timestamp()))
+    if (project_metadata := load_pyproject()) is None:
+        msg = f'{project_metadata=!r}'
+        raise RuntimeError(msg)
 
-    width = 0
-    constants: dict[str, str] = {}
-    for name in legion.__all__:
-        obj = vars(legion)[name]
-        if name.startswith('_') or not name.isupper() or isfunction(obj) or isclass(obj):
-            continue
-        width = max(width, len(name) + 1)
-        constants[name] = obj
+    readme_file = None
+    with contextlib.suppress(KeyError):
+        readme_file = project_metadata['project']['readme']
 
-    for constant, value in constants.items():
-        logger.info(DEMO_CONSTANT_FMT.format(constant, width, value))
+    if readme_file is None:
+        msg = f'{readme_file=!r}'
+        raise RuntimeError(msg)
+
+    (project_root / readme_file).write_text(docs(), encoding='utf-8', newline='\n')
 
 
-demo()
+sys.exit(main())
