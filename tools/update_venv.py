@@ -3,20 +3,15 @@ from pathlib import Path
 import site
 import subprocess
 import sys
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
+from legion import ensure_utf8_output
 
 if TYPE_CHECKING:
-    from io import TextIOWrapper
     from typing import Any
 
-# Reconfigure standard output streams so they use UTF-8 encoding even if
-# they are redirected to a file when running the program from a shell.
-if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
-    cast('TextIOWrapper', sys.stdout).reconfigure(encoding='utf-8')
-if sys.stderr and hasattr(sys.stdout, 'reconfigure'):
-    cast('TextIOWrapper', sys.stderr).reconfigure(encoding='utf-8')
 
-
+@ensure_utf8_output
 def main() -> int:
     """."""
     # ruff: disable[T201]
