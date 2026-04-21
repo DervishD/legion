@@ -159,12 +159,12 @@ def test_excepthook__munge_exception_args(exception: Exception, expected: list[t
     pytest.param(
         [
             FrameSummary('mock_file_1.py',  42, 'mock_func_1', line='mock_line_of_code_1'),
-            FrameSummary('mock_file_2.py',  77, 'mock_func_2', line='mock_line_of_code_2'),
+            FrameSummary('mock_file_2.py',  73, 'mock_func_2', line='mock_line_of_code_2'),
             FrameSummary('mock_file_3.py', 137, 'mock_func_3', line='mock_line_of_code_3'),
         ],
         [
             ('mock_file_1.py',  '42', 'mock_func_1', 'mock_line_of_code_1'),
-            ('mock_file_2.py',  '77', 'mock_func_2', 'mock_line_of_code_2'),
+            ('mock_file_2.py',  '73', 'mock_func_2', 'mock_line_of_code_2'),
             ('mock_file_3.py', '137', 'mock_func_3', 'mock_line_of_code_3'),
         ],
         id='test_excepthook__munge_exception_traceback_multiple_frames',
@@ -308,27 +308,27 @@ def test_excepthook__format_exception_args(
     pytest.param(
         [
             ('mock_file_1.py',  '42', 'mock_func_1', 'mock_line_of_code_1'),
-            ('mock_file_1.py',  '77', 'mock_func_1', 'mock_line_of_code_2'),
+            ('mock_file_1.py',  '73', 'mock_func_1', 'mock_line_of_code_2'),
             ('mock_file_1.py', '137', 'mock_func_1', 'mock_line_of_code_3'),
             ('mock_file_2.py',  '42', 'mock_func_2', 'mock_line_of_code_1'),
-            ('mock_file_2.py',  '77', 'mock_func_2', 'mock_line_of_code_2'),
+            ('mock_file_2.py',  '73', 'mock_func_2', 'mock_line_of_code_2'),
             ('mock_file_2.py', '137', 'mock_func_2', 'mock_line_of_code_3'),
             ('mock_file_1.py',  '42', 'mock_func_1', 'mock_line_of_code_1'),
-            ('mock_file_1.py',  '77', 'mock_func_1', 'mock_line_of_code_2'),
+            ('mock_file_1.py',  '73', 'mock_func_1', 'mock_line_of_code_2'),
             ('mock_file_1.py', '137', 'mock_func_1', 'mock_line_of_code_3'),
         ],
         (
             '  > mock_file_1.py:\n'
             '    42, mock_func_1: mock_line_of_code_1\n'
-            '    77, mock_func_1: mock_line_of_code_2\n'
+            '    73, mock_func_1: mock_line_of_code_2\n'
             '    137, mock_func_1: mock_line_of_code_3\n'
             '  > mock_file_2.py:\n'
             '    42, mock_func_2: mock_line_of_code_1\n'
-            '    77, mock_func_2: mock_line_of_code_2\n'
+            '    73, mock_func_2: mock_line_of_code_2\n'
             '    137, mock_func_2: mock_line_of_code_3\n'
             '  > mock_file_1.py:\n'
             '    42, mock_func_1: mock_line_of_code_1\n'
-            '    77, mock_func_1: mock_line_of_code_2\n'
+            '    73, mock_func_1: mock_line_of_code_2\n'
             '    137, mock_func_1: mock_line_of_code_3\n'
         ),
         id='test_excepthook__format_exception_traceback_many_files',
@@ -377,8 +377,8 @@ def test_excepthook(monkeypatch: pytest.MonkeyPatch) -> None:
     assert _format_exception_spy.calls[1] == (mock_formatted_exception, mock_exception_chain[1], {})
     assert error_spy.calls[0] == (None, (mock_formatted_message,), {})
 
-    default_format_message_args = ('Unhandled exception', (mock_formatted_exception + '\n') * 2)
-    custom_format_message_args = ('Customized header', (mock_formatted_exception + '\n') * 2)
+    default_format_message_args = ('Unhandled exception', ((mock_formatted_exception + '\n') * 2).rstrip())
+    custom_format_message_args = ('Customized header', ((mock_formatted_exception + '\n') * 2).rstrip())
     assert format_message_spy.calls[0] == (mock_formatted_message, default_format_message_args, {})
 
     excepthook(Exception, Exception(), None, heading=custom_format_message_args[0])
