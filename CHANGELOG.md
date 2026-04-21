@@ -39,15 +39,13 @@ side effects are no longer implicit.
 
 ### Added
 - Unit test framework
-- `format_message()` function, for pretty-formatting messages
 - `Logger` class, an augmented functionality logger
 - `ensure_utf8_output()` decorator for enabling `utf-8` mode in output streams
-- `excepthook()` supports exception chaining
+- `format_message()` function, for pretty-formatting messages
 - `git_repository_root()` function, for getting the current repository root path
 - `load_pyproject()` function, for loading current project's `pyproject.toml`
-
-### Fixed
-- Output of `demo()` function
+- `resolve_version()` function, for resolve version from VCS metadata
+- `excepthook()` exception chaining support
 
 
 ## [2.1.0] 2026-02-21

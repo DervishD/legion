@@ -186,6 +186,26 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
+- `resolve_version(`\
+    `    template: str = '{tag}.post{distance}+{branch}{detached}.{rev}{dirty}'`\
+    `) -> str | None`\
+    Resolve the current version from VCS metadata.
+
+    Return a version string generated from the repository VCS metadata, using the format string in *template*. If no metadata can be found, (e.g. the current working directory is not a repository, or it has no tags) then `None` is returned instead.
+
+    A default value for *template* is used if it is not provided.
+
+    The supported placeholders are:
+    - `{tag}`: The most recent version tag, without a leading `v`.
+    - `{distance}`: The number of commits since the tag.
+    - `{branch}`: Current branch name, lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set, replacing any other characters by `xxx`. It is an empty string if the repository is in the detached `HEAD` state.
+    - `{detached}`: The string `detached` when the repository is in the detached `HEAD` state, otherwise it is an empty string.
+    - `{rev}`: Abbreviated commit hash, without a leading `g`.
+    - `{dirty}`: The string `.dirty` if the working tree has uncommitted changes, otherwise an empty string.
+
+    All placeholders are optional, unused ones are silently ignored, but `KeyError` is raised if unknown placeholders are used in *template*.
+
+    **NOTE**: with the default *template* the produced version string is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). All the supported placeholders produce fully compliant strings, too. To keep the resolved version string fully compliant, use only `+` as the local version specifier separator, and `.` as general separator.
 - `run(`\
     `    command: collections.abc.Sequence[str],`\
     `    **kwargs: typing.Any`\
