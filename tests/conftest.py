@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from legion import get_logger, Logger
-from tests.helpers import LoggingPaths
+
+from .helpers import LoggingPaths
 
 if TYPE_CHECKING:
     from collections.abc import Generator

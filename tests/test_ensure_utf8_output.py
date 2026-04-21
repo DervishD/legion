@@ -3,7 +3,8 @@ import sys
 from typing import TYPE_CHECKING
 
 from legion import ensure_utf8_output
-from tests.helpers import CallableSpy
+
+from .helpers import CallableSpy
 
 if TYPE_CHECKING:
     import pytest

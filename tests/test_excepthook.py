@@ -16,7 +16,8 @@ from legion import (
     _munge_exception_traceback,
     excepthook,
 )
-from tests.helpers import CallableSpy
+
+from .helpers import CallableSpy
 
 if TYPE_CHECKING:
     from types import TracebackType

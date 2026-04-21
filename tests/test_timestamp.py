@@ -2,7 +2,8 @@
 from typing import TYPE_CHECKING
 
 from legion import timestamp
-from tests.helpers import CallableSpy
+
+from .helpers import CallableSpy
 
 if TYPE_CHECKING:
     import pytest

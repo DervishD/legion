@@ -5,7 +5,8 @@ import subprocess
 import pytest
 
 from legion import git_repository_root
-from tests.helpers import CallableSpy
+
+from .helpers import CallableSpy
 
 
 @pytest.mark.parametrize(('cwd', 'returncode', 'stdout' , 'expected'), [

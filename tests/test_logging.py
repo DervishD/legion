@@ -5,12 +5,13 @@ from typing import NamedTuple, TYPE_CHECKING
 import pytest
 
 from legion import get_logger, Logger
-from tests.helpers import LoggingFields, parse_logfile
+
+from .helpers import LoggingFields, parse_logfile
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from tests.helpers import LoggingPaths
+    from .helpers import LoggingPaths
 
 
 # pylint: disable-next=unused-variable

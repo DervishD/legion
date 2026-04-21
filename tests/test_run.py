@@ -5,7 +5,8 @@ import sys
 import pytest
 
 from legion import run
-from tests.helpers import CallableSpy
+
+from .helpers import CallableSpy
 
 
 @pytest.mark.parametrize(('platform', 'input_kwargs', 'expected_kwargs'), [

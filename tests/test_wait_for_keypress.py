@@ -9,7 +9,8 @@ from legion import (
     _is_attached_console_transient,  # pyright: ignore[reportPrivateUsage]
     wait_for_keypress,
 )
-from tests.helpers import CallableSpy
+
+from .helpers import CallableSpy
 
 if TYPE_CHECKING:
     from collections.abc import Callable
