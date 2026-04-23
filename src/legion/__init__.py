@@ -68,10 +68,17 @@ if sys.platform == 'win32':
 
 
 class Logger(logging.Logger):
-    """Augmented functionality logger.
+    """Highly opinionated, extended logger.
 
     Drop-in replacement for `logging.Logger` with indentation support,
     multiline records and a simple but powerful configuration helper.
+
+    It is intentionally opinionated about how logging should work, and
+    although it provides a convenient configuration helper, it enforces
+    a specific application-level logging model. For this reason, it is
+    generally not suitable for reusable library modules. Its intended
+    audience is applications, where authoritative logging configuration
+    and consistent output are desirable.
 
     Example usage:
     ```python
@@ -85,14 +92,14 @@ class Logger(logging.Logger):
     logger = logging.getLogger(__name__)
 
     # Option 2: Use `legion` provided shortcut to get a logger directly.
-    logger = legion.getlogger(__name__)
+    logger = legion.get_logger(__name__)
 
     # Then configure the logger with default or custom settings:
     logger.config()  # Check method documentation below for details.
 
     ```
 
-    The differences from `logging.Logger` are in the following methods:
+    The following methods differ from or extend `logging.Logger`:
     """
 
     LEVELNAME_MAX_LEN = len(max(logging.getLevelNamesMapping(), key=len))

@@ -7,10 +7,17 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
 ## API reference
 - `Logger`\
-    Augmented functionality logger.
+    Highly opinionated, extended logger.
 
     Drop-in replacement for `logging.Logger` with indentation support,
     multiline records and a simple but powerful configuration helper.
+
+    It is intentionally opinionated about how logging should work, and
+    although it provides a convenient configuration helper, it enforces
+    a specific application-level logging model. For this reason, it is
+    generally not suitable for reusable library modules. Its intended
+    audience is applications, where authoritative logging configuration
+    and consistent output are desirable.
 
     Example usage:
     ```python
@@ -24,14 +31,14 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     logger = logging.getLogger(__name__)
 
     # Option 2: Use `legion` provided shortcut to get a logger directly.
-    logger = legion.getlogger(__name__)
+    logger = legion.get_logger(__name__)
 
     # Then configure the logger with default or custom settings:
     logger.config()  # Check method documentation below for details.
 
     ```
 
-    The differences from `logging.Logger` are in the following methods:
+    The following methods differ from or extend `logging.Logger`:
     - `makeRecord(`\
         `    *args: typing.Any,`\
         `    **kwargs: typing.Any`\
@@ -167,7 +174,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
 
-    This is a convenience function to avoid having to register the class by hand, instantiante the logger, restore the previous class, etc.
+    This is a convenience function to avoid having to register the class by hand, instantiate the logger, restore the previous class, etc.
 - `git_repository_root(`\
     `    cwd: pathlib.Path | None = None`\
     `) -> pathlib.Path | None`\
