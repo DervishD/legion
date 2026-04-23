@@ -175,6 +175,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     This function temporarily registers `legion.Logger` as the default logger class, so the returned logger type is always guaranteed to be `legion.Logger`, no matter what other logger classes are registered.
 
     This is a convenience function to avoid having to register the class by hand, instantiate the logger, restore the previous class, etc.
+
+    If a logger named *name* already exists in the logging registry, but under a different class, the function raises. This can happen if for some reason `logging.getLogger()` (or a different logger class) is used to create a logger with the same name before this function was called. The exception argument is the actual fully qualified type of the existing logger.
 - `git_repository_root(`\
     `    cwd: pathlib.Path | None = None`\
     `) -> pathlib.Path | None`\

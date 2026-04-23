@@ -15,6 +15,19 @@ if TYPE_CHECKING:
 
 
 # pylint: disable-next=unused-variable
+def test_logging_get_logger_raises() -> None:
+    """Test that `get_logger()` raises `TypeError` when it should."""
+    name = '__logger_name_to_force_get_logger_to_raise_TypeError__'
+    logger = logging.getLogger(name)
+
+    with pytest.raises(TypeError) as excinfo:
+        get_logger(name)
+
+    assert excinfo.value.args[0] == f'{type(logger).__module__}.{type(logger).__name__}'
+    logging.shutdown()
+
+
+# pylint: disable-next=unused-variable
 def test_logging_paths_creation(logging_paths: LoggingPaths) -> None:
     """Test that the logging paths are created propertly."""
     assert not logging_paths.main.is_file()

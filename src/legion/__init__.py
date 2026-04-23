@@ -836,14 +836,27 @@ def get_logger(name: str) -> Logger:
     `legion.Logger`, no matter what other logger classes are registered.
 
     This is a convenience function to avoid having to register the class
-    by hand, instantiante the logger, restore the previous class, etc.
+    by hand, instantiate the logger, restore the previous class, etc.
+
+    If a logger named *name* already exists in the logging registry, but
+    under a different class, the function raises. This can happen if for
+    some reason `logging.getLogger()` (or a different logger class) is
+    used to create a logger with the same name before this function was
+    called. The exception argument is the actual fully qualified type of
+    the existing logger.
     """
     previous = logging.getLoggerClass()
     logging.setLoggerClass(Logger)
+    logger = None
     try:
-        return cast('Logger', logging.getLogger(name))
+        logger = logging.getLogger(name)
     finally:
         logging.setLoggerClass(previous)
+
+    if not isinstance(logger, Logger):
+        wrong_type = f'{type(logger).__module__}.{type(logger).__name__}'
+        raise TypeError(wrong_type)
+    return logger
 
 
 def git_repository_root(cwd: Path | None = None) -> Path | None:
