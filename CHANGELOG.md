@@ -39,7 +39,7 @@ side effects are no longer implicit.
 
 ### Added
 - Unit test framework
-- `Logger` class
+- `LegionLogger` class
 - `ensure_utf8_output()` function
 - `format_message()` function
 - `generate_metadata_file()` function

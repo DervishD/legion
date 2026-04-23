@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 
 __all__: list[str] = [  # pylint: disable=unused-variable
-    'Logger',
+    'LegionLogger',
     'docs',
     'ensure_utf8_output',
     'excepthook',
@@ -67,7 +67,7 @@ if sys.platform == 'win32':
     from msvcrt import get_osfhandle, getch
 
 
-class Logger(logging.Logger):
+class LegionLogger(logging.Logger):
     """Highly opinionated, extended logger.
 
     Drop-in replacement for `logging.Logger` with indentation support,
@@ -825,7 +825,7 @@ def get_desktop_path() -> Path | None:
     return None
 
 
-def get_logger(name: str) -> Logger:
+def get_logger(name: str) -> LegionLogger:
     """Get an instance of `legion.Logger` with the specified *name*.
 
     Unlike `logging.getLogger()`, the argument is **not** optional, so
@@ -846,14 +846,14 @@ def get_logger(name: str) -> Logger:
     the existing logger.
     """
     previous = logging.getLoggerClass()
-    logging.setLoggerClass(Logger)
+    logging.setLoggerClass(LegionLogger)
     logger = None
     try:
         logger = logging.getLogger(name)
     finally:
         logging.setLoggerClass(previous)
 
-    if not isinstance(logger, Logger):
+    if not isinstance(logger, LegionLogger):
         wrong_type = f'{type(logger).__module__}.{type(logger).__name__}'
         raise TypeError(wrong_type)
     return logger

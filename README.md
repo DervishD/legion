@@ -6,7 +6,7 @@
 Since this is many, it's *legion*. This package (currently, a single module) contains miscellaneous functions and constants used in some of the maintenance scripts of my private system. It is shared publicly in case the code may be useful to others.
 
 ## API reference
-- `Logger`\
+- `LegionLogger`\
     Highly opinionated, extended logger.
 
     Drop-in replacement for `logging.Logger` with indentation support,
@@ -167,7 +167,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     If the directory could not be determined, `None` is returned. Even if the directory can be determined, it **may not** exist.
 - `get_logger(`\
     `    name: str`\
-    `) -> Logger`\
+    `) -> LegionLogger`\
     Get an instance of `legion.Logger` with the specified *name*.
 
     Unlike `logging.getLogger()`, the argument is **not** optional, so the root logger is **never** returned by default.

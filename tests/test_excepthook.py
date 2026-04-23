@@ -364,7 +364,7 @@ def test_excepthook(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr('legion._get_exception_chain', _get_exception_chain_spy)
     monkeypatch.setattr('legion._format_exception', _format_exception_spy)
     monkeypatch.setattr('legion.format_message', format_message_spy)
-    monkeypatch.setattr('legion.Logger.error', error_spy)
+    monkeypatch.setattr('legion.LegionLogger.error', error_spy)
 
     exc = Exception()
     excepthook(Exception, exc, None)

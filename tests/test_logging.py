@@ -4,7 +4,7 @@ from typing import NamedTuple, TYPE_CHECKING
 
 import pytest
 
-from legion import get_logger, Logger
+from legion import get_logger, LegionLogger
 
 from .helpers import LoggingFields, parse_logfile
 
@@ -103,7 +103,7 @@ class OutputSpec(NamedTuple):
 def test_logging_functions(  # noqa: PLR0913
     request: pytest.FixtureRequest,
     capsys: pytest.CaptureFixture[str],
-    logger: Logger,
+    logger: LegionLogger,
     logging_paths: LoggingPaths,
     logging_function_name: str,
     output_spec: OutputSpec,
@@ -146,7 +146,7 @@ def test_logging_functions(  # noqa: PLR0913
     pytest.param('\bLeading and trailing newline.\n', id='test_logging_honor_both_newlines'),
 ])
 # pylint: disable-next=unused-variable
-def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: Logger, message: str) -> None:
+def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger: LegionLogger, message: str) -> None:
     """Test whether whitespace is honored where it should."""
     terminator = '<TERMINATOR>'
 
@@ -160,7 +160,7 @@ def test_logging_whitespace_honoring(capsys: pytest.CaptureFixture[str], logger:
 
 
 # pylint: disable-next=unused-variable
-def test_logging_indentation(logger: Logger) -> None:
+def test_logging_indentation(logger: LegionLogger) -> None:
     """Test that logging requested indentation is honored."""
     assert logger.indentation == ''  # pylint: disable=use-implicit-booleaness-not-comparison-to-string
 
