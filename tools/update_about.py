@@ -30,10 +30,11 @@ def main() -> int | str:
     def output_path_factory(m: dict[str, Any]) -> Path:
         return m['project_root'] / 'src' / m['project']['name'] / 'about.py'
 
-    if (release := resolve_version('{tag}')) is None:
+    if (release := resolve_version('{tag}.{distance}')) is None:
         return 'Release cannot be determined.'
+    tag, _, distance = release.rpartition('.')
 
-    extra_metadata = {'release': release}
+    extra_metadata = {'release': tag if distance == '0' else f'{tag}.post0'}
     if (about_py_file := generate_metadata_file(output_path_factory, TEMPLATE, extra_metadata)) is None:
         return f"Error generating metadata file at '{about_py_file}'."
 
