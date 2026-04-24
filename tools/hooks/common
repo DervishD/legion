@@ -1,0 +1,17 @@
+#!/bin/sh
+
+die() {
+    echo "$1";
+    exit 1;
+}
+
+update_about() {
+    python tools/update_about.py || die 'The about.py file could not be generated.'
+    pip install -q -e . || die 'The editable install could not be updated.'
+}
+
+if [ -f .venv/Scripts/activate ]; then
+    . .venv/Scripts/activate
+else
+    . .venv/bin/activate
+fi

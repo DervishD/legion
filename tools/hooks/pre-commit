@@ -1,22 +1,14 @@
 #!/bin/sh
-#
-# Check that documentation is up-to-date and corresponds to the current
-# code that is going to be committed (if any).
+. "$(dirname "$0")/common"
 
-SELF_DOCUMENTING_CODE="src/legion/__init__.py"
-GENERATED_DOCUMENTATION="README.md"
+SELF_DOCUMENTING_CODE='src/legion/__init__.py'
+GENERATED_DOCUMENTATION='README.md'
 
-if ! git diff --cached --name-only | grep -q "^$SELF_DOCUMENTING_CODE$"
-then
-    exit 0
-fi
+update_about
+git add '**/about.py'
 
-.venv/Scripts/python.exe -m legion
+git diff --cached --name-only | grep -q "^$SELF_DOCUMENTING_CODE$" || exit 0
 
-if ! git diff --quiet $GENERATED_DOCUMENTATION
-then
-  echo "$GENERATED_DOCUMENTATION is out of date."
-  exit 1
-fi
+python -m legion || die "Failed to generate $GENERATED_DOCUMENTATION."
 
-exit 0
+git diff --quiet $GENERATED_DOCUMENTATION || die "$GENERATED_DOCUMENTATION is out of date."
