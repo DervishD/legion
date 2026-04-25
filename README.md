@@ -1,4 +1,4 @@
-# legion 2.1.0.post0
+# legion 
 
 > 'What is your name?'\
 > 'My name is Legion,' he replied, 'for we are many.'
@@ -129,26 +129,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     Stringify `OSError` exception *exc* using *context*.
 
     *context* is typically used to indicate what exactly was the caller doing when the exception was raised.
-- `generate_metadata_file(`\
-    `    output_path_factory: collections.abc.Callable[[dict[str, typing.Any]], pathlib.Path | None],`\
-    `    template: str,`\
-    `    extra_metadata: dict[str, typing.Any] | None = None`\
-    `) -> pathlib.Path | None`\
-    Generate a file by rendering a template using project metadata.
-
-    The metadata is obtained from the `pyproject.toml` file contents, if available, and it is merged with *extra_metadata* if provided (it is `None` by default) so metadata keys can be appended or overridden if necessary, and an additional key named `project_root` containing the repository root is provided as as a default value which can be later overridden via `pyproject.toml` or *extra_metadata*. If the project version is absent from `pyproject.toml` or *extra_metadata*, it is resolved dynamically and injected into the combined metadata.
-
-    The output file is generated using *output_path_factory*, which gets a copy of the retrieved metadata and returns the output `Path`. This allows the caller to produce an output file path using metadata: ```python template = '...' output_path_factory = lambda m: Path(m['project_root'] / 'src' / 'output.txt') generate_metadata_file(output_path_factory, template) ``` If the factory returns `None`, no file is generated.
-
-    The *template* is any `str.format_map()`-compatible template whose placeholders are filled from the merged metadata.
-
-    The path of the written output file is returned, or `None` if any of the steps fails:
-    - the project root cannot be determined.
-    - the `pyproject.toml` file cannot be loaded (it is not found, it is not readable, it has syntax errors, etc.).
-    - the project version cannot be resolved.
-    - the *output_path_factory* returns `None`.
-
-    **Note**: metadata dictionaries are deep-merged, so nested keys can be merged instead of entirely replaced, as would be the case with a shallow merge, which is the default for the `dict` union operator.
 - `get_credentials(`\
     `    credentials_path: pathlib.Path = pathlib.Path.home() / '.credentials'`\
     `) -> dict[str, typing.Any] | None`\
@@ -177,6 +157,36 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     This is a convenience function to avoid having to register the class by hand, instantiate the logger, restore the previous class, etc.
 
     If a logger named *name* already exists in the logging registry, but under a different class, the function raises. This can happen if for some reason `logging.getLogger()` (or a different logger class) is used to create a logger with the same name before this function was called. The exception argument is the actual fully qualified type of the existing logger.
+- `get_project_metadata() -> dict[str, typing.Any] | None`\
+    Get all available project metadata as a dictionary.
+
+    The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`. Additional metadata is provided on extra keys at dictionary root, for convenience:
+    - `version`: version metadata as returned by `resolve_version()`.
+    - `pyproject_root`: fully resolved repository root directory.
+    - `timestamp`: timestamp, in '%Y-%m-%d %H:%M:%S' format.
+
+    The returned dictionary is multilevel. This means that shallow copy, shallow merge and the union operator will not work as expected. This dictionary needs to be deep-copied and deep-merged instead.
+
+    `None` is returned in any of these situations:
+    - the project root cannot be determined.
+    - the `pyproject.toml` file cannot be loaded (it is not found, it is not readable, it has syntax errors, etc.).
+    - the project version cannot be resolved.
+- `get_version_metadata() -> dict[str, str] | None`\
+    Get version metadata from repository current state.
+
+    Return a dictionary containing version metadata, which is built from VCS information reflecting the current state of the repository.
+
+    `None` is returned if no version metadata can be found, e.g. if the current working directory is not a repository, or it has no tags.
+
+    The returned dictionary contains the following keys:
+    - `tag`: the most recent version tag, without a leading `v`.
+    - `distance`: the number of commits since the `tag`.
+    - `branch`: current branch name, but lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set, replacing any other characters by `xxx`. It is an empty string if the repository is in the detached `HEAD` state.
+    - `detached`: the `detached` string if the repository is in detached `HEAD` state, otherwise it is an empty string.
+    - `rev`: abbreviated commit hash, without a leading `g`.
+    - `dirty`: The `.dirty` string when the working tree has uncommitted changes, otherwise an empty string.
+
+    **NOTE**: is up to the caller to use the returned metadata to create a version string which is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). The dictionary values are guaranteed to be fully compliant strings.
 - `git_repository_root(`\
     `    cwd: pathlib.Path | None = None`\
     `) -> pathlib.Path | None`\
@@ -215,26 +225,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
-- `resolve_version(`\
-    `    template: str = '{tag}.post{distance}+{branch}{detached}.{rev}{dirty}'`\
-    `) -> str | None`\
-    Resolve the current version from VCS metadata.
-
-    Return a version string generated from the repository VCS metadata, using the format string in *template*. If no metadata can be found, (e.g. the current working directory is not a repository, or it has no tags) then `None` is returned instead.
-
-    A default value for *template* is used if it is not provided.
-
-    The supported placeholders are:
-    - `{tag}`: The most recent version tag, without a leading `v`.
-    - `{distance}`: The number of commits since the tag.
-    - `{branch}`: Current branch name, lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set, replacing any other characters by `xxx`. It is an empty string if the repository is in the detached `HEAD` state.
-    - `{detached}`: The string `detached` when the repository is in the detached `HEAD` state, otherwise it is an empty string.
-    - `{rev}`: Abbreviated commit hash, without a leading `g`.
-    - `{dirty}`: The string `.dirty` if the working tree has uncommitted changes, otherwise an empty string.
-
-    All placeholders are optional, unused ones are silently ignored, but `KeyError` is raised if unknown placeholders are used in *template*.
-
-    **NOTE**: with the default *template* the produced version string is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). All the supported placeholders produce fully compliant strings, too. To keep the resolved version string fully compliant, use only `+` as the local version specifier separator, and `.` as general separator.
 - `run(`\
     `    command: collections.abc.Sequence[str],`\
     `    **kwargs: typing.Any`\

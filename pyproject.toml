@@ -34,6 +34,17 @@ source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
 
+[tool.metadata]
+template = '''
+    """Auto generated, do not edit."""
+    # {timestamp}
+
+    # pylint: disable=unused-variable
+    PROGRAM_NAME = {project[name]!r}
+    VERSION = {version!r}
+    RELEASE = {release!r}
+'''
+
 [tool.setuptools.dynamic]
 version = {attr = "legion.about.VERSION"}
 

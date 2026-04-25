@@ -1,7 +1,7 @@
 """Auto generated, do not edit."""
-# 2026-04-24 23:19:59
+# 2026-04-25 11:57:10
 
 # pylint: disable=unused-variable
 PROGRAM_NAME = 'legion'
-VERSION = '2.1.0.post151+development.ba47eb9.dirty'
-RELEASE = '2.1.0.post0'
+VERSION = '' # {'tag': '2.1.0', 'distance': '152', 'branch': 'development', 'detached': '', 'rev': '2882a40', 'dirty': '.dirty'}
+RELEASE = ''

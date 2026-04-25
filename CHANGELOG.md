@@ -42,7 +42,7 @@ side effects are no longer implicit.
 - `LegionLogger` class
 - `ensure_utf8_output()` function
 - `format_message()` function
-- `generate_metadata_file()` function
+- `get_project_metadata()` function
 - `git_repository_root()` function
 - `load_pyproject()` function
 - `resolve_version()` function

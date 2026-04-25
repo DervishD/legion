@@ -12,7 +12,6 @@ case the code may be useful to others.
 {}
 """  # noqa: D400, D415
 import ast
-from collections.abc import Mapping
 import contextlib
 from errno import errorcode
 import functools
@@ -47,10 +46,10 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'excepthook',
     'format_message',
     'format_oserror',
-    'generate_metadata_file',
     'get_credentials',
     'get_desktop_path',
     'get_logger',
+    'get_project_metadata',
     'git_repository_root',
     'load_pyproject',
     'munge_oserror',
@@ -701,76 +700,6 @@ def format_oserror(context: str, exc: OSError) -> str:
     return f'{exc_label} [{munged['errcodes']}] {context} {paths}.\n{munged['strerror']}.'
 
 
-def _deep_merge(defaults: Mapping[str, Any], overrides: Mapping[str, Any]) -> dict[str, Any]:
-    result = dict(defaults)
-    for key, value in overrides.items():
-        if key in result and isinstance(result[key], Mapping) and isinstance(value, Mapping):
-            result[key] = _deep_merge(result[key], cast('Mapping[str, Any]', value))
-        else:
-            result[key] = value
-    return result
-
-
-def generate_metadata_file(
-    output_path_factory: Callable[[dict[str, Any]], Path | None],
-    template: str,
-    extra_metadata: dict[str, Any] | None = None,
-) -> Path | None:
-    """Generate a file by rendering a template using project metadata.
-
-    The metadata is obtained from the `pyproject.toml` file contents, if
-    available, and it is merged with *extra_metadata* if provided (it is
-    `None` by default) so metadata keys can be appended or overridden if
-    necessary, and an additional key named `project_root` containing the
-    repository root is provided as as a default value which can be later
-    overridden via `pyproject.toml` or *extra_metadata*. If the project
-    version is absent from `pyproject.toml` or *extra_metadata*, it is
-    resolved dynamically and injected into the combined metadata.
-
-    The output file is generated using *output_path_factory*, which gets
-    a copy of the retrieved metadata and returns the output `Path`. This
-    allows the caller to produce an output file path using metadata:
-    ```python
-    template = '...'
-    output_path_factory = lambda m: Path(m['project_root'] / 'src' / 'output.txt')
-    generate_metadata_file(output_path_factory, template)
-    ```
-    If the factory returns `None`, no file is generated.
-
-    The *template* is any `str.format_map()`-compatible template whose
-    placeholders are filled from the merged metadata.
-
-    The path of the written output file is returned, or `None` if any of
-    the steps fails:
-    - the project root cannot be determined.
-    - the `pyproject.toml` file cannot be loaded (it is not found, it is
-    not readable, it has syntax errors, etc.).
-    - the project version cannot be resolved.
-    - the *output_path_factory* returns `None`.
-
-    **Note**: metadata dictionaries are deep-merged, so nested keys can
-    be merged instead of entirely replaced, as would be the case with a
-    shallow merge, which is the default for the `dict` union operator.
-    """
-    if (project_root := git_repository_root()) is None:
-        return None
-
-    if (package_metadata := load_pyproject(project_root)) is None:
-        return None
-
-    full_metadata = _deep_merge({'project_root': project_root} | package_metadata, extra_metadata or {})
-
-    if 'version' not in full_metadata.get('project', {}):
-        if (version := resolve_version()) is None:
-            return None
-        full_metadata['project']['version'] = version
-
-    if (output_path := output_path_factory(full_metadata)) is not None:
-        output_path.write_text(template.format_map(full_metadata), encoding='utf-8')
-
-    return output_path
-
-
 def get_credentials(credentials_path: Path = Path.home() / '.credentials') -> dict[str, Any] | None:  # noqa: B008
     """Read credentials from *credentials_path*.
 
@@ -857,6 +786,43 @@ def get_logger(name: str) -> LegionLogger:
         wrong_type = f'{type(logger).__module__}.{type(logger).__name__}'
         raise TypeError(wrong_type)
     return logger
+
+
+def get_project_metadata() -> dict[str, Any] | None:
+    """Get all available project metadata as a dictionary.
+
+    The metadata is obtained from the `pyproject.toml` file contents, so
+    the returned dictionary mimics the keys and values structure within
+    the file, as parsed by `tomllib`. Additional metadata is provided on
+    extra keys at dictionary root, for convenience:
+    - `version`: version metadata as returned by `resolve_version()`.
+    - `pyproject_root`: fully resolved repository root directory.
+    - `timestamp`: timestamp, in '%Y-%m-%d %H:%M:%S' format.
+
+    The returned dictionary is multilevel. This means that shallow copy,
+    shallow merge and the union operator will not work as expected. This
+    dictionary needs to be deep-copied and deep-merged instead.
+
+    `None` is returned in any of these situations:
+    - the project root cannot be determined.
+    - the `pyproject.toml` file cannot be loaded (it is not found, it is
+    not readable, it has syntax errors, etc.).
+    - the project version cannot be resolved.
+    """
+    if (project_root := git_repository_root()) is None:
+        return None
+
+    if (project_metadata := load_pyproject(project_root)) is None:
+        return None
+
+    if (version_metadata := resolve_version()) is None:
+        return None
+
+    project_metadata['version'] = version_metadata
+    project_metadata['project_root'] = project_root
+    project_metadata['timestamp'] = timestamp('%Y-%m-%d %H:%M:%S')
+
+    return project_metadata
 
 
 def git_repository_root(cwd: Path | None = None) -> Path | None:
