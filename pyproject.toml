@@ -41,7 +41,7 @@ template = '''
 
     # pylint: disable=unused-variable
     PROGRAM_NAME = {project[name]!r}
-    VERSION = {version!r}
+    VERSION = '{version[tag]}.post{version[distance]}+{version[branch]}{version[detached]}.{version[rev]}{version[dirty]}'
     RELEASE = {release!r}
 '''
 

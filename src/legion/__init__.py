@@ -50,10 +50,10 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'get_desktop_path',
     'get_logger',
     'get_project_metadata',
+    'get_version_metadata',
     'git_repository_root',
     'load_pyproject',
     'munge_oserror',
-    'resolve_version',
     'run',
     'timestamp',
     'wait_for_keypress',
@@ -815,7 +815,7 @@ def get_project_metadata() -> dict[str, Any] | None:
     if (project_metadata := load_pyproject(project_root)) is None:
         return None
 
-    if (version_metadata := resolve_version()) is None:
+    if (version_metadata := get_version_metadata()) is None:
         return None
 
     project_metadata['version'] = version_metadata
@@ -823,6 +823,62 @@ def get_project_metadata() -> dict[str, Any] | None:
     project_metadata['timestamp'] = timestamp('%Y-%m-%d %H:%M:%S')
 
     return project_metadata
+
+
+def get_version_metadata() -> dict[str, str] | None:
+    """Get version metadata from repository current state.
+
+    Return a dictionary containing version metadata, which is built from
+    VCS information reflecting the current state of the repository.
+
+    `None` is returned if no version metadata can be found, e.g. if the
+    current working directory is not a repository, or it has no tags.
+
+    The returned dictionary contains the following keys:
+    - `tag`: the most recent version tag, without a leading `v`.
+    - `distance`: the number of commits since the `tag`.
+    - `branch`: current branch name, but lowercased and sanitized, so it
+    only contains characters in the `[a-z0-9]` set, replacing any other
+    characters by `xxx`. It is an empty string if the repository is in
+    the detached `HEAD` state.
+    - `detached`: the `detached` string if the repository is in detached
+    `HEAD` state, otherwise it is an empty string.
+    - `rev`: abbreviated commit hash, without a leading `g`.
+    - `dirty`: The `.dirty` string when the working tree has uncommitted
+    changes, otherwise an empty string.
+
+    **NOTE**: is up to the caller to use the returned metadata to create
+    a version string which is fully compliant with the
+    [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme).
+    The dictionary values are guaranteed to be fully compliant strings.
+    """
+    branch_name_escape_sequence = 'xxx'
+    dirty_marker = 'dirty'
+    detached_head_marker = 'detached'
+
+    if (result := run(['git', 'describe', '--long', f'--dirty=-{dirty_marker}'])).returncode:
+        return None
+
+    components = result.stdout.strip().split('-')
+
+    dirty = f'.{dirty_marker}' if components[-1] == dirty_marker else ''
+    tag, distance, rev = components[0:3]
+
+    detached = ''
+    branch = ''
+    if not (result := run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])).returncode:
+        branch = re.sub(r'[^a-z0-9]', branch_name_escape_sequence, result.stdout.strip().lower())
+    else:
+        detached = detached_head_marker
+
+    return {
+        'tag': tag.removeprefix('v'),
+        'distance': distance,
+        'branch': branch,
+        'detached': detached,
+        'rev': rev.removeprefix('g'),
+        'dirty': dirty,
+    }
 
 
 def git_repository_root(cwd: Path | None = None) -> Path | None:
@@ -910,70 +966,6 @@ def munge_oserror(exc: OSError) -> dict[str, str | None]:
         'filename1': fsdecode(exc.filename) if isinstance(exc.filename, bytes) else exc.filename,
         'filename2': fsdecode(exc.filename2) if isinstance(exc.filename2, bytes) else exc.filename2,
     }
-
-
-def resolve_version(template: str = '{tag}.post{distance}+{branch}{detached}.{rev}{dirty}') -> str | None:
-    """Resolve the current version from VCS metadata.
-
-    Return a version string generated from the repository VCS metadata,
-    using the format string in *template*. If no metadata can be found,
-    (e.g. the current working directory is not a repository, or it has
-    no tags) then `None` is returned instead.
-
-    A default value for *template* is used if it is not provided.
-
-    The supported placeholders are:
-    - `{tag}`: The most recent version tag, without a leading `v`.
-    - `{distance}`: The number of commits since the tag.
-    - `{branch}`: Current branch name, lowercased and sanitized, so it
-    only contains characters in the `[a-z0-9]` set, replacing any other
-    characters by `xxx`. It is an empty string if the repository is in
-    the detached `HEAD` state.
-    - `{detached}`: The string `detached` when the repository is in the
-    detached `HEAD` state, otherwise it is an empty string.
-    - `{rev}`: Abbreviated commit hash, without a leading `g`.
-    - `{dirty}`: The string `.dirty` if the working tree has uncommitted
-    changes, otherwise an empty string.
-
-    All placeholders are optional, unused ones are silently ignored, but
-    `KeyError` is raised if unknown placeholders are used in *template*.
-
-    **NOTE**: with the default *template* the produced version string is
-    fully compliant with the
-    [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme).
-    All the supported placeholders produce fully compliant strings, too.
-    To keep the resolved version string fully compliant, use only `+` as
-    the local version specifier separator, and `.` as general separator.
-    """
-    branch_name_escape_sequence = 'xxx'
-    dirty_marker = 'dirty'
-    detached_head_marker = 'detached'
-
-    if (result := run(['git', 'describe', '--long', f'--dirty=-{dirty_marker}'])).returncode:
-        return None
-
-    components = result.stdout.strip().split('-')
-
-    dirty = f'.{dirty_marker}' if components[-1] == dirty_marker else ''
-    tag, distance, rev = components[0:3]
-
-    detached = ''
-    branch = ''
-    if not (result := run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])).returncode:
-        branch = re.sub(r'[^a-z0-9]', branch_name_escape_sequence, result.stdout.strip().lower())
-    else:
-        detached = detached_head_marker
-
-    placeholders = {
-        'tag': tag.removeprefix('v'),
-        'distance': distance,
-        'branch': branch,
-        'detached': detached,
-        'rev': rev.removeprefix('g'),
-        'dirty': dirty,
-    }
-
-    return template.format_map(placeholders)
 
 
 def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401

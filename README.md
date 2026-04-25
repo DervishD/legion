@@ -1,4 +1,4 @@
-# legion 
+# legion 2.1.0.post0
 
 > 'What is your name?'\
 > 'My name is Legion,' he replied, 'for we are many.'
