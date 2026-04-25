@@ -9,7 +9,6 @@ from legion import ensure_utf8_output, excepthook, get_project_metadata
 @ensure_utf8_output
 def main() -> int | str:
     """."""
-    # ruff: disable[T201]
     sys.excepthook = excepthook
 
     if (project_metadata := get_project_metadata()) is None:
@@ -24,9 +23,8 @@ def main() -> int | str:
     extra_metadata = {'release': tag if project_metadata['version']['distance'] == '0' else f'{tag}.post0'}
     output_path.resolve().write_text(template.format_map(project_metadata | extra_metadata), newline='\n')
 
-    print(output_path, end='')
+    print(output_path, end='')  # noqa: T201
     return 0
-    # ruff: enable[T201]
 
 
 if __name__ == '__main__':
