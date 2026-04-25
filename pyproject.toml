@@ -34,7 +34,8 @@ source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
 
-[tool.metadata]
+[tool.colophon]
+path = 'src/{project[name]}/about.py'
 template = '''
     """Auto generated, do not edit."""
     # {timestamp}

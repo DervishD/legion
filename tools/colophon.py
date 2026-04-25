@@ -15,14 +15,16 @@ def main() -> int | str:
     if (project_metadata := get_project_metadata()) is None:
         return 'Error geting project metadata.'
 
-    output_path = Path(project_metadata['project_root']) / 'src' / project_metadata['project']['name'] / 'about.py'
-    template = dedent(project_metadata['tool']['metadata']['template'])
+    project_root = Path(project_metadata['project_root']).resolve()
+    config = project_metadata['tool'][Path(__file__).stem]
+    output_path = project_root / config['path'].format_map(project_metadata)
+    template = dedent(config['template'])
 
     tag = project_metadata['version']['tag']
     extra_metadata = {'release': tag if project_metadata['version']['distance'] == '0' else f'{tag}.post0'}
     output_path.resolve().write_text(template.format_map(project_metadata | extra_metadata), newline='\n')
 
-    print(f"Generated metadata file at '{output_path}'")
+    print(output_path, end='')
     return 0
     # ruff: enable[T201]
 

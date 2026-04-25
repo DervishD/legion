@@ -4,8 +4,8 @@
 SELF_DOCUMENTING_CODE='src/legion/__init__.py'
 GENERATED_DOCUMENTATION='README.md'
 
-update_about
-git add '**/about.py'
+update_colophon
+git add "$COLOPHON_PATH"
 
 git diff --cached --name-only | grep -q "^$SELF_DOCUMENTING_CODE$" || exit 0
 

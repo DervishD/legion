@@ -5,9 +5,9 @@ die() {
     exit 1;
 }
 
-update_about() {
-    python tools/update_about.py || die 'The about.py file could not be generated.'
-    pip install -q -e . || die 'The editable install could not be updated.'
+update_colophon() {
+    COLOPHON_PATH=$(python tools/colophon.py) || die 'The colophon file could not be generated.'
+    # pip install -q -e . || die 'The editable install could not be updated.'
 }
 
 if [ -f .venv/Scripts/activate ]; then
