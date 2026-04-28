@@ -996,6 +996,23 @@ def resolve_metadata(metadata: dict[str, Any], table: str, eval_prefix: str = '!
     evaluation entirely.
 
     The original *metadata* is left unchanged.
+
+    Example usage:
+    ```python
+    metadata = {
+        'project': {'name': 'my_project'},
+        'tool': {
+            'my_project': {
+                'src': 'src',
+                'package_root': '{tool[my_project][src]}/{project[name]}',
+                'package_root_len': '!!len({tool[my_project][package_root]!r})',
+            }
+        }
+    }
+    resolved_metadata = resolve_metadata(metadata, 'tool.my_project')
+    # resolved_metadata['tool']['my_project']['package_root'] == 'src/my_project'
+    # resolved_metadata['tool']['my_project']['package_root_len'] == 14
+    ```
     """
     def _resolve(value: object) -> object:
         """Resolve a single *value*, recursively."""

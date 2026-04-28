@@ -233,6 +233,23 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     If *eval_prefix* is provided, the string values starting with it are evaluated as Python expressions. An empty *eval_prefix* disables the evaluation entirely.
 
     The original *metadata* is left unchanged.
+
+    Example usage:
+    ```python
+    metadata = {
+        'project': {'name': 'my_project'},
+        'tool': {
+            'my_project': {
+                'src': 'src',
+                'package_root': '{tool[my_project][src]}/{project[name]}',
+                'package_root_len': '!!len({tool[my_project][package_root]!r})',
+            }
+        }
+    }
+    resolved_metadata = resolve_metadata(metadata, 'tool.my_project')
+    # resolved_metadata['tool']['my_project']['package_root'] == 'src/my_project'
+    # resolved_metadata['tool']['my_project']['package_root_len'] == 14
+    ```
 - `run(`\
     `    command: collections.abc.Sequence[str],`\
     `    **kwargs: typing.Any`\
