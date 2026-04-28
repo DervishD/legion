@@ -158,6 +158,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     - `version`: version metadata as returned by `resolve_version()`.
     - `pyproject_root`: fully resolved repository root directory.
     - `timestamp`: timestamp, in '%Y-%m-%d %H:%M:%S' format.
+    - `self`: alias for `metadata['tool'][metadata['project']['name']]` table, or an empty dict if that table does not exist.
 
     The returned dictionary is multilevel. This means that shallow copy, shallow merge and the union operator will not work as expected. This dictionary needs to be deep-copied and deep-merged instead.
 

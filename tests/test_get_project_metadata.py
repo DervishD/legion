@@ -14,12 +14,14 @@ if TYPE_CHECKING:
 
 MOCK_PROJECT_NAME = 'mock_project'
 MOCK_PROJECT_VERSION = '0.42.73'
+MOCK_SELF_METADATA = { 'mock_private_key': 'mock_private_value' }
 MOCK_PYPROJECT = {
     'project': {
         'name': MOCK_PROJECT_NAME,
         'version': MOCK_PROJECT_VERSION,
     },
     'mock_key': 'mock_value',
+    'tool': {MOCK_PROJECT_NAME: MOCK_SELF_METADATA},
 }
 MOCK_PROJECT_ROOT = Path('/mock/project_root')
 MOCK_VERSION_METADATA = {
@@ -41,6 +43,12 @@ def mock_load_pyproject(*_: object) -> dict[str, Any]:
     """Mock `load_pyproject()`."""
     return deepcopy(MOCK_PYPROJECT)
 
+def mock_load_pyproject_no_tool(*_: object) -> dict[str, Any]:
+    """Mock `load_pyproject()` without a `tool` subtable."""
+    metadata = deepcopy(MOCK_PYPROJECT)
+    del metadata['tool']
+    return metadata
+
 def mock_get_version_metadata(*_: object) -> dict[str, str]:
     """Mock `get_version_metadata()`."""
     return deepcopy(MOCK_VERSION_METADATA)
@@ -60,6 +68,7 @@ def test_get_project_metadata_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
         'project_root': MOCK_PROJECT_ROOT,
         'version': MOCK_VERSION_METADATA,
         'timestamp': MOCK_TIMESTAMP,
+        'self': MOCK_SELF_METADATA,
     }
     expected['project']['version'] = MOCK_PROJECT_VERSION
     monkeypatch.setattr('legion.git_repository_root', mock_git_repository_root)
@@ -68,6 +77,13 @@ def test_get_project_metadata_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr('legion.timestamp', mock_timestamp)
 
     project_metadata = get_project_metadata()
+    assert project_metadata is not None
+    assert project_metadata == expected
+
+    monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject_no_tool)
+    project_metadata = get_project_metadata()
+    del expected['tool']
+    expected['self'] = {}
     assert project_metadata is not None
     assert project_metadata == expected
 

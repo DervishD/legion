@@ -811,6 +811,8 @@ def get_project_metadata() -> dict[str, Any] | None:
     - `version`: version metadata as returned by `resolve_version()`.
     - `pyproject_root`: fully resolved repository root directory.
     - `timestamp`: timestamp, in '%Y-%m-%d %H:%M:%S' format.
+    - `self`: alias for `metadata['tool'][metadata['project']['name']]`
+    table, or an empty dict if that table does not exist.
 
     The returned dictionary is multilevel. This means that shallow copy,
     shallow merge and the union operator will not work as expected. This
@@ -834,6 +836,10 @@ def get_project_metadata() -> dict[str, Any] | None:
     project_metadata['version'] = version_metadata
     project_metadata['project_root'] = project_root
     project_metadata['timestamp'] = timestamp('%Y-%m-%d %H:%M:%S')
+    try:
+        project_metadata['self'] = project_metadata['tool'][project_metadata['project']['name']]
+    except KeyError:
+        project_metadata['self'] = {}
 
     return project_metadata
 
