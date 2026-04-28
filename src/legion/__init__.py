@@ -323,7 +323,8 @@ def _unwrap_markdown(markdown: str) -> str:
     """
     unwrapped: list[str] = []
     paragraph = ''
-    for line in markdown.splitlines():
+    lines = iter(markdown.splitlines())
+    for line in lines:
         rstripped_line = line.rstrip()
 
         if not rstripped_line:
@@ -337,6 +338,15 @@ def _unwrap_markdown(markdown: str) -> str:
         elif rstripped_line.lstrip().startswith('- '):
             unwrapped.append(paragraph)
             paragraph = rstripped_line
+        elif rstripped_line.lstrip().startswith('```'):
+            unwrapped.append(paragraph)
+            unwrapped.append(rstripped_line)
+            for quotedline in lines:  # pragma: no branch
+                rstripped_quoted_line = quotedline.rstrip()
+                unwrapped.append(rstripped_quoted_line)
+                if rstripped_quoted_line.lstrip() == '```':
+                    break
+            paragraph = ''
         elif rstripped_line.startswith(('# ', '## ', '> ')):
             paragraph = f'{paragraph}{'\n' if paragraph else ''}{rstripped_line}'
             unwrapped.append(paragraph)
@@ -443,7 +453,8 @@ class _DocstringVisitor(ast.NodeVisitor):
             return
 
         docstring = ast.get_docstring(node)
-        doc_fragment = f'- `{name}`{f'\\\n{_indent_markdown(docstring)}' if docstring else ''}\n'
+        docstring = f'\\\n{_indent_markdown(_unwrap_markdown(docstring))}' if docstring else ''
+        doc_fragment = f'- `{name}`{docstring}\n'
         self._class_fragments.append(doc_fragment)
 
         self._within_class_definition = True

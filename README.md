@@ -9,15 +9,9 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 - `LegionLogger`\
     Highly opinionated, extended logger.
 
-    Drop-in replacement for `logging.Logger` with indentation support,
-    multiline records and a simple but powerful configuration helper.
+    Drop-in replacement for `logging.Logger` with indentation support, multiline records and a simple but powerful configuration helper.
 
-    It is intentionally opinionated about how logging should work, and
-    although it provides a convenient configuration helper, it enforces
-    a specific application-level logging model. For this reason, it is
-    generally not suitable for reusable library modules. Its intended
-    audience is applications, where authoritative logging configuration
-    and consistent output are desirable.
+    It is intentionally opinionated about how logging should work, and although it provides a convenient configuration helper, it enforces a specific application-level logging model. For this reason, it is generally not suitable for reusable library modules. Its intended audience is applications, where authoritative logging configuration and consistent output are desirable.
 
     Example usage:
     ```python
