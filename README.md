@@ -225,6 +225,20 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
+- `resolve_metadata(`\
+    `    metadata: dict[str, typing.Any],`\
+    `    table: str,`\
+    `    eval_prefix: str = '!!'`\
+    `) -> dict[str, typing.Any]`\
+    Resolve *table* entries in *metadata*, returning a resolved copy.
+
+    The *metadata* dictionary is expected to have a similar structure to those returned by `get_*_metadata()` functions in this module, built from `pyproject.toml` or equivalent.
+
+    *table* is a dot-separated path of keys which specify the metadata subtable to be resolved, such as `tool.my_project.config_table`.
+
+    If *eval_prefix* is provided, the string values starting with it are evaluated as Python expressions. An empty *eval_prefix* disables the evaluation entirely.
+
+    The original *metadata* is left unchanged.
 - `run(`\
     `    command: collections.abc.Sequence[str],`\
     `    **kwargs: typing.Any`\

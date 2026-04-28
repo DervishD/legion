@@ -13,6 +13,7 @@ case the code may be useful to others.
 """  # noqa: D400, D415
 import ast
 import contextlib
+from copy import deepcopy
 from errno import errorcode
 import functools
 from inspect import getsource
@@ -54,6 +55,7 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'git_repository_root',
     'load_pyproject',
     'munge_oserror',
+    'resolve_metadata',
     'run',
     'timestamp',
     'wait_for_keypress',
@@ -966,6 +968,47 @@ def munge_oserror(exc: OSError) -> dict[str, str | None]:
         'filename1': fsdecode(exc.filename) if isinstance(exc.filename, bytes) else exc.filename,
         'filename2': fsdecode(exc.filename2) if isinstance(exc.filename2, bytes) else exc.filename2,
     }
+
+
+def resolve_metadata(metadata: dict[str, Any], table: str, eval_prefix: str = '!!') -> dict[str, Any]:
+    """Resolve *table* entries in *metadata*, returning a resolved copy.
+
+    The *metadata* dictionary is expected to have a similar structure to
+    those returned by `get_*_metadata()` functions in this module, built
+    from `pyproject.toml` or equivalent.
+
+    *table* is a dot-separated path of keys which specify the metadata
+    subtable to be resolved, such as `tool.my_project.config_table`.
+
+    If *eval_prefix* is provided, the string values starting with it are
+    evaluated as Python expressions. An empty *eval_prefix* disables the
+    evaluation entirely.
+
+    The original *metadata* is left unchanged.
+    """
+    def _resolve(value: object) -> object:
+        """Resolve a single *value*, recursively."""
+        if isinstance(value, list):
+            value = cast('list[object]', value)
+            for i, v in enumerate(value):
+                value[i] = _resolve(v)
+        elif isinstance(value, dict):
+            value = cast('dict[str, object]', value)
+            for k, v in value.items():
+                value[k] = _resolve(v)
+        elif isinstance(value, str):
+            resolved_value = value.format_map(resolved)
+            if eval_prefix and resolved_value.startswith(eval_prefix):
+                return eval(resolved_value.removeprefix(eval_prefix))  # pylint: disable=eval-used  # noqa: S307
+            return resolved_value
+        return value
+
+    resolved = deepcopy(metadata)
+    subtable = resolved
+    for key in table.split('.'):
+        subtable = subtable[key]
+    _resolve(subtable)
+    return resolved
 
 
 def run(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # noqa: ANN401
