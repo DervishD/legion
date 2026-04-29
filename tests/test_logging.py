@@ -192,7 +192,7 @@ def test_logging_indentation(logger: LegionLogger) -> None:
 # pylint: disable-next=unused-variable
 def test_logging_parse_logfile(tmp_path: Path) -> None:
     """Test `parse_logfile()` helper."""
-    mock_log_file = tmp_path / 'mock_log_file.log'
-    mock_log_file.write_text('invalid_log_line', encoding='utf-8')
+    log_file = tmp_path / 'example_log_file.log'
+    log_file.write_text('invalid_log_line', encoding='utf-8')
     with pytest.raises(ValueError, match='invalid_log_line'):
-        parse_logfile(mock_log_file)
+        parse_logfile(log_file)

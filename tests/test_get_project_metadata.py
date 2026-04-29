@@ -81,9 +81,9 @@ def test__git_repository_root(
     expected: Path | None,
 ) -> None:
     """Test `_git_repository_root()` helper."""
-    def _mock_run(*_a: object, **_kw: object) -> subprocess.CompletedProcess[str]:
+    def mock_run(*_a: object, **_kw: object) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess('', returncode, stdout)
-    mock_run_spy = CallableSpy(_mock_run)
+    mock_run_spy = CallableSpy(mock_run)
     monkeypatch.setattr('legion.run', mock_run_spy)
 
     result = _git_repository_root()
@@ -141,7 +141,7 @@ class MockCompletedProcess:
         self.stdout = stdout
 
 
-def _mock_run_factory(results: list[MockCompletedProcess]) -> Callable[..., MockCompletedProcess]:
+def mock_run_factory(results: list[MockCompletedProcess]) -> Callable[..., MockCompletedProcess]:
     """Produce `legion.run()` replacements.
 
     Return a closure that returns the next result of the *results* queue
@@ -154,7 +154,7 @@ def _mock_run_factory(results: list[MockCompletedProcess]) -> Callable[..., Mock
 
 
 VERSION_METADATA_KEYS = ('tag', 'distance', 'branch', 'detached', 'rev', 'dirty')
-def mock_metadata_dict(*values: str) -> dict[str, str]:
+def build_test_metadata_dict(*values: str) -> dict[str, str]:
     """Return a metadata dictionary from *values*."""
     return dict(zip(VERSION_METADATA_KEYS, values, strict=True))
 
@@ -178,27 +178,27 @@ DIRTY_WORKTREE = f'v{TAG}-{DISTANCE}-g{REV}-{DIRTY.lstrip('.')}\n'
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_WORKTREE), MockCompletedProcess(0, BRANCH)],
-        mock_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
+        build_test_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
         id='test_resolve_version_baseline_clean',
     ),
     pytest.param(
         [MockCompletedProcess(0, DIRTY_WORKTREE), MockCompletedProcess(0, BRANCH)],
-        mock_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, DIRTY),
+        build_test_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, DIRTY),
         id='test_resolve_version_baseline_dirty',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_NOT_V_NOR_G), MockCompletedProcess(0, BRANCH)],
-        mock_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
+        build_test_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
         id='test_resolve_version_no_v_nor_g',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_WORKTREE), MockCompletedProcess(1, '')],
-        mock_metadata_dict(TAG, DISTANCE, '', DETACHED, REV, ''),
+        build_test_metadata_dict(TAG, DISTANCE, '', DETACHED, REV, ''),
         id='test_resolve_version_detached_head',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_WORKTREE), MockCompletedProcess(0, f'branch with,{BRANCH}/extra-separators')],
-        mock_metadata_dict(TAG, DISTANCE, f'branchxxxwithxxx{BRANCH}xxxextraxxxseparators', '', REV, ''),
+        build_test_metadata_dict(TAG, DISTANCE, f'branchxxxwithxxx{BRANCH}xxxextraxxxseparators', '', REV, ''),
         id='test_resolve_version_sanitize_branch',
     ),
 ])
@@ -209,7 +209,7 @@ def test__get_version_metadata(
     expected: dict[str, str],
 ) -> None:
     """Test `get_version_metadata()` functionality."""
-    monkeypatch.setattr('legion.run', _mock_run_factory(results))
+    monkeypatch.setattr('legion.run', mock_run_factory(results))
 
     version_metadata = _get_version_metadata()
     assert version_metadata == expected

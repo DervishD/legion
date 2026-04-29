@@ -9,7 +9,7 @@ from legion import munge_oserror
 
 
 class MockOSError:
-    """Minimal `OSError` mock, for testing under full control.
+    """Minimal `OSError` replacement, for testing under full control.
 
     This class allows precise control over all possible arguments of a
     real `OSError` exception, including the ones that may be not present

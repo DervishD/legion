@@ -7,43 +7,43 @@ from legion import format_oserror
 @pytest.mark.parametrize(('munged', 'exc', 'expected'), [
     pytest.param(
         {
-            'errcodes': 'MOCK_ERRNO/WinError42',
-            'strerror': 'Mock error message string',
-            'filename1': 'mock_filename1',
-            'filename2': 'mock_filename2',
+            'errcodes': 'EXAMPLE_ERRNO/WinError42',
+            'strerror': 'Example error message string',
+            'filename1': 'example_filename1',
+            'filename2': 'example_filename2',
         },
         OSError(),
         (
-            "OSError [MOCK_ERRNO/WinError42] doing something 'mock_filename1' -> 'mock_filename2'.\n"
-            'Mock error message string.'
+            "OSError [EXAMPLE_ERRNO/WinError42] doing something 'example_filename1' -> 'example_filename2'.\n"
+            'Example error message string.'
         ),
         id='test_format_oserror_baseline',
     ),
     pytest.param(
         {
-            'errcodes': 'MOCK_ERRNO/WinError42',
-            'strerror': 'Mock error message string',
-            'filename1': 'mock_filename1',
+            'errcodes': 'EXAMPLE_ERRNO/WinError42',
+            'strerror': 'Example error message string',
+            'filename1': 'example_filename1',
             'filename2': None,
         },
         OSError(),
         (
-            "OSError [MOCK_ERRNO/WinError42] doing something 'mock_filename1'.\n"
-            'Mock error message string.'
+            "OSError [EXAMPLE_ERRNO/WinError42] doing something 'example_filename1'.\n"
+            'Example error message string.'
         ),
         id='test_format_oserror_no_filename2',
     ),
     pytest.param(
         {
-            'errcodes': 'MOCK_ERRNO/WinError42',
-            'strerror': 'Mock error message string',
-            'filename1': 'mock_filename1',
+            'errcodes': 'EXAMPLE_ERRNO/WinError42',
+            'strerror': 'Example error message string',
+            'filename1': 'example_filename1',
             'filename2': None,
         },
         PermissionError(),
         (
-            "OS.PermissionError [MOCK_ERRNO/WinError42] doing something 'mock_filename1'.\n"
-            'Mock error message string.'
+            "OS.PermissionError [EXAMPLE_ERRNO/WinError42] doing something 'example_filename1'.\n"
+            'Example error message string.'
         ),
         id='test_format_oserror_subclass',
     ),
@@ -55,8 +55,8 @@ def test_format_oserror(
     exc: OSError, expected: str,
 ) -> None:
     """Test `format_oserror()` output."""
-    def _mock_munge_oserror(*_: object) -> dict[str, str | None]:
+    def mock_munge_oserror(*_: object) -> dict[str, str | None]:
         return munged
-    monkeypatch.setattr('legion.munge_oserror', _mock_munge_oserror)
+    monkeypatch.setattr('legion.munge_oserror', mock_munge_oserror)
 
     assert format_oserror('doing something', exc) == expected

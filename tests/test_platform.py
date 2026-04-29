@@ -27,7 +27,7 @@ def test_platform_win32(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_platform_non_win32(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that SystemExit is raised on non-win32 platforms."""
     monkeypatch.delitem(sys.modules, 'legion', raising=False)
-    monkeypatch.setattr('sys.platform', 'mock_platform')
+    monkeypatch.setattr('sys.platform', 'example_platform')
     module = importlib.import_module('legion')
 
     for symbol in WIN32_ONLY_SYMBOLS:

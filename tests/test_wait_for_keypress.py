@@ -77,39 +77,39 @@ def test_customized_prompt(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Captu
 # pylint: disable-next=unused-variable
 def test_is_attached_console_transient(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `_is_attached_console_transient()` helper."""
-    def mock_get_console_title_factory(mock_len: int) -> Callable[[], int]:
+    def get_console_title_factory(length: int) -> Callable[[], int]:
         def mock_get_console_title(*_: object) -> int:
-            return mock_len
+            return length
         return mock_get_console_title
 
     class MockConsoleTitle:  # pylint: disable=missing-class-docstring
-        value = 'mock_console_title'
+        value = 'example_console_title'
 
-    mock_console_title = MockConsoleTitle()
+    console_title = MockConsoleTitle()
 
     def mock_create_unicode_buffer(*_: object) -> MockConsoleTitle:
-        return mock_console_title
+        return console_title
 
-    mock_get_console_title = mock_get_console_title_factory(0)
+    mock_get_console_title = get_console_title_factory(0)
     monkeypatch.setattr('legion.windll.kernel32.GetConsoleTitleW', mock_get_console_title)
     assert _is_attached_console_transient() is False
 
-    mock_get_console_title = mock_get_console_title_factory(len(mock_console_title.value))
+    mock_get_console_title = get_console_title_factory(len(console_title.value))
     monkeypatch.setattr('legion.windll.kernel32.GetConsoleTitleW', mock_get_console_title)
     monkeypatch.setattr('legion.create_unicode_buffer', mock_create_unicode_buffer)
 
     monkeypatch.setattr(sys, 'frozen', True, raising=False)
 
-    monkeypatch.setattr(sys, 'executable', 'mock_sys_executable')
+    monkeypatch.setattr(sys, 'executable', 'example_sys_executable')
     assert _is_attached_console_transient() is False
 
-    monkeypatch.setattr(sys, 'executable', mock_console_title.value)
+    monkeypatch.setattr(sys, 'executable', console_title.value)
     assert _is_attached_console_transient() is True
 
     monkeypatch.delattr(sys, 'frozen')
 
-    monkeypatch.setattr(sys, 'argv', [mock_console_title.value])
+    monkeypatch.setattr(sys, 'argv', [console_title.value])
     assert _is_attached_console_transient() is False
 
-    monkeypatch.setattr(sys, 'argv', ['mock_sys_argv_0'])
+    monkeypatch.setattr(sys, 'argv', ['example_sys_argv_0'])
     assert _is_attached_console_transient() is True

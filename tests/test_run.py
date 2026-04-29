@@ -43,7 +43,7 @@ from .helpers import CallableSpy
             'text': True,
             'errors': 'replace',
         },
-        id='test_run__baseline',
+        id='test_run_baseline',
     ),
     pytest.param(
         'any',
@@ -95,16 +95,16 @@ def test_run(
     input_kwargs: dict[str, object],
     expected_kwargs: dict[str, object])-> None:
     """Test `run()` handling of input arguments."""
-    mock_subprocess_run_retval: subprocess.CompletedProcess[str] = subprocess.CompletedProcess('', 0)
-    def _mock_subprocess_run(*_a: object, **_kw: object) -> subprocess.CompletedProcess[str]:
-        return mock_subprocess_run_retval
-    subprocess_run_spy = CallableSpy(_mock_subprocess_run)
+    retval: subprocess.CompletedProcess[str] = subprocess.CompletedProcess('', 0)
+    def mock_subprocess_run(*_a: object, **_kw: object) -> subprocess.CompletedProcess[str]:
+        return retval
+    subprocess_run_spy = CallableSpy(mock_subprocess_run)
     monkeypatch.setattr(subprocess, 'run', subprocess_run_spy)
     monkeypatch.setattr(sys, 'platform', platform)
 
-    mock_command = ('mock_command', 'mock_argument')
-    run(mock_command, **input_kwargs)
+    command = ('example_command', 'example_argument')
+    run(command, **input_kwargs)
 
     assert subprocess_run_spy.called
     assert subprocess_run_spy.call_count == 1
-    assert subprocess_run_spy.calls[0] == (mock_subprocess_run_retval, (mock_command,), expected_kwargs)
+    assert subprocess_run_spy.calls[0] == (retval, (command,), expected_kwargs)

@@ -34,7 +34,7 @@ def test_get_credentials_returns_parsed_toml(
     expected: dict[str, Any],
 ) -> None:
     """Test contents processing."""
-    creds_file = tmp_path / 'mock_credentials.toml'
+    creds_file = tmp_path / 'example_credentials.toml'
     creds_file.write_text(contents, encoding='utf-8')
 
     result = get_credentials(creds_file)
@@ -45,10 +45,10 @@ def test_get_credentials_returns_parsed_toml(
 # pylint: disable-next=unused-variable
 def test_get_credentials_oserror(tmp_path: Path) -> None:
     """Test that `None` is returned if `OSError` is raised."""
-    mock_credentials_path = tmp_path / 'mock_credentials_does_not_exist'
-    result = get_credentials(mock_credentials_path)
+    credentials_path = tmp_path / 'example_credentials_which_does_not_exist'
+    result = get_credentials(credentials_path)
 
-    assert not mock_credentials_path.is_file()
+    assert not credentials_path.is_file()
     assert result is None
 
 
