@@ -151,23 +151,31 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     This is a convenience function to avoid having to register the class by hand, instantiate the logger, restore the previous class, etc.
 
     If a logger named *name* already exists in the logging registry, but under a different class, the function raises. This can happen if for some reason `logging.getLogger()` (or a different logger class) is used to create a logger with the same name before this function was called. The exception argument is the actual fully qualified type of the existing logger.
-- `get_project_metadata() -> dict[str, typing.Any] | None`\
+- `get_project_metadata(`\
+    `    eval_prefix: str = '!!'`\
+    `) -> dict[str, typing.Any] | None`\
     Get all available project metadata as a dictionary.
+
+    The *eval_prefix* meaning is explained below.
 
     The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`.
 
     The returned dictionary is multilevel. This means that shallow copy, shallow merge and the union operator will not work as expected. This dictionary needs to be deep-copied and deep-merged instead.
 
     Additional metadata in available in the following toplevel keys:
-    - `project_root`: fully resolved repository root directory.
-    - `local`: a reference to the project's local metadata at the table `tool.<project name>`, if it exists, otherwise an empty dictionary.
-    - `version`: project's version metadata with the following keys:
-        - `tag`: the most recent version tag, without a leading `v`.
-        - `distance`: the number of commits since the `tag`.
-        - `branch`: current branch name, lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set. Other characters are replaced by `xxx`. For a detached `HEAD` state repository it is an empty string instead.
-        - `detached`: the `detached` string for a detached `HEAD` state in the repository, otherwise an empty string.
-        - `rev`: abbreviated commit hash, without a leading `g`.
-        - `dirty`: The `.dirty` string if there are uncommitted changes in the working tree, otherwise an empty string.
+    - `project_root` (`str`): fully resolved repository root directory.
+    - `version` (`dict[str, str]`): project's version metadata.
+    - `local` (`dict[str, Any]`): project's local metadata.
+
+    The `version` dictionary contains the following keys:
+    - `tag`: the most recent version tag, without a leading `v`.
+    - `distance`: the number of commits since the `tag`.
+    - `branch`: current branch name, but lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set, replacing any other characters by `xxx`. It is an empty string if the repository is in the detached `HEAD` state.
+    - `detached`: the `detached` string if the repository is in detached `HEAD` state, otherwise it is an empty string.
+    - `rev`: abbreviated commit hash, without a leading `g`.
+    - `dirty`: The `.dirty` string when the working tree has uncommitted changes, otherwise an empty string.
+
+    The `local` dictionary is actually a reference to the metadata table `tool.<project name>`, if present, otherwise is an empty dictionary. Format placeholders in string values are resolved against the full metadata dictionary, so values like `'{project[name]}'` are expanded automatically. Values starting with *eval_prefix* are evaluated as Python expressions. E.g. if the default *eval_prefix* is used, then `'!!{timestamp()}'` will be replaced by the function return value.
 
     `None` is returned in any of these situations:
     - the project root cannot be determined.
@@ -195,37 +203,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **Note**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
     **Note**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
-- `resolve_metadata(`\
-    `    metadata: dict[str, typing.Any],`\
-    `    table: str,`\
-    `    eval_prefix: str = '!!'`\
-    `) -> dict[str, typing.Any]`\
-    Resolve *table* entries in *metadata*, returning a resolved copy.
-
-    The *metadata* dictionary is expected to have a similar structure to those returned by `get_*_metadata()` functions in this module, built from `pyproject.toml` or equivalent.
-
-    *table* is a dot-separated path of keys which specify the metadata subtable to be resolved, such as `tool.my_project.config_table`.
-
-    If *eval_prefix* is provided, the string values starting with it are evaluated as Python expressions. An empty *eval_prefix* disables the evaluation entirely.
-
-    The original *metadata* is left unchanged.
-
-    Example usage:
-    ```python
-    metadata = {
-        'project': {'name': 'my_project'},
-        'tool': {
-            'my_project': {
-                'src': 'src',
-                'package_root': '{tool[my_project][src]}/{project[name]}',
-                'package_root_len': '!!len({tool[my_project][package_root]!r})',
-            }
-        }
-    }
-    resolved_metadata = resolve_metadata(metadata, 'tool.my_project')
-    # resolved_metadata['tool']['my_project']['package_root'] == 'src/my_project'
-    # resolved_metadata['tool']['my_project']['package_root_len'] == 14
-    ```
 - `run(`\
     `    command: collections.abc.Sequence[str],`\
     `    **kwargs: typing.Any`\

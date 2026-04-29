@@ -12,6 +12,7 @@ from legion import (
     _get_version_metadata,  # pyright: ignore[reportPrivateUsage]
     _git_repository_root,  # pyright: ignore[reportPrivateUsage]
     _load_pyproject,  # pyright: ignore[reportPrivateUsage]
+    _resolve_metadata,  # pyright: ignore[reportPrivateUsage]
     get_project_metadata,
 )
 
@@ -55,9 +56,9 @@ def mock_load_pyproject(*_: object) -> dict[str, Any]:
 
 def mock_load_pyproject_no_local(*_: object) -> dict[str, Any]:
     """Mock `_load_pyproject()` without a `tool` subtable."""
-    metadata = deepcopy(TEST_PYPROJECT)
-    del metadata['tool']
-    return metadata
+    metadata_no_tool = deepcopy(TEST_PYPROJECT)
+    del metadata_no_tool['tool']
+    return metadata_no_tool
 
 def mock_get_version_metadata(*_: object) -> dict[str, str]:
     """Mock `get_version_metadata()`."""
@@ -202,7 +203,7 @@ DIRTY_WORKTREE = f'v{TAG}-{DISTANCE}-g{REV}-{DIRTY.lstrip('.')}\n'
     ),
 ])
 # pylint: disable-next=unused-variable
-def test_get_version_metadata(
+def test__get_version_metadata(
     monkeypatch: pytest.MonkeyPatch,
     results: list[MockCompletedProcess],
     expected: dict[str, str],
@@ -212,6 +213,85 @@ def test_get_version_metadata(
 
     version_metadata = _get_version_metadata()
     assert version_metadata == expected
+
+
+EVAL_PREFIX = '!!'
+
+@pytest.fixture
+# pylint: disable-next=unused-variable
+def metadata() -> dict[str, Any]:
+    """Return a fresh copy of the sample metadata."""
+    return {
+        'toplevel_string': 'There was a button. I pushed it.',
+        'toplevel_dict': {'example_key': 'example_value'},
+        'local': {
+            'string': 'example_string',
+            'int': 42,
+            'float': 73.137,
+            'bool': False,
+            'eval': f'{EVAL_PREFIX}len({{local[string]!r}})',
+            'eval_type_preserve': f'{EVAL_PREFIX}[42, 73, 137]',
+            'simple_interpolation': '{local[eval]}/{toplevel_string}',
+            'chained_interpolation': '{local[simple_interpolation]}/{toplevel_dict[example_key]}',
+            'list': [
+                42,
+                'example_string_in_list',
+                {'int_in_dict_in_list': 42, 'string_in_dict_in_list': 'example_string_in_dict_in_list'},
+            ],
+            'dict': {
+                'int_in_dict': 42,
+                'string_in_dict': 'example_string_in_dict',
+                'list_in_dict': [42, 'examples_string_in_list_in_dict'],
+            },
+            'empty_list': [],
+            'empty_dict': {},
+        },
+    }
+
+
+EXPECTED = {
+    'toplevel_string': 'There was a button. I pushed it.',
+    'toplevel_dict': {'example_key': 'example_value'},
+    'local': {
+        'string': 'example_string',
+        'int': 42,
+        'float': 73.137,
+        'bool': False,
+        'eval': 14,
+        'eval_type_preserve': [42, 73, 137],
+        'simple_interpolation': '14/There was a button. I pushed it.',
+        'chained_interpolation': '14/There was a button. I pushed it./example_value',
+        'list': [
+            42,
+            'example_string_in_list',
+            {'int_in_dict_in_list': 42, 'string_in_dict_in_list': 'example_string_in_dict_in_list'},
+        ],
+        'dict': {
+            'int_in_dict': 42,
+            'string_in_dict': 'example_string_in_dict',
+            'list_in_dict': [42, 'examples_string_in_list_in_dict'],
+        },
+        'empty_list': [],
+        'empty_dict': {},
+    },
+}
+
+
+# pylint: disable-next=unused-variable,redefined-outer-name
+def test__resolve_metadata_baseline(metadata: dict[str, Any]) -> None:
+    """Test `resolve_metadata()` baseline."""
+    original = deepcopy(metadata)
+    resolved = _resolve_metadata(metadata, EVAL_PREFIX)
+    assert metadata == original
+    assert resolved == EXPECTED
+
+
+# pylint: disable-next=unused-variable,redefined-outer-name
+def test__resolve_metadata_unresolvable_placeholder(metadata: dict[str, Any]) -> None:
+    """Test that unresolvable placeholders raise `KeyError`."""
+    metadata['local']['dict']['unresolvable'] = '{unresolvable[placeholder]}'
+    with pytest.raises(KeyError):
+        _resolve_metadata(metadata, EVAL_PREFIX)
 
 
 # pylint: disable-next=unused-variable

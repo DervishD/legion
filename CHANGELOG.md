@@ -43,7 +43,6 @@ side effects are no longer implicit.
 - `ensure_utf8_output()` function
 - `format_message()` function
 - `get_project_metadata()` function
-- `resolve_metadata()` function
 - `excepthook()` exception chaining support
 
 
