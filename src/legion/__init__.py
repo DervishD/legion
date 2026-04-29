@@ -874,7 +874,7 @@ def get_version_metadata() -> dict[str, str] | None:
     - `dirty`: The `.dirty` string when the working tree has uncommitted
     changes, otherwise an empty string.
 
-    **NOTE**: is up to the caller to use the returned metadata to create
+    **Note**: is up to the caller to use the returned metadata to create
     a version string which is fully compliant with the
     [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme).
     The dictionary values are guaranteed to be fully compliant strings.
@@ -981,13 +981,13 @@ def munge_oserror(exc: OSError) -> dict[str, str | None]:
     value will be `None`, to make the dictionary easier to process, for
     examply for replacing missing values with a marker, etc.
 
-    **NOTE**: the `errno` and `winerror` codes are combined with a slash
+    **Note**: the `errno` and `winerror` codes are combined with a slash
     character if both are present.
 
-    **NOTE**: the returned error message is normalized if present. The
+    **Note**: the returned error message is normalized if present. The
     first letter is uppercased and the final period (if any), removed.
 
-    **NOTE**: depending on operation which caused the exception raising,
+    **Note**: depending on operation which caused the exception raising,
     there may be zero, one, or two paths involved.
     """
     exc_errno = None
@@ -1166,11 +1166,11 @@ if sys.platform == 'win32':
         *prompt* message to ensure it is clearly separated from previous
         output from the program.
 
-        **NOTE**: there is no standard method of knowing if a console is
+        **Note**: there is no standard method of knowing if a console is
         transient or not, so determining console transience is entirely
         based on heuristics.
 
-        **NOTE**: is up to the importer to register this function with
+        **Note**: is up to the importer to register this function with
         `atexit.register()`, to call it explicitly, or to use it only if
         the importer is running as a script instead of being imported.
         """
