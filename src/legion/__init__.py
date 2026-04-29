@@ -809,8 +809,7 @@ def get_project_metadata() -> dict[str, Any] | None:
     the file, as parsed by `tomllib`. Additional metadata is provided on
     extra keys at dictionary root, for convenience:
     - `version`: version metadata as returned by `resolve_version()`.
-    - `pyproject_root`: fully resolved repository root directory.
-    - `timestamp`: timestamp, in '%Y-%m-%d %H:%M:%S' format.
+    - `project_root`: fully resolved repository root directory.
     - `self`: alias for `metadata['tool'][metadata['project']['name']]`
     table, or an empty dict if that table does not exist.
 
@@ -843,7 +842,6 @@ def get_project_metadata() -> dict[str, Any] | None:
 
     project_metadata['version'] = version_metadata
     project_metadata['project_root'] = project_root
-    project_metadata['timestamp'] = timestamp('%Y-%m-%d %H:%M:%S')
     try:
         project_metadata['self'] = project_metadata['tool'][project_metadata['project']['name']]
     except KeyError:
