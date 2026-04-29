@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 
-from legion import git_repository_root, load_pyproject
+from legion import get_project_metadata, load_pyproject
 from legion.about import PROGRAM_NAME, VERSION
 
 # This project uses a PyPA compliant versioning scheme, as defined in
@@ -57,7 +57,9 @@ def test_version_matches_pypa_spec() -> None:
 # pylint: disable-next=unused-variable
 def test_project_root() -> None:
     """Test the project root for the program is coherent."""
-    assert Path(__file__).parent.parent == git_repository_root()
+    project_metadata = get_project_metadata()
+    assert project_metadata is not None
+    assert Path(__file__).parent.parent == project_metadata['project_root']
 
 
 # pylint: disable-next=unused-variable

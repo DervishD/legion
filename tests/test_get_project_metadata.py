@@ -2,88 +2,110 @@
 from copy import deepcopy
 from hashlib import sha1
 from pathlib import Path
+import subprocess
 from typing import TYPE_CHECKING
 
-from legion import get_project_metadata
+import pytest
+
+from legion import _git_repository_root, get_project_metadata  # pyright: ignore[reportPrivateUsage]
+
+from .helpers import CallableSpy
 
 if TYPE_CHECKING:
     from typing import Any
 
-    import pytest
 
-
-MOCK_PROJECT_NAME = 'mock_project'
-MOCK_PROJECT_VERSION = '0.42.73'
-MOCK_SELF_METADATA = { 'mock_private_key': 'mock_private_value' }
-MOCK_PYPROJECT = {
+TEST_PROJECT_ROOT = Path('/example/fake/project_root')
+TEST_PROJECT_NAME = 'example_project'
+TEST_PROJECT_VERSION = '0.42.73'
+TEST_LOCAL_METADATA = {'local_key': 'local_value' }
+TEST_PYPROJECT = {
     'project': {
-        'name': MOCK_PROJECT_NAME,
-        'version': MOCK_PROJECT_VERSION,
+        'name': TEST_PROJECT_NAME,
+        'version': TEST_PROJECT_VERSION,
     },
-    'mock_key': 'mock_value',
-    'tool': {MOCK_PROJECT_NAME: MOCK_SELF_METADATA},
+    'example_key': 'example_value',
+    'tool': {TEST_PROJECT_NAME: TEST_LOCAL_METADATA},
 }
-MOCK_PROJECT_ROOT = Path('/mock/project_root')
-MOCK_VERSION_METADATA = {
-    'tag': MOCK_PROJECT_VERSION,
+TEST_VERSION_METADATA = {
+    'tag': TEST_PROJECT_VERSION,
     'distance': '137',
-    'branch': 'mock_branch',
+    'branch': 'example_branch',
     'detached': '',
     'rev': sha1(b'There was a button. I pushed it.', usedforsecurity=False).hexdigest(),
     'dirty': '.dirty',
 }
-MOCK_TIMESTAMP = '2084-07-07 06:54:54.9'  # TMA-1
 
 
 def mock_git_repository_root(*_: object) -> Path:
     """Mock `git_repository_root()`."""
-    return MOCK_PROJECT_ROOT
+    return TEST_PROJECT_ROOT
 
 def mock_load_pyproject(*_: object) -> dict[str, Any]:
     """Mock `load_pyproject()`."""
-    return deepcopy(MOCK_PYPROJECT)
+    return deepcopy(TEST_PYPROJECT)
 
-def mock_load_pyproject_no_tool(*_: object) -> dict[str, Any]:
+def mock_load_pyproject_no_local(*_: object) -> dict[str, Any]:
     """Mock `load_pyproject()` without a `tool` subtable."""
-    metadata = deepcopy(MOCK_PYPROJECT)
+    metadata = deepcopy(TEST_PYPROJECT)
     del metadata['tool']
     return metadata
 
 def mock_get_version_metadata(*_: object) -> dict[str, str]:
     """Mock `get_version_metadata()`."""
-    return deepcopy(MOCK_VERSION_METADATA)
-
-def mock_timestamp(*_: object) -> str:
-    """Mock `timestamp()`."""
-    return MOCK_TIMESTAMP
+    return deepcopy(TEST_VERSION_METADATA)
 
 def return_none(*_: object) -> None:
     """Monkeypatch helper to return `None`."""
 
 
+@pytest.mark.parametrize(('returncode', 'stdout' , 'expected'), [
+    pytest.param(0, 'example_repo', Path('example_repo').resolve(), id='test_git_repository_root_baseline'),
+    pytest.param(0, 'example_repo\n\n', Path('example_repo').resolve(), id='test_git_repository_root_newlines'),
+    pytest.param(1, '', None, id='test_git_repository_root_not_found'),
+])
+# pylint: disable-next=unused-variable
+def test__git_repository_root(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int,
+    stdout: str,
+    expected: Path | None,
+) -> None:
+    """Test `_git_repository_root()` helper."""
+    def _mock_run(*_a: object, **_kw: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess('', returncode, stdout)
+    mock_run_spy = CallableSpy(_mock_run)
+    monkeypatch.setattr('legion.run', mock_run_spy)
+
+    result = _git_repository_root()
+
+    assert result == expected
+    assert mock_run_spy.called
+    assert mock_run_spy.call_count == 1
+
+
+
 # pylint: disable-next=unused-variable
 def test_get_project_metadata_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `get_project_metadata()` baseline."""
-    expected: dict[str, Any] = deepcopy(MOCK_PYPROJECT) | {
-        'project_root': MOCK_PROJECT_ROOT,
-        'version': MOCK_VERSION_METADATA,
-        'timestamp': MOCK_TIMESTAMP,
-        'self': MOCK_SELF_METADATA,
+    expected: dict[str, Any] = deepcopy(TEST_PYPROJECT) | {
+        'project_root': TEST_PROJECT_ROOT,
+        'version': TEST_VERSION_METADATA,
+        'local': TEST_LOCAL_METADATA,
     }
-    expected['project']['version'] = MOCK_PROJECT_VERSION
-    monkeypatch.setattr('legion.git_repository_root', mock_git_repository_root)
+    expected['project']['version'] = TEST_PROJECT_VERSION
+    monkeypatch.setattr('legion._git_repository_root', mock_git_repository_root)
     monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject)
     monkeypatch.setattr('legion.get_version_metadata', mock_get_version_metadata)
-    monkeypatch.setattr('legion.timestamp', mock_timestamp)
 
     project_metadata = get_project_metadata()
     assert project_metadata is not None
     assert project_metadata == expected
 
-    monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject_no_tool)
+    monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject_no_local)
     project_metadata = get_project_metadata()
     del expected['tool']
-    expected['self'] = {}
+    expected['local'] = {}
     assert project_metadata is not None
     assert project_metadata == expected
 
@@ -91,10 +113,10 @@ def test_get_project_metadata_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
 # pylint: disable-next=unused-variable
 def test_get_project_metadata_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that `None` is returned when it should."""
-    monkeypatch.setattr('legion.git_repository_root', return_none)
+    monkeypatch.setattr('legion._git_repository_root', return_none)
     assert get_project_metadata() is None
 
-    monkeypatch.setattr('legion.git_repository_root', mock_git_repository_root)
+    monkeypatch.setattr('legion._git_repository_root', mock_git_repository_root)
     monkeypatch.setattr('legion.load_pyproject', return_none)
     assert get_project_metadata() is None
 

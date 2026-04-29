@@ -52,7 +52,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'get_logger',
     'get_project_metadata',
     'get_version_metadata',
-    'git_repository_root',
     'load_pyproject',
     'munge_oserror',
     'resolve_metadata',
@@ -801,6 +800,19 @@ def get_logger(name: str) -> LegionLogger:
     return logger
 
 
+def _git_repository_root() -> Path | None:
+    """Return the root directory of a Git repository.
+
+    The lookup is performed relative to the current working directory.
+
+    This function runs `git rev-parse --show-toplevel` and returns the
+    fully resolved path of the repository root if the command succeeds,
+    or `None` otherwise.
+    """
+    result = run(['git', 'rev-parse', '--show-toplevel'], cwd=Path.cwd(), encoding='utf-8')
+    return None if result.returncode else Path(result.stdout.strip()).resolve()
+
+
 def get_project_metadata() -> dict[str, Any] | None:
     """Get all available project metadata as a dictionary.
 
@@ -831,7 +843,7 @@ def get_project_metadata() -> dict[str, Any] | None:
     metadata to a file at build or commit time, using for example a VCS
     hook or similar, and read it back at runtime instead.
     """
-    if (project_root := git_repository_root()) is None:
+    if (project_root := _git_repository_root()) is None:
         return None
 
     if (project_metadata := load_pyproject(project_root)) is None:
@@ -913,27 +925,6 @@ def get_version_metadata() -> dict[str, str] | None:
     }
 
 
-def git_repository_root(cwd: Path | None = None) -> Path | None:
-    """Return the root directory of a Git repository.
-
-    The lookup is performed relative to *cwd*. If not provided, then the
-    current working directory is used.
-
-    This function runs `git rev-parse --show-toplevel` and returns the
-    fully resolved path of the repository root if the command succeeds,
-    or `None` otherwise.
-
-    **Note**: This function requires access to the project's repository
-    metadata. It will return `None` instead of the valid `Path`, if the
-    the repository is not available, like for installed modules, frozen
-    executables, etc. For those environments a viable alternative is to
-    serialize this `Path` to a file at build or commit time, using a VCS
-    hook or similar, and read it back at runtime instead.
-    """
-    result = run(['git', 'rev-parse', '--show-toplevel'], cwd=(cwd or Path()).resolve(), encoding='utf-8')
-    return None if result.returncode else Path(result.stdout.strip()).resolve()
-
-
 def load_pyproject(project_dir: Path | None = None) -> dict[str, Any] | None:
     """Load `pyproject.toml` file and parse it into a dictionary.
 
@@ -956,7 +947,7 @@ def load_pyproject(project_dir: Path | None = None) -> dict[str, Any] | None:
     necessary metadata to a file at build or commit time, by using a VCS
     hook or similar, and read it back at runtime instead.
     """
-    if (pyproject_basedir := project_dir or git_repository_root()) is not None:
+    if (pyproject_basedir := project_dir or _git_repository_root()) is not None:
         pyproject_toml_path = pyproject_basedir.resolve() / 'pyproject.toml'
         with contextlib.suppress(PermissionError, FileNotFoundError):
             return tomllib.loads(pyproject_toml_path.read_text(encoding='utf-8'))

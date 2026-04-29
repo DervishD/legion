@@ -154,10 +154,10 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 - `get_project_metadata() -> dict[str, typing.Any] | None`\
     Get all available project metadata as a dictionary.
 
-    The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`. Additional metadata is provided on extra keys at dictionary root, for convenience:
-    - `version`: version metadata as returned by `resolve_version()`.
+    The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`. Additional metadata is provided on extra keys at toplevel, for convenience:
+    - `version`: project's version metadata, as returned by `get_version_metadata()`.
     - `project_root`: fully resolved repository root directory.
-    - `self`: alias for `metadata['tool'][metadata['project']['name']]` table, or an empty dict if that table does not exist.
+    - `local`: a reference to the project's local metadata at the table `tool.<project name>`, if it exists, otherwise an empty dictionary.
 
     The returned dictionary is multilevel. This means that shallow copy, shallow merge and the union operator will not work as expected. This dictionary needs to be deep-copied and deep-merged instead.
 
@@ -185,16 +185,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **Note**: is up to the caller to use the returned metadata to create a version string which is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). The dictionary values are guaranteed to be fully compliant strings.
 
     **Note**: This function requires access to the project's repository metadata. It will return `None` instead of valid version metadata if the repository is not available, like for installed modules, frozen executables, etc. A viable alternative is to serialize the necessary version metadata to a file at build or commit time, using a VCS hook or similar, and read it back at runtime instead.
-- `git_repository_root(`\
-    `    cwd: pathlib.Path | None = None`\
-    `) -> pathlib.Path | None`\
-    Return the root directory of a Git repository.
-
-    The lookup is performed relative to *cwd*. If not provided, then the current working directory is used.
-
-    This function runs `git rev-parse --show-toplevel` and returns the fully resolved path of the repository root if the command succeeds, or `None` otherwise.
-
-    **Note**: This function requires access to the project's repository metadata. It will return `None` instead of the valid `Path`, if the the repository is not available, like for installed modules, frozen executables, etc. For those environments a viable alternative is to serialize this `Path` to a file at build or commit time, using a VCS hook or similar, and read it back at runtime instead.
 - `load_pyproject(`\
     `    project_dir: pathlib.Path | None = None`\
     `) -> dict[str, typing.Any] | None`\
