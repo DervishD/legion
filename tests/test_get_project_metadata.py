@@ -3,11 +3,16 @@ from copy import deepcopy
 from hashlib import sha1
 from pathlib import Path
 import subprocess
+import tomllib
 from typing import TYPE_CHECKING
 
 import pytest
 
-from legion import _git_repository_root, get_project_metadata  # pyright: ignore[reportPrivateUsage]
+from legion import (
+    _git_repository_root,  # pyright: ignore[reportPrivateUsage]
+    _load_pyproject,  # pyright: ignore[reportPrivateUsage]
+    get_project_metadata,
+)
 
 from .helpers import CallableSpy
 
@@ -38,15 +43,15 @@ TEST_VERSION_METADATA = {
 
 
 def mock_git_repository_root(*_: object) -> Path:
-    """Mock `git_repository_root()`."""
+    """Mock `_git_repository_root()`."""
     return TEST_PROJECT_ROOT
 
 def mock_load_pyproject(*_: object) -> dict[str, Any]:
-    """Mock `load_pyproject()`."""
+    """Mock `_load_pyproject()`."""
     return deepcopy(TEST_PYPROJECT)
 
 def mock_load_pyproject_no_local(*_: object) -> dict[str, Any]:
-    """Mock `load_pyproject()` without a `tool` subtable."""
+    """Mock `_load_pyproject()` without a `tool` subtable."""
     metadata = deepcopy(TEST_PYPROJECT)
     del metadata['tool']
     return metadata
@@ -84,6 +89,45 @@ def test__git_repository_root(
     assert mock_run_spy.call_count == 1
 
 
+# pylint: disable-next=unused-variable
+def test__load_pyproject_baseline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test `load_pyproject()` baseline."""
+    monkeypatch.setattr('legion._git_repository_root', lambda: tmp_path)
+
+    pyproject_path = tmp_path / 'pyproject.toml'
+    pyproject_path.write_text('[project]\nname = "example_project"\nversion = "42.73.137"\n', encoding='utf-8')
+
+    result = _load_pyproject(tmp_path)
+
+    pyproject_path.unlink()
+
+    assert result == {'project': {'name': 'example_project', 'version': '42.73.137'}}
+
+
+# pylint: disable-next=unused-variable
+def test__load_pyproject_not_found(tmp_path: Path) -> None:
+    """Test `load_pyproject()` when the file does not exist."""
+    assert _load_pyproject(tmp_path) is None
+
+
+# pylint: disable-next=unused-variable
+def test__load_pyproject_permission_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test `load_pyproject()` when the file cannot be read."""
+    def mock_read_text(*_a: object, **_kw: object) -> None:
+        raise PermissionError
+    monkeypatch.setattr(Path, 'read_text', mock_read_text)
+    (tmp_path / 'pyproject.toml').write_text('', encoding='utf-8')
+
+    assert _load_pyproject(tmp_path) is None
+
+
+# pylint: disable-next=unused-variable
+def test__load_pyproject__invalid_toml(tmp_path: Path) -> None:
+    """Test `load_pyproject()` when the file has invalid syntax."""
+    (tmp_path / 'pyproject.toml').write_text('this is : not [ valid toml', encoding='utf-8')
+    with pytest.raises(tomllib.TOMLDecodeError):
+        _load_pyproject(tmp_path)
+
 
 # pylint: disable-next=unused-variable
 def test_get_project_metadata_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -95,14 +139,14 @@ def test_get_project_metadata_baseline(monkeypatch: pytest.MonkeyPatch) -> None:
     }
     expected['project']['version'] = TEST_PROJECT_VERSION
     monkeypatch.setattr('legion._git_repository_root', mock_git_repository_root)
-    monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject)
+    monkeypatch.setattr('legion._load_pyproject', mock_load_pyproject)
     monkeypatch.setattr('legion.get_version_metadata', mock_get_version_metadata)
 
     project_metadata = get_project_metadata()
     assert project_metadata is not None
     assert project_metadata == expected
 
-    monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject_no_local)
+    monkeypatch.setattr('legion._load_pyproject', mock_load_pyproject_no_local)
     project_metadata = get_project_metadata()
     del expected['tool']
     expected['local'] = {}
@@ -117,9 +161,9 @@ def test_get_project_metadata_returns_none(monkeypatch: pytest.MonkeyPatch) -> N
     assert get_project_metadata() is None
 
     monkeypatch.setattr('legion._git_repository_root', mock_git_repository_root)
-    monkeypatch.setattr('legion.load_pyproject', return_none)
+    monkeypatch.setattr('legion._load_pyproject', return_none)
     assert get_project_metadata() is None
 
-    monkeypatch.setattr('legion.load_pyproject', mock_load_pyproject)
+    monkeypatch.setattr('legion._load_pyproject', mock_load_pyproject)
     monkeypatch.setattr('legion.get_version_metadata', return_none)
     assert get_project_metadata() is None

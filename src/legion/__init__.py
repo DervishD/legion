@@ -52,7 +52,6 @@ __all__: list[str] = [  # pylint: disable=unused-variable
     'get_logger',
     'get_project_metadata',
     'get_version_metadata',
-    'load_pyproject',
     'munge_oserror',
     'resolve_metadata',
     'run',
@@ -813,6 +812,24 @@ def _git_repository_root() -> Path | None:
     return None if result.returncode else Path(result.stdout.strip()).resolve()
 
 
+def _load_pyproject(directory: Path) -> dict[str, Any] | None:
+    """Load and parse `pyproject.toml` from *directory*.
+
+    The file is assumed to be in `TOML` syntax.
+
+    If it exists and can be read, and its syntax is correct, then return
+    a dictionary containing a representation of its contents, according
+    to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax
+    of the `TOML` document is invalid.
+
+    If the file does not exist or cannot be read, return `None`.
+    """
+    pyproject_toml_path = directory.resolve() / 'pyproject.toml'
+    with contextlib.suppress(PermissionError, FileNotFoundError):
+        return tomllib.loads(pyproject_toml_path.read_text(encoding='utf-8'))
+    return None
+
+
 def get_project_metadata() -> dict[str, Any] | None:
     """Get all available project metadata as a dictionary.
 
@@ -846,7 +863,7 @@ def get_project_metadata() -> dict[str, Any] | None:
     if (project_root := _git_repository_root()) is None:
         return None
 
-    if (project_metadata := load_pyproject(project_root)) is None:
+    if (project_metadata := _load_pyproject(project_root)) is None:
         return None
 
     if (version_metadata := get_version_metadata()) is None:
@@ -923,35 +940,6 @@ def get_version_metadata() -> dict[str, str] | None:
         'rev': rev.removeprefix('g'),
         'dirty': dirty,
     }
-
-
-def load_pyproject(project_dir: Path | None = None) -> dict[str, Any] | None:
-    """Load `pyproject.toml` file and parse it into a dictionary.
-
-    The file is assumed to be in `TOML` syntax.
-
-    The file is looked up in *project_dir* if provided, otherwise in the
-    root of the current Git repository. `None` is returned when the file
-    does not exist or cannot be read, or if *project_dir* was not given
-    and the root of the current Git repository cannot be determined.
-
-    If the file can be found and its syntax is correct, a dictionary is
-    returned, containing a representation of the file contents according
-    to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax
-    of the `TOML` document is invalid.
-
-    **Note**: This function requires access to the `pyproject.toml` file
-    and it will return `None`, instead of valid metadata, if the source
-    tree is unavailable, like for installed modules, frozen executables,
-    etc. For such environments a viable alternative is to serialize the
-    necessary metadata to a file at build or commit time, by using a VCS
-    hook or similar, and read it back at runtime instead.
-    """
-    if (pyproject_basedir := project_dir or _git_repository_root()) is not None:
-        pyproject_toml_path = pyproject_basedir.resolve() / 'pyproject.toml'
-        with contextlib.suppress(PermissionError, FileNotFoundError):
-            return tomllib.loads(pyproject_toml_path.read_text(encoding='utf-8'))
-    return None
 
 
 def munge_oserror(exc: OSError) -> dict[str, str | None]:

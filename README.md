@@ -185,18 +185,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     **Note**: is up to the caller to use the returned metadata to create a version string which is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). The dictionary values are guaranteed to be fully compliant strings.
 
     **Note**: This function requires access to the project's repository metadata. It will return `None` instead of valid version metadata if the repository is not available, like for installed modules, frozen executables, etc. A viable alternative is to serialize the necessary version metadata to a file at build or commit time, using a VCS hook or similar, and read it back at runtime instead.
-- `load_pyproject(`\
-    `    project_dir: pathlib.Path | None = None`\
-    `) -> dict[str, typing.Any] | None`\
-    Load `pyproject.toml` file and parse it into a dictionary.
-
-    The file is assumed to be in `TOML` syntax.
-
-    The file is looked up in *project_dir* if provided, otherwise in the root of the current Git repository. `None` is returned when the file does not exist or cannot be read, or if *project_dir* was not given and the root of the current Git repository cannot be determined.
-
-    If the file can be found and its syntax is correct, a dictionary is returned, containing a representation of the file contents according to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax of the `TOML` document is invalid.
-
-    **Note**: This function requires access to the `pyproject.toml` file and it will return `None`, instead of valid metadata, if the source tree is unavailable, like for installed modules, frozen executables, etc. For such environments a viable alternative is to serialize the necessary metadata to a file at build or commit time, by using a VCS hook or similar, and read it back at runtime instead.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> dict[str, str | None]`\

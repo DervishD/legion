@@ -44,7 +44,6 @@ side effects are no longer implicit.
 - `format_message()` function
 - `get_project_metadata()` function
 - `get_version_metadata()` function
-- `load_pyproject()` function
 - `resolve_metadata()` function
 - `excepthook()` exception chaining support
 
