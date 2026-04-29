@@ -823,6 +823,14 @@ def get_project_metadata() -> dict[str, Any] | None:
     - the `pyproject.toml` file cannot be loaded (it is not found, it is
     not readable, it has syntax errors, etc.).
     - the project version cannot be resolved.
+
+    **Note**: This function requires access to the project's source tree
+    and VCS metadata. It will return `None`, instead of valid metadata,
+    in environments where neither the source tree nor the VCS repository
+    are available, like installed modules, frozen executables, etc. For
+    such environments a viable alternative is to serialize the necessary
+    metadata to a file at build or commit time, using for example a VCS
+    hook or similar, and read it back at runtime instead.
     """
     if (project_root := git_repository_root()) is None:
         return None
@@ -870,6 +878,13 @@ def get_version_metadata() -> dict[str, str] | None:
     a version string which is fully compliant with the
     [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme).
     The dictionary values are guaranteed to be fully compliant strings.
+
+    **Note**: This function requires access to the project's repository
+    metadata. It will return `None` instead of valid version metadata if
+    the repository is not available, like for installed modules, frozen
+    executables, etc. A viable alternative is to serialize the necessary
+    version metadata to a file at build or commit time, using a VCS hook
+    or similar, and read it back at runtime instead.
     """
     branch_name_escape_sequence = 'xxx'
     dirty_marker = 'dirty'
@@ -909,6 +924,13 @@ def git_repository_root(cwd: Path | None = None) -> Path | None:
     This function runs `git rev-parse --show-toplevel` and returns the
     fully resolved path of the repository root if the command succeeds,
     or `None` otherwise.
+
+    **Note**: This function requires access to the project's repository
+    metadata. It will return `None` instead of the valid `Path`, if the
+    the repository is not available, like for installed modules, frozen
+    executables, etc. For those environments a viable alternative is to
+    serialize this `Path` to a file at build or commit time, using a VCS
+    hook or similar, and read it back at runtime instead.
     """
     result = run(['git', 'rev-parse', '--show-toplevel'], cwd=(cwd or Path()).resolve(), encoding='utf-8')
     return None if result.returncode else Path(result.stdout.strip()).resolve()
@@ -928,6 +950,13 @@ def load_pyproject(project_dir: Path | None = None) -> dict[str, Any] | None:
     returned, containing a representation of the file contents according
     to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax
     of the `TOML` document is invalid.
+
+    **Note**: This function requires access to the `pyproject.toml` file
+    and it will return `None`, instead of valid metadata, if the source
+    tree is unavailable, like for installed modules, frozen executables,
+    etc. For such environments a viable alternative is to serialize the
+    necessary metadata to a file at build or commit time, by using a VCS
+    hook or similar, and read it back at runtime instead.
     """
     if (pyproject_basedir := project_dir or git_repository_root()) is not None:
         pyproject_toml_path = pyproject_basedir.resolve() / 'pyproject.toml'

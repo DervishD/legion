@@ -156,8 +156,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`. Additional metadata is provided on extra keys at dictionary root, for convenience:
     - `version`: version metadata as returned by `resolve_version()`.
-    - `pyproject_root`: fully resolved repository root directory.
-    - `timestamp`: timestamp, in '%Y-%m-%d %H:%M:%S' format.
+    - `project_root`: fully resolved repository root directory.
     - `self`: alias for `metadata['tool'][metadata['project']['name']]` table, or an empty dict if that table does not exist.
 
     The returned dictionary is multilevel. This means that shallow copy, shallow merge and the union operator will not work as expected. This dictionary needs to be deep-copied and deep-merged instead.
@@ -166,6 +165,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     - the project root cannot be determined.
     - the `pyproject.toml` file cannot be loaded (it is not found, it is not readable, it has syntax errors, etc.).
     - the project version cannot be resolved.
+
+    **Note**: This function requires access to the project's source tree and VCS metadata. It will return `None`, instead of valid metadata, in environments where neither the source tree nor the VCS repository are available, like installed modules, frozen executables, etc. For such environments a viable alternative is to serialize the necessary metadata to a file at build or commit time, using for example a VCS hook or similar, and read it back at runtime instead.
 - `get_version_metadata() -> dict[str, str] | None`\
     Get version metadata from repository current state.
 
@@ -181,7 +182,9 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     - `rev`: abbreviated commit hash, without a leading `g`.
     - `dirty`: The `.dirty` string when the working tree has uncommitted changes, otherwise an empty string.
 
-    **NOTE**: is up to the caller to use the returned metadata to create a version string which is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). The dictionary values are guaranteed to be fully compliant strings.
+    **Note**: is up to the caller to use the returned metadata to create a version string which is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). The dictionary values are guaranteed to be fully compliant strings.
+
+    **Note**: This function requires access to the project's repository metadata. It will return `None` instead of valid version metadata if the repository is not available, like for installed modules, frozen executables, etc. A viable alternative is to serialize the necessary version metadata to a file at build or commit time, using a VCS hook or similar, and read it back at runtime instead.
 - `git_repository_root(`\
     `    cwd: pathlib.Path | None = None`\
     `) -> pathlib.Path | None`\
@@ -190,6 +193,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     The lookup is performed relative to *cwd*. If not provided, then the current working directory is used.
 
     This function runs `git rev-parse --show-toplevel` and returns the fully resolved path of the repository root if the command succeeds, or `None` otherwise.
+
+    **Note**: This function requires access to the project's repository metadata. It will return `None` instead of the valid `Path`, if the the repository is not available, like for installed modules, frozen executables, etc. For those environments a viable alternative is to serialize this `Path` to a file at build or commit time, using a VCS hook or similar, and read it back at runtime instead.
 - `load_pyproject(`\
     `    project_dir: pathlib.Path | None = None`\
     `) -> dict[str, typing.Any] | None`\
@@ -200,6 +205,8 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     The file is looked up in *project_dir* if provided, otherwise in the root of the current Git repository. `None` is returned when the file does not exist or cannot be read, or if *project_dir* was not given and the root of the current Git repository cannot be determined.
 
     If the file can be found and its syntax is correct, a dictionary is returned, containing a representation of the file contents according to the `tomllib` parser. `TOMLDecodeError` is raised if the syntax of the `TOML` document is invalid.
+
+    **Note**: This function requires access to the `pyproject.toml` file and it will return `None`, instead of valid metadata, if the source tree is unavailable, like for installed modules, frozen executables, etc. For such environments a viable alternative is to serialize the necessary metadata to a file at build or commit time, by using a VCS hook or similar, and read it back at runtime instead.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> dict[str, str | None]`\
@@ -215,11 +222,11 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     Attributes are not guaranteed to exist, and in that case the stored value will be `None`, to make the dictionary easier to process, for examply for replacing missing values with a marker, etc.
 
-    **NOTE**: the `errno` and `winerror` codes are combined with a slash character if both are present.
+    **Note**: the `errno` and `winerror` codes are combined with a slash character if both are present.
 
-    **NOTE**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
+    **Note**: the returned error message is normalized if present. The first letter is uppercased and the final period (if any), removed.
 
-    **NOTE**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
+    **Note**: depending on operation which caused the exception raising, there may be zero, one, or two paths involved.
 - `resolve_metadata(`\
     `    metadata: dict[str, typing.Any],`\
     `    table: str,`\
@@ -275,9 +282,9 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 
     It is a good idea to include a leading new line character in the *prompt* message to ensure it is clearly separated from previous output from the program.
 
-    **NOTE**: there is no standard method of knowing if a console is transient or not, so determining console transience is entirely based on heuristics.
+    **Note**: there is no standard method of knowing if a console is transient or not, so determining console transience is entirely based on heuristics.
 
-    **NOTE**: is up to the importer to register this function with `atexit.register()`, to call it explicitly, or to use it only if the importer is running as a script instead of being imported.
+    **Note**: is up to the importer to register this function with `atexit.register()`, to call it explicitly, or to use it only if the importer is running as a script instead of being imported.
 - `wait_for_keypress(`\
     `    *args: typing.Any,`\
     `    **kwargs: typing.Any`\
