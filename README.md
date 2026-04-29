@@ -154,12 +154,20 @@ Since this is many, it's *legion*. This package (currently, a single module) con
 - `get_project_metadata() -> dict[str, typing.Any] | None`\
     Get all available project metadata as a dictionary.
 
-    The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`. Additional metadata is provided on extra keys at toplevel, for convenience:
-    - `version`: project's version metadata, as returned by `get_version_metadata()`.
-    - `project_root`: fully resolved repository root directory.
-    - `local`: a reference to the project's local metadata at the table `tool.<project name>`, if it exists, otherwise an empty dictionary.
+    The metadata is obtained from the `pyproject.toml` file contents, so the returned dictionary mimics the keys and values structure within the file, as parsed by `tomllib`.
 
     The returned dictionary is multilevel. This means that shallow copy, shallow merge and the union operator will not work as expected. This dictionary needs to be deep-copied and deep-merged instead.
+
+    Additional metadata in available in the following toplevel keys:
+    - `project_root`: fully resolved repository root directory.
+    - `local`: a reference to the project's local metadata at the table `tool.<project name>`, if it exists, otherwise an empty dictionary.
+    - `version`: project's version metadata with the following keys:
+        - `tag`: the most recent version tag, without a leading `v`.
+        - `distance`: the number of commits since the `tag`.
+        - `branch`: current branch name, lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set. Other characters are replaced by `xxx`. For a detached `HEAD` state repository it is an empty string instead.
+        - `detached`: the `detached` string for a detached `HEAD` state in the repository, otherwise an empty string.
+        - `rev`: abbreviated commit hash, without a leading `g`.
+        - `dirty`: The `.dirty` string if there are uncommitted changes in the working tree, otherwise an empty string.
 
     `None` is returned in any of these situations:
     - the project root cannot be determined.
@@ -167,24 +175,6 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     - the project version cannot be resolved.
 
     **Note**: This function requires access to the project's source tree and VCS metadata. It will return `None`, instead of valid metadata, in environments where neither the source tree nor the VCS repository are available, like installed modules, frozen executables, etc. For such environments a viable alternative is to serialize the necessary metadata to a file at build or commit time, using for example a VCS hook or similar, and read it back at runtime instead.
-- `get_version_metadata() -> dict[str, str] | None`\
-    Get version metadata from repository current state.
-
-    Return a dictionary containing version metadata, which is built from VCS information reflecting the current state of the repository.
-
-    `None` is returned if no version metadata can be found, e.g. if the current working directory is not a repository, or it has no tags.
-
-    The returned dictionary contains the following keys:
-    - `tag`: the most recent version tag, without a leading `v`.
-    - `distance`: the number of commits since the `tag`.
-    - `branch`: current branch name, but lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set, replacing any other characters by `xxx`. It is an empty string if the repository is in the detached `HEAD` state.
-    - `detached`: the `detached` string if the repository is in detached `HEAD` state, otherwise it is an empty string.
-    - `rev`: abbreviated commit hash, without a leading `g`.
-    - `dirty`: The `.dirty` string when the working tree has uncommitted changes, otherwise an empty string.
-
-    **Note**: is up to the caller to use the returned metadata to create a version string which is fully compliant with the [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme). The dictionary values are guaranteed to be fully compliant strings.
-
-    **Note**: This function requires access to the project's repository metadata. It will return `None` instead of valid version metadata if the repository is not available, like for installed modules, frozen executables, etc. A viable alternative is to serialize the necessary version metadata to a file at build or commit time, using a VCS hook or similar, and read it back at runtime instead.
 - `munge_oserror(`\
     `    exc: OSError`\
     `) -> dict[str, str | None]`\
