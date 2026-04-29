@@ -1,4 +1,6 @@
-"""# legion {}
+"""# legion
+
+*Documentation for version `{}`*
 
 > 'What is your name?'<br>
 > 'My name is Legion,' he replied, 'for we are many.'
@@ -459,7 +461,7 @@ class _DocstringVisitor(ast.NodeVisitor):
 
 
 def docs() -> str:
-    """Return this module documentation in Markdown format."""
+    """Return this module documentation rendered in Markdown format."""
     if __doc__ is None:  # pragma: no cover
         raise RuntimeError
 

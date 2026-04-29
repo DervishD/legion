@@ -1,4 +1,6 @@
-# legion 2.1.0.post0
+# legion
+
+*Documentation for version `2.1.0.post0`*
 
 > 'What is your name?'\
 > 'My name is Legion,' he replied, 'for we are many.'
@@ -72,7 +74,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
             - Messages with severity of `logging.WARNING` or higher go to the standard error stream.
         - If all file paths are `None` and *console* is `False`, **NO LOGGING OUTPUT IS PRODUCED AT ALL**.
 - `docs() -> str`\
-    Return this module documentation in Markdown format.
+    Return this module documentation rendered in Markdown format.
 - `ensure_utf8_output(`\
     `    f: collections.abc.Callable[P, R]`\
     `) -> collections.abc.Callable[P, R]`\
