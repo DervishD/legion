@@ -807,11 +807,11 @@ def get_project_metadata() -> dict[str, Any] | None:
     The metadata is obtained from the `pyproject.toml` file contents, so
     the returned dictionary mimics the keys and values structure within
     the file, as parsed by `tomllib`. Additional metadata is provided on
-    extra keys at dictionary root, for convenience:
-    - `version`: version metadata as returned by `resolve_version()`.
+    extra keys at toplevel, for convenience:
+    - `version`: project's version metadata, as returned by `get_version_metadata()`.
     - `project_root`: fully resolved repository root directory.
-    - `self`: alias for `metadata['tool'][metadata['project']['name']]`
-    table, or an empty dict if that table does not exist.
+    - `local`: a reference to the project's local metadata at the table
+    `tool.<project name>`, if it exists, otherwise an empty dictionary.
 
     The returned dictionary is multilevel. This means that shallow copy,
     shallow merge and the union operator will not work as expected. This
@@ -843,9 +843,9 @@ def get_project_metadata() -> dict[str, Any] | None:
     project_metadata['version'] = version_metadata
     project_metadata['project_root'] = project_root
     try:
-        project_metadata['self'] = project_metadata['tool'][project_metadata['project']['name']]
+        project_metadata['local'] = project_metadata['tool'][project_metadata['project']['name']]
     except KeyError:
-        project_metadata['self'] = {}
+        project_metadata['local'] = {}
 
     return project_metadata
 
