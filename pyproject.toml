@@ -30,6 +30,7 @@ maintainers = [{name="Raúl Núñez de Arenas Coronado", email="raulnac@gmail.co
 scripts = {"legion" = "legion:demo"}
 
 [project.urls]
+homepage = "https://github.com/DervishD/legion"
 source = "https://github.com/DervishD/legion"
 issues = "https://github.com/DervishD/legion/issues"
 changelog = "https://github.com/DervishD/legion/CHANGELOG.md"
@@ -50,6 +51,7 @@ colophon.template = '''
     PROGRAM_NAME = {project[name]!r}
     VERSION = {local[version]!r}
     RELEASE = {local[release]!r}
+    REPOSITORY = {project[urls][source]!r}
 '''
 
 [tool.setuptools.dynamic]

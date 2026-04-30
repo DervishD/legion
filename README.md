@@ -1,6 +1,6 @@
 # legion
 
-*Documentation for version `2.1.0.post0`*
+*`v2.1.0.post0` · [GitHub](https://github.com/DervishD/legion)*
 
 > 'What is your name?'\
 > 'My name is Legion,' he replied, 'for we are many.'
