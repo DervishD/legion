@@ -31,7 +31,7 @@ side effects are no longer implicit.
   of `None`, empty strings, markers, etc.
 - `munge_oserror()` now removes ending period (if any) from `strerror`
 - `munge_oserror()` no longer returns the exception type name
-- `_ConvenienceLogger` is now exported and it is named `Logger`
+- `_ConvenienceLogger` is now exported and it is named `LegionLogger`
 - Most hardcoded messages are now customizable
 - Improved default exception hook, with customizable heading
 - `wait_for_keypress()` is no longer automatically registered with `atexit`
