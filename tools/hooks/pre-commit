@@ -7,7 +7,7 @@ GENERATED_DOCUMENTATION='README.md'
 update_colophon
 git add "$COLOPHON_PATH"
 
-git diff --cached --name-only | grep -q "^$SELF_DOCUMENTING_CODE$" || exit 0
+git diff --cached --name-only | grep -Fxq -e "$SELF_DOCUMENTING_CODE" -e "$COLOPHON_PATH" || exit 0
 
 python -m legion || die "Failed to generate $GENERATED_DOCUMENTATION."
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+REPO_ROOT=$(git rev-parse --show-toplevel)
 
 die() {
     echo "$1";
@@ -7,6 +8,8 @@ die() {
 
 update_colophon() {
     COLOPHON_PATH=$(python tools/colophon.py) || die 'The colophon file could not be generated.'
+    COLOPHON_PATH=${COLOPHON_PATH//\\//}
+    COLOPHON_PATH=${COLOPHON_PATH#"$REPO_ROOT"/}
 }
 
 if [ -f .venv/Scripts/activate ]; then
