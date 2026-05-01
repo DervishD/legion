@@ -72,7 +72,7 @@ def test__git_repository_root(
 
 # pylint: disable-next=unused-variable
 def test__load_pyproject_baseline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Test `load_pyproject()` baseline."""
+    """Test `_load_pyproject()` baseline."""
     monkeypatch.setattr('legion._git_repository_root', lambda: tmp_path)
 
     pyproject_path = tmp_path / 'pyproject.toml'
@@ -87,13 +87,13 @@ def test__load_pyproject_baseline(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
 
 # pylint: disable-next=unused-variable
 def test__load_pyproject_not_found(tmp_path: Path) -> None:
-    """Test `load_pyproject()` when the file does not exist."""
+    """Test `_load_pyproject()` when the file does not exist."""
     assert _load_pyproject(tmp_path) is None
 
 
 # pylint: disable-next=unused-variable
 def test__load_pyproject_permission_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Test `load_pyproject()` when the file cannot be read."""
+    """Test `_load_pyproject()` when the file cannot be read."""
     def mock_read_text(*_a: object, **_kw: object) -> None:
         raise PermissionError
     monkeypatch.setattr(Path, 'read_text', mock_read_text)
@@ -104,7 +104,7 @@ def test__load_pyproject_permission_error(monkeypatch: pytest.MonkeyPatch, tmp_p
 
 # pylint: disable-next=unused-variable
 def test__load_pyproject__invalid_toml(tmp_path: Path) -> None:
-    """Test `load_pyproject()` when the file has invalid syntax."""
+    """Test `_load_pyproject()` when the file has invalid syntax."""
     (tmp_path / 'pyproject.toml').write_text('this is : not [ valid toml', encoding='utf-8')
     with pytest.raises(tomllib.TOMLDecodeError):
         _load_pyproject(tmp_path)
@@ -141,13 +141,8 @@ def mock_run_factory(results: list[MockCompletedProcess]) -> Callable[..., MockC
     return wrapped
 
 
-VERSION_METADATA_KEYS = ('tag', 'distance', 'branch', 'detached', 'rev', 'dirty')
-def build_test_metadata_dict(*values: str) -> dict[str, str]:
-    """Return a metadata dictionary from *values*."""
-    return dict(zip(VERSION_METADATA_KEYS, values, strict=True))
-
-
 TAG = '0.42.73'
+RELEASE = '42.37'
 DISTANCE = '137'
 BRANCH = 'main'
 DETACHED = 'detached'
@@ -158,45 +153,106 @@ CLEAN_WORKTREE = f'v{TAG}-{DISTANCE}-g{REV}\n'
 CLEAN_NOT_V_NOR_G = f'{TAG}-{DISTANCE}-{REV}\n'
 DIRTY_WORKTREE = f'v{TAG}-{DISTANCE}-g{REV}-{DIRTY.lstrip('.')}\n'
 
+VERSION_METADATA_KEYS = ('tag', 'distance', 'branch', 'detached', 'rev', 'dirty')
+def build_test_version_metadata_dict(*values: str) -> dict[str, str]:
+    """Return a metadata dictionary from *values*."""
+    return dict(zip(VERSION_METADATA_KEYS, values, strict=True)) | {'release': ''}
+
+
+@pytest.mark.parametrize(('changelog_contents', 'expected'), [
+    pytest.param(f'## [{RELEASE}] 2084-07-07 06:54:54.9', RELEASE, id='test__get_version_metadata_changelog_baseline'),
+    pytest.param('## []', '', id='test__get_version_metadata_changelog_no_match'),
+    pytest.param('', '', id='test__get_version_metadata_changelog_empty'),
+])
+# pylint: disable-next=unused-variable
+def test__get_version_metadata_changelog(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    changelog_contents: str,
+    expected: str,
+) -> None:
+    """Test `_get_version_metadata()` functionality, changelog mode."""
+    changelog = tmp_path / 'example_CHANGELOG.md'
+    changelog.write_text(changelog_contents, encoding='utf-8')
+    monkeypatch.setattr('legion.run', mock_run_factory([
+        MockCompletedProcess(0, CLEAN_WORKTREE),
+        MockCompletedProcess(0, BRANCH),
+    ]))
+
+    result = _get_version_metadata(changelog)
+    changelog.unlink()
+
+    assert result is not None
+    assert result == build_test_version_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, '') | {'release': expected}
+
+
+# pylint: disable-next=unused-variable
+def test__get_version_metadata_changelog_no_data(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Test `_get_version_metadata()` with no release data."""
+    expected = build_test_version_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, '')
+
+    monkeypatch.setattr('legion.run', mock_run_factory([
+        MockCompletedProcess(0, CLEAN_WORKTREE),
+        MockCompletedProcess(0, BRANCH),
+    ]))
+    result = _get_version_metadata(tmp_path / 'non_existent')
+    assert result is not None
+    assert result == expected
+
+    def mock_read_text(*_a: object, **_kw: object) -> None:
+        raise PermissionError
+    monkeypatch.setattr(Path, 'read_text', mock_read_text)
+    monkeypatch.setattr('legion.run', mock_run_factory([
+        MockCompletedProcess(0, CLEAN_WORKTREE),
+        MockCompletedProcess(0, BRANCH),
+    ]))
+    result = _get_version_metadata(tmp_path / 'non_readable')
+    assert result is not None
+    assert result == expected
+
+
 @pytest.mark.parametrize(('results', 'expected'), [
     pytest.param(
         [MockCompletedProcess(1, '')],
         None,
-        id='test_resolve_version_no_metadata',
+        id='test_resolve_version_git_no_metadata',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_WORKTREE), MockCompletedProcess(0, BRANCH)],
-        build_test_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
-        id='test_resolve_version_baseline_clean',
+        build_test_version_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
+        id='test_resolve_version_git_baseline_clean',
     ),
     pytest.param(
         [MockCompletedProcess(0, DIRTY_WORKTREE), MockCompletedProcess(0, BRANCH)],
-        build_test_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, DIRTY),
-        id='test_resolve_version_baseline_dirty',
+        build_test_version_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, DIRTY),
+        id='test_resolve_version_git_baseline_dirty',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_NOT_V_NOR_G), MockCompletedProcess(0, BRANCH)],
-        build_test_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
-        id='test_resolve_version_no_v_nor_g',
+        build_test_version_metadata_dict(TAG, DISTANCE, BRANCH, '', REV, ''),
+        id='test_resolve_version_git_no_v_nor_g',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_WORKTREE), MockCompletedProcess(1, '')],
-        build_test_metadata_dict(TAG, DISTANCE, '', DETACHED, REV, ''),
-        id='test_resolve_version_detached_head',
+        build_test_version_metadata_dict(TAG, DISTANCE, '', DETACHED, REV, ''),
+        id='test_resolve_version_git_detached_head',
     ),
     pytest.param(
         [MockCompletedProcess(0, CLEAN_WORKTREE), MockCompletedProcess(0, f'branch with,{BRANCH}/extra-separators')],
-        build_test_metadata_dict(TAG, DISTANCE, f'branchxxxwithxxx{BRANCH}xxxextraxxxseparators', '', REV, ''),
-        id='test_resolve_version_sanitize_branch',
+        build_test_version_metadata_dict(TAG, DISTANCE, f'branchxxxwithxxx{BRANCH}xxxextraxxxseparators', '', REV, ''),
+        id='test_resolve_version_git_sanitize_branch',
     ),
 ])
 # pylint: disable-next=unused-variable
-def test__get_version_metadata(
+def test__get_version_metadata_git(
     monkeypatch: pytest.MonkeyPatch,
     results: list[MockCompletedProcess],
     expected: dict[str, str],
 ) -> None:
-    """Test `get_version_metadata()` functionality."""
+    """Test `_get_version_metadata()` functionality, git mode."""
     monkeypatch.setattr('legion.run', mock_run_factory(results))
 
     version_metadata = _get_version_metadata()
@@ -278,7 +334,7 @@ EXPECTED = {
 
 # pylint: disable-next=unused-variable,redefined-outer-name
 def test__resolve_metadata_baseline(metadata: dict[str, Any]) -> None:
-    """Test `resolve_metadata()` baseline."""
+    """Test `_resolve_metadata()` baseline."""
     original = deepcopy(metadata)
     resolved = _resolve_metadata(metadata, EVAL_PREFIX)
     assert metadata == original

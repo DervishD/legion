@@ -170,6 +170,7 @@ Since this is many, it's *legion*. This package (currently, a single module) con
     - `local` (`dict[str, Any]`): project's local metadata.
 
     The `version` dictionary contains the following keys:
+    - `release`: the version number for public releases, an empty string otherwise (for development or non-public releases, for example).
     - `tag`: the most recent version tag, without a leading `v`.
     - `distance`: the number of commits since the `tag`.
     - `branch`: current branch name, but lowercased and sanitized, so it only contains characters in the `[a-z0-9]` set, replacing any other characters by `xxx`. It is an empty string if the repository is in the detached `HEAD` state.

@@ -830,7 +830,7 @@ def _load_pyproject(directory: Path) -> dict[str, Any] | None:
     return None
 
 
-def _get_version_metadata() -> dict[str, str] | None:
+def _get_version_metadata(changelog_path: Path | None = None) -> dict[str, str] | None:
     """Get version metadata from repository current state.
 
     Return a dictionary containing version metadata, which is built from
@@ -838,14 +838,29 @@ def _get_version_metadata() -> dict[str, str] | None:
     version metadata values are fully compliant with the
     [`PyPA` version scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme).
 
+    Optionally, if *changelog_path* is provided, and it points to a file
+    which exists and can be read, release information is retrieved from
+    its contents, from the **FIRST** level two heading, if any. If that
+    heading contains anything that matches a release version number, as
+    defined by `PyPA` above, it is stored on the returned metadata.
+
     `None` is returned if no version metadata can be found, e.g. if the
     current working directory is not a repository, or it has no tags.
 
     Refer to `get_project_metadata()` documentation for a description of
     the returned keys.
     """
-    branch_name_escape_sequence = 'xxx'
-    dirty_marker = 'dirty'
+    release = ''
+    if changelog_path is not None:
+        with contextlib.suppress(FileNotFoundError, PermissionError):
+            for line in changelog_path.read_text(encoding='utf-8').splitlines():
+                if not line.startswith('## '):
+                    continue
+                if match := re.search(r'(?P<release>(?:0|[1-9][0-9]*+)(?:\.(?:0|[1-9][0-9]*+))*)', line):
+                    value = match.group('release')
+                    release = value
+                break
+
     detached_head_marker = 'detached'
 
     if (result := run(['git', 'describe', '--long', '--dirty'])).returncode:
@@ -864,6 +879,7 @@ def _get_version_metadata() -> dict[str, str] | None:
         detached = detached_head_marker
 
     return {
+        'release': release,
         'tag': tag.removeprefix('v'),
         'distance': distance,
         'branch': branch,
@@ -924,6 +940,8 @@ def get_project_metadata(eval_prefix: str = '!!') -> dict[str, Any] | None:
     - `local` (`dict[str, Any]`): project's local metadata.
 
     The `version` dictionary contains the following keys:
+    - `release`: the version number for public releases, an empty string
+    otherwise (for development or non-public releases, for example).
     - `tag`: the most recent version tag, without a leading `v`.
     - `distance`: the number of commits since the `tag`.
     - `branch`: current branch name, but lowercased and sanitized, so it
@@ -964,7 +982,7 @@ def get_project_metadata(eval_prefix: str = '!!') -> dict[str, Any] | None:
     if (project_metadata := _load_pyproject(project_root)) is None:
         return None
 
-    if (version_metadata := _get_version_metadata()) is None:
+    if (version_metadata := _get_version_metadata(project_root / 'CHANGELOG.md')) is None:
         return None
 
     project_metadata['version'] = version_metadata
