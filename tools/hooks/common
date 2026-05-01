@@ -12,8 +12,11 @@ update_colophon() {
     COLOPHON_PATH=${COLOPHON_PATH#"$REPO_ROOT"/}
 }
 
-if [ -f .venv/Scripts/activate ]; then
-    . .venv/Scripts/activate
-else
-    . .venv/bin/activate
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    if [ -f .venv/Scripts/activate ]; then
+        . .venv/Scripts/activate
+    else
+        . .venv/bin/activate
+    fi
 fi
