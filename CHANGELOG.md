@@ -6,6 +6,11 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 
+## [Development]
+### Fixed
+- `post-checkout` hook no longer updates colophon file infinitely.
+
+
 ## [3.0.2]
 ### Fixed
 - Improve automatic release tagging
@@ -131,7 +136,7 @@ side effects are no longer implicit.
 - Useful run-time constants
 - Timestamp string generator
 
-
+[Development]: https://github.com/DervishD/legion/compare/v3.0.2...development
 [3.0.2]: https://github.com/DervishD/legion/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/DervishD/legion/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/DervishD/legion/compare/v2.1.0...v3.0.0
