@@ -848,12 +848,12 @@ def _get_version_metadata() -> dict[str, str] | None:
     dirty_marker = 'dirty'
     detached_head_marker = 'detached'
 
-    if (result := run(['git', 'describe', '--long', f'--dirty=-{dirty_marker}'])).returncode:
+    if (result := run(['git', 'describe', '--long', '--dirty'])).returncode:
         return None
 
     components = result.stdout.strip().split('-')
 
-    dirty = f'.{dirty_marker}' if components[-1] == dirty_marker else ''
+    dirty = '.dirty' if components[-1] == 'dirty' else ''
     tag, distance, rev = components[0:3]
 
     detached = ''
