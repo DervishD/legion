@@ -859,7 +859,7 @@ def _get_version_metadata() -> dict[str, str] | None:
     detached = ''
     branch = ''
     if not (result := run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])).returncode:
-        branch = re.sub(r'[^a-z0-9]', branch_name_escape_sequence, result.stdout.strip().lower())
+        branch = re.sub(r'[^a-z0-9]', 'xxx', result.stdout.strip().lower())
     else:
         detached = detached_head_marker
 
