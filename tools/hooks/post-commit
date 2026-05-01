@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/common"
+
+VERSION=$(python - <<'EOF'
+from legion.about import VERSION, RELEASE
+if VERSION == RELEASE:
+    print(VERSION)
+else:
+    exit(1)
+EOF
+) || die "Unable to retrieve version tag"
+
+git tag -a "v$VERSION" -m ''
