@@ -1,4 +1,4 @@
-"""Test units for `get_project_metadata()` function."""
+"""Test units for `get_project_metadata()` function and helpers."""
 from copy import deepcopy
 from hashlib import sha1
 from pathlib import Path
@@ -24,48 +24,14 @@ if TYPE_CHECKING:
 
 
 
-TEST_PROJECT_ROOT = Path('/example/fake/project_root')
-TEST_PROJECT_NAME = 'example_project'
-TEST_PROJECT_VERSION = '0.42.73'
-TEST_LOCAL_METADATA = {'local_key': 'local_value' }
-TEST_PYPROJECT = {
-    'project': {
-        'name': TEST_PROJECT_NAME,
-        'version': TEST_PROJECT_VERSION,
-    },
-    'example_key': 'example_value',
-    'tool': {TEST_PROJECT_NAME: TEST_LOCAL_METADATA},
-}
-TEST_VERSION_METADATA = {
-    'tag': TEST_PROJECT_VERSION,
-    'distance': '137',
-    'branch': 'example_branch',
-    'detached': '',
-    'rev': sha1(b'There was a button. I pushed it.', usedforsecurity=False).hexdigest(),
-    'dirty': '.dirty',
-}
+
+########################################################################
+#                                                                      #
+#   Test units for _git_repository_root()                              #
+#                                                                      #
+########################################################################
 
 
-def mock_git_repository_root(*_: object) -> Path:
-    """Mock `_git_repository_root()`."""
-    return TEST_PROJECT_ROOT
-
-def mock_load_pyproject(*_: object) -> dict[str, Any]:
-    """Mock `_load_pyproject()`."""
-    return deepcopy(TEST_PYPROJECT)
-
-def mock_load_pyproject_no_local(*_: object) -> dict[str, Any]:
-    """Mock `_load_pyproject()` without a `tool` subtable."""
-    metadata_no_tool = deepcopy(TEST_PYPROJECT)
-    del metadata_no_tool['tool']
-    return metadata_no_tool
-
-def mock_get_version_metadata(*_: object) -> dict[str, str]:
-    """Mock `get_version_metadata()`."""
-    return deepcopy(TEST_VERSION_METADATA)
-
-def return_none(*_: object) -> None:
-    """Monkeypatch helper to return `None`."""
 
 
 @pytest.mark.parametrize(('returncode', 'stdout' , 'expected'), [
@@ -91,6 +57,17 @@ def test__git_repository_root(
     assert result == expected
     assert mock_run_spy.called
     assert mock_run_spy.call_count == 1
+
+
+
+
+########################################################################
+#                                                                      #
+#   Test units for _load_pyproject()                                   #
+#                                                                      #
+########################################################################
+
+
 
 
 # pylint: disable-next=unused-variable
@@ -131,6 +108,17 @@ def test__load_pyproject__invalid_toml(tmp_path: Path) -> None:
     (tmp_path / 'pyproject.toml').write_text('this is : not [ valid toml', encoding='utf-8')
     with pytest.raises(tomllib.TOMLDecodeError):
         _load_pyproject(tmp_path)
+
+
+
+
+########################################################################
+#                                                                      #
+#   Test units for _get_version_metadata()                             #
+#                                                                      #
+########################################################################
+
+
 
 
 class MockCompletedProcess:
@@ -215,6 +203,17 @@ def test__get_version_metadata(
     assert version_metadata == expected
 
 
+
+
+########################################################################
+#                                                                      #
+#   Test units for _resolve_metadata()                                 #
+#                                                                      #
+########################################################################
+
+
+
+
 EVAL_PREFIX = '!!'
 
 @pytest.fixture
@@ -292,6 +291,58 @@ def test__resolve_metadata_unresolvable_placeholder(metadata: dict[str, Any]) ->
     metadata['local']['dict']['unresolvable'] = '{unresolvable[placeholder]}'
     with pytest.raises(KeyError):
         _resolve_metadata(metadata, EVAL_PREFIX)
+
+
+
+
+########################################################################
+#                                                                      #
+#   Test units for get_project_metadata()                              #
+#                                                                      #
+########################################################################
+
+
+
+
+TEST_PROJECT_ROOT = Path('/example/fake/project_root')
+TEST_PROJECT_NAME = 'example_project'
+TEST_PROJECT_RELEASE = '1.42.73'
+TEST_PROJECT_VERSION = '0.42.73'
+TEST_LOCAL_METADATA = {'local_key': 'local_value' }
+TEST_PYPROJECT = {
+    'project': {
+        'name': TEST_PROJECT_NAME,
+        'version': TEST_PROJECT_VERSION,
+    },
+    'example_key': 'example_value',
+    'tool': {TEST_PROJECT_NAME: TEST_LOCAL_METADATA},
+}
+TEST_VERSION_METADATA = {
+    'release': TEST_PROJECT_RELEASE,
+    'tag': TEST_PROJECT_VERSION,
+    'distance': '137',
+    'branch': 'example_branch',
+    'detached': '',
+    'rev': sha1(b'There was a button. I pushed it.', usedforsecurity=False).hexdigest(),
+    'dirty': '.dirty',
+}
+
+def mock_git_repository_root(*_: object) -> Path:
+    """Mock `_git_repository_root()`."""
+    return TEST_PROJECT_ROOT
+def mock_load_pyproject(*_: object) -> dict[str, Any]:
+    """Mock `_load_pyproject()`."""
+    return deepcopy(TEST_PYPROJECT)
+def mock_load_pyproject_no_local(*_: object) -> dict[str, Any]:
+    """Mock `_load_pyproject()` without a `tool` subtable."""
+    metadata_no_tool = deepcopy(TEST_PYPROJECT)
+    del metadata_no_tool['tool']
+    return metadata_no_tool
+def mock_get_version_metadata(*_: object) -> dict[str, str]:
+    """Mock `get_version_metadata()`."""
+    return deepcopy(TEST_VERSION_METADATA)
+def return_none(*_: object) -> None:
+    """Monkeypatch helper to return `None`."""
 
 
 # pylint: disable-next=unused-variable
