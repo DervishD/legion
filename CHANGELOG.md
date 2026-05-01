@@ -6,7 +6,7 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 
-## [Development]
+## [3.0.1]
 ### Added
 - Release-mode support for automatic version handling
 
@@ -126,7 +126,8 @@ side effects are no longer implicit.
 - Useful run-time constants
 - Timestamp string generator
 
-[Development]: https://github.com/DervishD/legion/compare/v3.0.0...development
+
+[3.0.1]: https://github.com/DervishD/legion/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/DervishD/legion/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/DervishD/legion/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/DervishD/legion/compare/v2.0.0...v2.0.1

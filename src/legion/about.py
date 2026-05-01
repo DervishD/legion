@@ -2,6 +2,6 @@
 
 # pylint: disable=unused-variable
 PROGRAM_NAME = 'legion'
-VERSION = '3.0.0.post4+development.b147ad5.dirty'
-RELEASE = '3.0.0.post0'
+VERSION = '3.0.1'
+RELEASE = '3.0.1'
 REPOSITORY = 'https://github.com/DervishD/legion'
