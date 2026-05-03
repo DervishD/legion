@@ -1,14 +1,22 @@
 #!/bin/sh
 . "$(dirname "$0")/common"
 
-SELF_DOCUMENTING_CODE='src/legion/__init__.py'
-GENERATED_DOCUMENTATION='README.md'
+SELF_DOCUMENTING_CODE=$(python -c "
+import importlib.util, pathlib, tomllib
+metadata = tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))
+origin = pathlib.Path(importlib.util.find_spec(metadata['project']['name']).origin).relative_to(pathlib.Path.cwd())
+print(origin.as_posix())
+") || die 'Failed to get self-documenting code file path'
+
+GENERATED_DOCUMENTATION=$(python tools/pluck.py project.readme) || die 'Failed to get generated documentation file path'
 
 update_colophon
+
+COLOPHON_PATH=$(python tools/pluck.py local.colophon.path)  || die 'Failed to get colophon file path'
 git add "$COLOPHON_PATH"
 
 git diff --cached --name-only | grep -Fxq -e "$SELF_DOCUMENTING_CODE" -e "$COLOPHON_PATH" || exit 0
 
-python -m legion || die "Failed to generate $GENERATED_DOCUMENTATION."
+python -m legion || die "Failed to generate $GENERATED_DOCUMENTATION"
 
-git diff --quiet $GENERATED_DOCUMENTATION || die "$GENERATED_DOCUMENTATION is out of date."
+git diff --quiet $GENERATED_DOCUMENTATION || die "$GENERATED_DOCUMENTATION is out of date"

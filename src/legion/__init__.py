@@ -33,7 +33,7 @@ import tomllib
 import traceback as tb
 from typing import cast, TextIO, TYPE_CHECKING
 
-from .about import RELEASE, REPOSITORY
+from .about import VERSION, REPOSITORY
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -468,7 +468,7 @@ def docs() -> str:
     visitor = _DocstringVisitor()
     visitor.visit(ast.parse(getsource(sys.modules[__name__])))
 
-    return _unwrap_markdown(__doc__).format(RELEASE, REPOSITORY, visitor.get_full_docs())
+    return _unwrap_markdown(__doc__).format(VERSION, REPOSITORY, visitor.get_full_docs())
 
 
 def ensure_utf8_output[**P, R](f: Callable[P, R]) -> Callable[P, R]:
