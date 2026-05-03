@@ -6,9 +6,13 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 
+## [Development]
+### Added
+- `pluck.py`, a project metadata plucking tool
+
 ## [3.0.3]
 ### Fixed
-- `post-checkout` hook no longer updates colophon file infinitely.
+- `post-checkout` hook no longer updates colophon file infinitely
 
 
 ## [3.0.2]

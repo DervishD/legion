@@ -1,6 +1,6 @@
 # legion
 
-*`v3.0.3` · [GitHub](https://github.com/DervishD/legion)*
+*`v3.0.3.post0` · [GitHub](https://github.com/DervishD/legion)*
 
 > 'What is your name?'\
 > 'My name is Legion,' he replied, 'for we are many.'
