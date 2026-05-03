@@ -7,8 +7,12 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 
 ## [Development]
+### Changed
+- Version metadata handling and policies
+
 ### Added
 - `pluck.py`, a project metadata plucking tool
+
 
 ## [3.0.3]
 ### Fixed

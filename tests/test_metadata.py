@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 
 from legion import get_project_metadata
-from legion.about import PROGRAM_NAME, VERSION
+from legion.about import BUILD, PROGRAM_NAME
 
 PROJECT_METADATA = get_project_metadata()
 
@@ -54,7 +54,7 @@ def test_version_matches_pypa_spec() -> None:
                 (?P<dirty>\.dirty)?+                                #     Dirty marker (optional within segment).
         )?+
     $"""
-    assert re.fullmatch(pypa_spec_compliant_version_regex, VERSION, re.ASCII|re.VERBOSE) is not None
+    assert re.fullmatch(pypa_spec_compliant_version_regex, BUILD, re.ASCII|re.VERBOSE) is not None
 
 
 # pylint: disable-next=unused-variable
