@@ -27,7 +27,6 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name="Raúl Núñez de Arenas Coronado", email="raulnac@gmail.com"}]
 maintainers = [{name="Raúl Núñez de Arenas Coronado", email="raulnac@gmail.com"}]
-scripts = {"legion" = "legion:demo"}
 
 [project.urls]
 homepage = "https://github.com/DervishD/legion"
@@ -76,7 +75,7 @@ force-sort-within-sections = true
 order-by-type = false
 
 [tool.pylint.main]
-init-hook = "import sys, os; sys.path.insert(0, os.path.abspath('src'))"
+# init-hook = "import sys, os; sys.path.insert(0, os.path.abspath('src'))"
 persistent = false
 jobs = 0
 max-line-length = 120

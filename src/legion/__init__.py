@@ -33,7 +33,7 @@ import tomllib
 import traceback as tb
 from typing import cast, TextIO, TYPE_CHECKING
 
-from .about import VERSION, REPOSITORY
+from .about import REPOSITORY, VERSION
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

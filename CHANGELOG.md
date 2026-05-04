@@ -7,6 +7,8 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 
 ## [Development]
+### Fixed
+- Minor bugfixes
 
 
 ## [3.0.4]
