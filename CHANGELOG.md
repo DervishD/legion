@@ -6,7 +6,7 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 
-## [Development]
+## [3.0.4]
 ### Changed
 - Version metadata handling and policies
 
@@ -145,6 +145,7 @@ side effects are no longer implicit.
 - Timestamp string generator
 
 
+[3.0.4]: https://github.com/DervishD/legion/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/DervishD/legion/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/DervishD/legion/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/DervishD/legion/compare/v3.0.0...v3.0.1
