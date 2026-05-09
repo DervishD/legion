@@ -6,9 +6,9 @@ This document is based on the [DervishD changelog specification](https://gist.gi
 This project versioning scheme complies with the `Python Packaging Authority` [version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/) as defined by the `Python Packaging User Guide`.
 
 
-## [Development]
-### Changed
-- `wait_for_keypress()` heuristics have been improved
+## [3.0.6]
+### Fixed
+- `wait_for_keypress()` heuristics
 
 
 ## [3.0.5]
@@ -155,7 +155,7 @@ side effects are no longer implicit.
 - Timestamp string generator
 
 
-[Development]: https://github.com/DervishD/legion/compare/v3.0.5...development
+[3.0.6]: https://github.com/DervishD/legion/compare/v3.0.5...v3.0.6
 [3.0.5]: https://github.com/DervishD/legion/compare/v3.0.4...v3.0.5
 [3.0.4]: https://github.com/DervishD/legion/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/DervishD/legion/compare/v3.0.2...v3.0.3
