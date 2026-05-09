@@ -7,6 +7,8 @@ This project versioning scheme complies with the `Python Packaging Authority` [v
 
 
 ## [Development]
+### Changed
+- `wait_for_keypress()` heuristics have been improved
 
 
 ## [3.0.5]

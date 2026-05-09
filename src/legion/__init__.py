@@ -1093,6 +1093,25 @@ if sys.platform == 'win32':
         return windll.kernel32.GetConsoleMode(get_osfhandle(sys.stdout.fileno()), byref(c_uint()))   # pragma: no cover
 
 
+    def _get_invocation_name() -> str | None:
+        """Return the invocation name for the current execution.
+
+        Posible return values:
+        - For `python -m package_name`, `__spec__.name`
+        - For `python -m module_name`, `__spec__.parent`
+        - For any other invocation, `pathlib.Path(sys.argv[0]).name`
+
+        Helper for `_is_attached_console_transient()`.
+        """
+        main = sys.modules['__main__']
+        spec = getattr(main, '__spec__', None)
+
+        if spec is not None:
+            return spec.parent or spec.name
+
+        return Path(sys.argv[0]).name
+
+
     def _is_attached_console_transient() -> bool:
         """Predicate for `wait_for_keypress()`.
 
@@ -1112,16 +1131,17 @@ if sys.platform == 'win32':
         console_title = create_unicode_buffer(buffer_size)
         if not windll.kernel32.GetConsoleTitleW(console_title, buffer_size):
             return False
+
         # For a frozen executable, if the console title is not equal to
         # `sys.executable`, then the console is NOT transient.
         #
-        # For a `.py` file, this is more complicated, but in most cases
-        # if the console title contains the name of the `.py` file, the
-        # console is NOT transient.
+        # For a script, module or package, this is more complicated, but
+        # if the console title contains the invocation name, then it is
+        # reasonable to consider that the console is NOT transient.
         if getattr(sys, 'frozen', False):
             if console_title.value != sys.executable:
                 return False
-        elif Path(sys.argv[0]).name in console_title.value:
+        elif _get_invocation_name() in console_title.value:
             return False
         return True
 

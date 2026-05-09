@@ -1,10 +1,12 @@
 """Test units for `main()` function."""
 import sys
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 import pytest
 
 from legion import (
+    _get_invocation_name,  # pyright: ignore[reportPrivateUsage]
     _has_attached_console,  # pyright: ignore[reportPrivateUsage]
     _is_attached_console_transient,  # pyright: ignore[reportPrivateUsage]
     wait_for_keypress,
@@ -74,20 +76,46 @@ def test_customized_prompt(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Captu
     assert output == custom_prompt
 
 
+@pytest.mark.parametrize(('spec', 'argv', 'expected'), [
+    pytest.param(
+        SimpleNamespace(parent='package_name', name='package_name.__main__'),
+        None,
+        'package_name',
+        id='test__get_invocation_name_package'),
+    pytest.param(
+        SimpleNamespace(parent='', name='module_name'),
+        None,
+        'module_name',
+        id='test__get_invocation_name_module'),
+    pytest.param(
+        None,
+        ['fallback_invocation.py'],
+        'fallback_invocation.py',
+        id='test__get_invocation_name_fallback'),
+])
 # pylint: disable-next=unused-variable
-def test_is_attached_console_transient(monkeypatch: pytest.MonkeyPatch) -> None:
+def test__get_invocation_name(
+    monkeypatch: pytest.MonkeyPatch,
+    spec: SimpleNamespace | None,
+    argv: list[str] | None,
+    expected: str,
+) -> None:
+    """Test `_get_invocation_name` helper."""
+    monkeypatch.setattr(sys.modules['__main__'], '__spec__', spec)
+    monkeypatch.setattr(sys, 'argv', argv)
+    assert _get_invocation_name() == expected
+
+
+# pylint: disable-next=unused-variable
+def test__is_attached_console_transient(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `_is_attached_console_transient()` helper."""
     def get_console_title_factory(length: int) -> Callable[[], int]:
         def mock_get_console_title(*_: object) -> int:
             return length
         return mock_get_console_title
 
-    class MockConsoleTitle:  # pylint: disable=missing-class-docstring
-        value = 'example_console_title'
-
-    console_title = MockConsoleTitle()
-
-    def mock_create_unicode_buffer(*_: object) -> MockConsoleTitle:
+    console_title = SimpleNamespace(value='example_console_title')
+    def mock_create_unicode_buffer(*_: object) -> SimpleNamespace:
         return console_title
 
     mock_get_console_title = get_console_title_factory(0)
@@ -99,17 +127,13 @@ def test_is_attached_console_transient(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr('legion.create_unicode_buffer', mock_create_unicode_buffer)
 
     monkeypatch.setattr(sys, 'frozen', True, raising=False)
-
     monkeypatch.setattr(sys, 'executable', 'example_sys_executable')
     assert _is_attached_console_transient() is False
-
     monkeypatch.setattr(sys, 'executable', console_title.value)
     assert _is_attached_console_transient() is True
 
     monkeypatch.delattr(sys, 'frozen')
-
-    monkeypatch.setattr(sys, 'argv', [console_title.value])
+    monkeypatch.setattr('legion._get_invocation_name', lambda: console_title.value)
     assert _is_attached_console_transient() is False
-
-    monkeypatch.setattr(sys, 'argv', ['example_sys_argv_0'])
+    monkeypatch.setattr('legion._get_invocation_name', lambda: '-' * 42)
     assert _is_attached_console_transient() is True
