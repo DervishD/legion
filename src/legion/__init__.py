@@ -136,9 +136,9 @@ class LegionLogger(logging.Logger):
         """Set current logging indentation to *level*.
 
         If *level* is:
-            - `INCREASE_INDENT_SYMBOL` string, indentation is increased
-            - `DECREASE_INDENT_SYMBOL` string, indentation is decreased
-            - Any integer `>=0`, indentation is set to that value
+        - `INCREASE_INDENT_SYMBOL` string, indentation is increased
+        - `DECREASE_INDENT_SYMBOL` string, indentation is decreased
+        - Any integer `>=0`, indentation is set to that value
 
         For any other value, `ValueError` is raised.
 
